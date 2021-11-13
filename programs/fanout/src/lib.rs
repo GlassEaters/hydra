@@ -58,6 +58,8 @@ use super::*;
     fanout.total_inflow += current_balance.checked_sub(fanout.last_balance).or_arith_error()? as u128;
     fanout.last_balance = current_balance;
 
+
+    voucher.fanout = fanout.key();
     voucher.bump_seed = bump_seed;
     voucher.account = ctx.accounts.voucher_account.key();
     voucher.shares = ctx.accounts.voucher_account.amount;
@@ -106,7 +108,7 @@ use super::*;
     let current_balance = ctx.accounts.fanout_account.amount;
     fanout.total_inflow += current_balance.checked_sub(fanout.last_balance).or_arith_error()? as u128;
 
-    let inflow_change = voucher.last_inflow.checked_sub(fanout.total_inflow).or_arith_error()?;
+    let inflow_change = fanout.total_inflow.checked_sub(voucher.last_inflow).or_arith_error()?;
     let dist_amount = (voucher.shares as u128).checked_mul(inflow_change).or_arith_error()?
                                                    .checked_div(fanout.total_shares as u128).or_arith_error()?;
     let dist_amount_u64 = u64::try_from(dist_amount).unwrap();
@@ -114,6 +116,7 @@ use super::*;
     fanout.last_balance = current_balance.checked_sub(dist_amount_u64).or_arith_error()?;
     voucher.last_inflow = fanout.total_inflow;
 
+    msg!("Transferring {} to destination", inflow_change);
     token::transfer(
       CpiContext::new_with_signer(
         ctx.accounts.token_program.to_account_info().clone(), 

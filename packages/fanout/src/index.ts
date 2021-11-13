@@ -1,6 +1,6 @@
 import * as anchor from "@project-serum/anchor";
 import { Program, Provider } from "@project-serum/anchor";
-import { getTokenAccount } from "@project-serum/common";
+import { getTokenAccount, parseMintAccount } from "@project-serum/common";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   Token,
@@ -48,7 +48,7 @@ interface IUnstakeArgs {
   voucher: PublicKey;
 }
 
-interface DistributeV0 {
+interface IDistributeArgs {
   payer?: PublicKey;
   /** The staking voucher to distribute funds to */
   voucher: PublicKey;
@@ -129,6 +129,13 @@ export class Fanout {
       programId
     )
   }
+
+  static async voucherKey(account: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
+    return await PublicKey.findProgramAddress(
+      [Buffer.from("voucher", "utf-8"), account.toBuffer()],
+      programId
+    )
+  }
   
   static async freezeAuthority(mint: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
@@ -150,7 +157,7 @@ export class Fanout {
     mint,
     shares,
   }: IInitializeFanoutArgs): Promise<
-    InstructionResult<{ fanout: PublicKey; }>
+    InstructionResult<{ fanout: PublicKey; mint: PublicKey; }>
   > {
     const [fanout, bumpSeed] = await Fanout.fanoutKey(account);
     const [accountOwner, accountOwnerBumpSeed] = await Fanout.accountOwner(account);
@@ -233,7 +240,7 @@ export class Fanout {
         ]
       );
     }
-    
+
     const [freezeAuthority, freezeAuthorityBumpSeed] = await Fanout.freezeAuthority(mint);
 
     instructions.push(await this.instruction.initializeFanoutV0({
@@ -253,18 +260,138 @@ export class Fanout {
 
     return {
       output: {
-        fanout
+        fanout,
+        mint
       },
       instructions,
       signers,
     };
   }
 
-  async initializeFanout(args: IInitializeFanoutArgs): Promise<{ fanout: PublicKey}> {
+  async initializeFanout(args: IInitializeFanoutArgs): Promise<{ fanout: PublicKey; mint: PublicKey }> {
     const { instructions, signers, output } = await this.initializeFanoutInstructions(args);
 
     await this.sendInstructions(instructions, signers, args.payer);
 
     return output
   }
+
+  async stakeInstructions({
+    payer = this.wallet.publicKey,
+    fanout,
+    voucherAccount,
+    destination
+  }: IStakeArgs): Promise<
+    InstructionResult<{ voucher: PublicKey; destination: PublicKey }>
+  > {
+    const fanoutAcct = await this.account.fanoutV0.fetch(fanout);
+    const tokenAccount = await getTokenAccount(this.provider, fanoutAcct.account);
+    const instructions = [];
+
+    if (!voucherAccount) {
+      voucherAccount = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        fanoutAcct.mint,
+        this.wallet.publicKey,
+        true
+      );
+    }
+
+    const [voucher, bumpSeed] = await Fanout.voucherKey(voucherAccount);
+    const voucherAccountFetched = await getTokenAccount(this.provider, voucherAccount);
+    const [freezeAuthority] = await Fanout.freezeAuthority(fanoutAcct.mint);
+
+    if (!destination) {
+      destination = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        tokenAccount.mint,
+        this.wallet.publicKey,
+        true
+      );
+
+      instructions.push(
+        // Create an ata to receive tokens for this mint
+        Token.createAssociatedTokenAccountInstruction(
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+          TOKEN_PROGRAM_ID,
+          tokenAccount.mint,
+          destination,
+          this.wallet.publicKey,
+          payer
+        ),
+      )
+    }
+
+    instructions.push(await this.instruction.stakeV0(bumpSeed, {
+      accounts: {
+        payer,
+        fanout,
+        voucher,
+        voucherAccount: voucherAccount!,
+        destination: destination!,
+        owner: voucherAccountFetched.owner,
+        fanoutAccount: fanoutAcct.account,
+        mint: fanoutAcct.mint,
+        freezeAuthority,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+        rent: SYSVAR_RENT_PUBKEY
+      }
+    }));
+
+
+    return {
+      output: {
+        destination: destination!,
+        voucher
+      },
+      instructions,
+      signers: []
+    }
+  }
+
+  async stake(args: IStakeArgs): Promise<{ voucher: PublicKey; destination: PublicKey }> {
+    const { instructions, signers, output } = await this.stakeInstructions(args);
+
+    await this.sendInstructions(instructions, signers, args.payer);
+
+    return output
+  }
+
+  async distributeInstructionns({
+    voucher
+  }: IDistributeArgs): Promise<
+    InstructionResult<null>
+  > {
+    const voucherAcct = await this.account.fanoutVoucherV0.fetch(voucher);
+    const fanoutAcct = await this.account.fanoutV0.fetch(voucherAcct.fanout);
+    const [accountOwner] = await Fanout.accountOwner(fanoutAcct.account);
+
+    return {
+      output: null,
+      instructions: [
+        await this.instruction.distributeV0({
+          accounts: {
+            fanout: voucherAcct.fanout,
+            voucher,
+            fanoutAccount: fanoutAcct.account,
+            owner: accountOwner,
+            destination: voucherAcct.destination,
+            tokenProgram: TOKEN_PROGRAM_ID
+          }
+        })
+      ],
+      signers: []
+    }
+  }
+
+  async distribute(args: IDistributeArgs): Promise<null> {
+    const { instructions, signers, output } = await this.distributeInstructionns(args);
+
+    await this.sendInstructions(instructions, signers, args.payer);
+
+    return output
+  } 
 }

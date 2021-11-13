@@ -19,20 +19,22 @@ describe('fanout', () => {
   const fanoutSdk = new Fanout(provider, program);
   const tokenUtils = new TokenUtils(provider);
 
+  let sharesMint: PublicKey;
   let mintToSplit: PublicKey;
   let accountToSplit: PublicKey;
   const me = provider.wallet.publicKey;
   const splitWallet = Keypair.generate()
   let fanout: PublicKey;
 
-  beforeEach(async () => {
-    mintToSplit = await createMint(provider, me, 9);
-    accountToSplit = await tokenUtils.createAtaAndMint(provider, mintToSplit, 1000, splitWallet.publicKey);
+  before(async () => {
+    mintToSplit = await createMint(provider, me, 0);
+    accountToSplit = await tokenUtils.createAtaAndMint(provider, mintToSplit, 0, splitWallet.publicKey);
 
-    const { instructions, signers, output: { fanout: fanoutOut } } = await fanoutSdk.initializeFanoutInstructions({
+    const { instructions, signers, output: { fanout: fanoutOut, mint: mintOut } } = await fanoutSdk.initializeFanoutInstructions({
       shares: 100,
       account: accountToSplit
     })
+    sharesMint = mintOut;
 
     fanout = fanoutOut;
 
@@ -43,4 +45,29 @@ describe('fanout', () => {
     const fanoutAcct = await fanoutSdk.account.fanoutV0.fetch(fanout);
     expect(fanoutAcct.account.toBase58()).to.equal(accountToSplit.toBase58());
   });
+
+  describe("after staking", () => {
+    let voucher: PublicKey;
+    let destination: PublicKey;
+    before(async () => {
+      const result = await fanoutSdk.stake({
+        fanout
+      });
+      voucher = result.voucher;
+      destination = result.destination;
+      await tokenUtils.mintTo(mintToSplit, 1000, accountToSplit);
+    })
+
+    it('creates the staking voucher', async () => {
+      const voucherAcct = await fanoutSdk.account.fanoutVoucherV0.fetch(voucher);
+      expect(voucherAcct.fanout.toBase58()).to.equal(fanout.toBase58())
+    })
+
+    it('gives us our share of the account', async () => {
+      await fanoutSdk.distribute({
+        voucher
+      });
+      await tokenUtils.expectBalance(destination, 1000);
+    })
+  })
 });

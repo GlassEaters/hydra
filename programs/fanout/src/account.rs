@@ -53,7 +53,7 @@ pub struct StakeV0<'info> {
   pub fanout: Box<Account<'info, FanoutV0>>,
   #[account(
     init,
-    space = 100,
+    space = 300,
     seeds = [b"voucher", voucher_account.key().as_ref()],
     bump = bump_seed,
     payer = payer
@@ -122,10 +122,12 @@ pub struct DistributeV0<'info> {
   )]
   pub voucher: Account<'info, FanoutVoucherV0>,
   #[account(
+    mut,
     has_one = owner
   )]
   pub fanout_account: Account<'info, TokenAccount>,
   pub owner: AccountInfo<'info>,
+  #[account(mut)]
   pub destination: Account<'info, TokenAccount>,
   pub token_program: Program<'info, Token>,
 }
