@@ -40,6 +40,10 @@ pub struct InitializeFanoutV0<'info> {
 }
 
 
+/**
+ * This is explicitly permissionless, save for the payer, so that the distributor can start
+ * staking on distributed accounts immediately. Unstake the owner must sign
+ */
 #[derive(Accounts)]
 #[instruction(bump_seed: u8)]
 pub struct StakeV0<'info> {
@@ -62,14 +66,12 @@ pub struct StakeV0<'info> {
   #[account(
     mut,
     has_one = mint,
-    has_one = owner
   )]
   pub voucher_account: Box<Account<'info, TokenAccount>>,
   #[account(
     constraint = destination.mint == fanout_account.mint
   )]
   pub destination: Box<Account<'info, TokenAccount>>,
-  pub owner: Signer<'info>,
   pub fanout_account: Box<Account<'info, TokenAccount>>,
   pub mint: Box<Account<'info, Mint>>,
   #[account(

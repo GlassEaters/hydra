@@ -83,6 +83,52 @@ export class TokenUtils {
     await this.provider.send(mintTx);
   }
 
+  async sendTokens(
+    provider: Provider,
+    mint: PublicKey,
+    to: PublicKey,
+    amount: number,
+    owner: PublicKey = provider.wallet.publicKey,
+    payer: PublicKey = provider.wallet.publicKey
+  ): Promise<PublicKey> {
+    const source = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      mint,
+      owner
+    )
+    const ata = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      mint,
+      to
+    )
+    const tx = new Transaction({ feePayer: payer });
+    if (!await provider.connection.getAccountInfo(ata)) {
+      tx.add(Token.createAssociatedTokenAccountInstruction(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        mint,
+        ata,
+        to,
+        payer
+      ))
+    }
+    tx.add(
+      Token.createTransferInstruction(
+        TOKEN_PROGRAM_ID,
+        source,
+        ata,
+        owner,
+        [],
+        amount
+      )
+    )
+    await provider.send(tx);
+  
+    return ata;
+  }
+
   async createAtaAndMint(
     provider: Provider,
     mint: PublicKey,

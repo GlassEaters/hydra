@@ -49,12 +49,25 @@ describe('fanout', () => {
   describe("after staking", () => {
     let voucher: PublicKey;
     let destination: PublicKey;
+    let voucher2: PublicKey;
+    let destination2: PublicKey;
+    const secondShareHolder = Keypair.generate()
+
     before(async () => {
+      // Send some shares to another shareholder
+      const shareholder2VoucherAccount = await tokenUtils.sendTokens(provider, sharesMint, secondShareHolder.publicKey, 20);
       const result = await fanoutSdk.stake({
         fanout
       });
       voucher = result.voucher;
       destination = result.destination;
+      const result2 = await fanoutSdk.stake({
+        fanout,
+        voucherAccount: shareholder2VoucherAccount
+      });
+      voucher2 = result2.voucher;
+      destination2 = result2.destination;
+      
       await tokenUtils.mintTo(mintToSplit, 1000, accountToSplit);
     })
 
@@ -67,7 +80,11 @@ describe('fanout', () => {
       await fanoutSdk.distribute({
         voucher
       });
-      await tokenUtils.expectBalance(destination, 1000);
+      await fanoutSdk.distribute({
+        voucher: voucher2
+      });
+      await tokenUtils.expectBalance(destination, 800);
+      await tokenUtils.expectBalance(destination2, 200);
     })
   })
 });

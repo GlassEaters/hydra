@@ -307,21 +307,23 @@ export class Fanout {
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         tokenAccount.mint,
-        this.wallet.publicKey,
+        voucherAccountFetched.owner,
         true
       );
 
-      instructions.push(
-        // Create an ata to receive tokens for this mint
-        Token.createAssociatedTokenAccountInstruction(
-          ASSOCIATED_TOKEN_PROGRAM_ID,
-          TOKEN_PROGRAM_ID,
-          tokenAccount.mint,
-          destination,
-          this.wallet.publicKey,
-          payer
-        ),
-      )
+      if (!await this.provider.connection.getAccountInfo(destination)) {
+        instructions.push(
+          // Create an ata to receive tokens for this mint
+          Token.createAssociatedTokenAccountInstruction(
+            ASSOCIATED_TOKEN_PROGRAM_ID,
+            TOKEN_PROGRAM_ID,
+            tokenAccount.mint,
+            destination,
+            voucherAccountFetched.owner,
+            payer
+          ),
+        )
+      }
     }
 
     instructions.push(await this.instruction.stakeV0(bumpSeed, {
@@ -331,7 +333,6 @@ export class Fanout {
         voucher,
         voucherAccount: voucherAccount!,
         destination: destination!,
-        owner: voucherAccountFetched.owner,
         fanoutAccount: fanoutAcct.account,
         mint: fanoutAcct.mint,
         freezeAuthority,
