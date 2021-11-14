@@ -331,6 +331,7 @@ export class Fanout {
         payer,
         fanout,
         voucher,
+        owner: voucherAccountFetched.owner,
         voucherAccount: voucherAccount!,
         destination: destination!,
         fanoutAccount: fanoutAcct.account,

@@ -8,6 +8,7 @@ pub struct FanoutV0 {
   pub total_shares: u64,
   pub total_inflow: u128,
   pub last_balance: u64,
+  pub total_staked: u64,
 
   pub bump_seed: u8,
   pub freeze_authority_bump_seed: u8,

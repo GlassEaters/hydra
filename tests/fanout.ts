@@ -52,19 +52,23 @@ describe('fanout', () => {
     let voucher2: PublicKey;
     let destination2: PublicKey;
     const secondShareHolder = Keypair.generate()
+    const unstakedShareHolder = Keypair.generate()
 
     before(async () => {
       // Send some shares to another shareholder
       const shareholder2VoucherAccount = await tokenUtils.sendTokens(provider, sharesMint, secondShareHolder.publicKey, 20);
+      // Send some to someone not staked
+      await tokenUtils.sendTokens(provider, sharesMint, unstakedShareHolder.publicKey, 20);
       const result = await fanoutSdk.stake({
         fanout
       });
       voucher = result.voucher;
       destination = result.destination;
-      const result2 = await fanoutSdk.stake({
+      const { instructions, output: result2, signers } = await fanoutSdk.stakeInstructions({
         fanout,
         voucherAccount: shareholder2VoucherAccount
       });
+      await fanoutSdk.sendInstructions(instructions, [...signers, secondShareHolder], me);
       voucher2 = result2.voucher;
       destination2 = result2.destination;
       
@@ -83,8 +87,18 @@ describe('fanout', () => {
       await fanoutSdk.distribute({
         voucher: voucher2
       });
-      await tokenUtils.expectBalance(destination, 800);
-      await tokenUtils.expectBalance(destination2, 200);
+      await tokenUtils.expectBalance(destination, 60/80 * 1000);
+      await tokenUtils.expectBalance(destination2, 20/80 * 1000);
+      await tokenUtils.mintTo(mintToSplit, 500, accountToSplit);
+      await fanoutSdk.distribute({
+        voucher
+      });
+      await tokenUtils.expectBalance(destination, 60/80 * 1000 + (60/80) * 500);
+      await tokenUtils.mintTo(mintToSplit, 250, accountToSplit);
+      await fanoutSdk.distribute({
+        voucher: voucher2
+      });
+      await tokenUtils.expectBalance(destination2, 20/80 * 1000 + Math.floor((20/80) * 750));
     })
   })
 });

@@ -66,8 +66,10 @@ pub struct StakeV0<'info> {
   #[account(
     mut,
     has_one = mint,
+    has_one = owner
   )]
   pub voucher_account: Box<Account<'info, TokenAccount>>,
+  pub owner: Signer<'info>,
   #[account(
     constraint = destination.mint == fanout_account.mint
   )]

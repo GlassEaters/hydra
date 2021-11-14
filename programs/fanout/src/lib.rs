@@ -1,9 +1,11 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token::TokenAccount;
 use std::convert::TryFrom;
 
 use crate::account::*;
 use crate::arg::*;
 use crate::error::ErrorCode;
+use crate::state::*;
 
 pub mod error;
 pub mod account;
@@ -28,6 +30,27 @@ impl OrArithError<u128> for Option<u128> {
   }
 }
 
+fn update_inflow(fanout_account: &TokenAccount, fanout: &mut FanoutV0) -> ProgramResult {
+  let current_balance = fanout_account.amount;
+  let inflow_change = current_balance.checked_sub(fanout.last_balance).or_arith_error()? as u128;
+  fanout.total_inflow += inflow_change;
+  if fanout.total_staked > 0 {
+    // Take the share of unstaked tokens and add it back to the inflow such that the unaccounted
+    // for funds get redistributed amongst the staking shareholders.
+    // inflow * (total_shares - staked_shares) / staked_shares
+    let unstaked_correction = inflow_change.checked_mul(
+      (fanout.total_shares as u128)
+             .checked_sub(fanout.total_staked as u128).or_arith_error()?
+    ).or_arith_error()?.checked_div(
+      fanout.total_staked as u128
+    ).or_arith_error()?;
+    fanout.total_inflow += unstaked_correction;
+  }
+  
+  fanout.last_balance = current_balance;
+
+  Ok(())
+}
 
 #[program]
 pub mod fanout {
@@ -54,10 +77,8 @@ use super::*;
     let voucher = &mut ctx.accounts.voucher;
     let fanout = &mut ctx.accounts.fanout;
 
-    let current_balance = ctx.accounts.fanout_account.amount;
-    fanout.total_inflow += current_balance.checked_sub(fanout.last_balance).or_arith_error()? as u128;
-    fanout.last_balance = current_balance;
-
+    update_inflow(&ctx.accounts.fanout_account, fanout)?;
+    fanout.total_staked += ctx.accounts.voucher_account.amount;
 
     voucher.fanout = fanout.key();
     voucher.bump_seed = bump_seed;
@@ -85,6 +106,8 @@ use super::*;
   }
 
   pub fn unstake_v0(ctx: Context<UnstakeV0>) -> ProgramResult {
+    ctx.accounts.fanout.total_staked -= ctx.accounts.account.amount;
+
     token::thaw_account(
       CpiContext::new_with_signer(
         ctx.accounts.token_program.to_account_info().clone(), 
@@ -104,16 +127,14 @@ use super::*;
   pub fn distribute_v0(ctx: Context<DistributeV0>) -> ProgramResult {
     let voucher = &mut ctx.accounts.voucher;
     let fanout = &mut ctx.accounts.fanout;
-
-    let current_balance = ctx.accounts.fanout_account.amount;
-    fanout.total_inflow += current_balance.checked_sub(fanout.last_balance).or_arith_error()? as u128;
-
+    update_inflow(&ctx.accounts.fanout_account, fanout)?;
+    
     let inflow_change = fanout.total_inflow.checked_sub(voucher.last_inflow).or_arith_error()?;
     let dist_amount = (voucher.shares as u128).checked_mul(inflow_change).or_arith_error()?
                                                    .checked_div(fanout.total_shares as u128).or_arith_error()?;
     let dist_amount_u64 = u64::try_from(dist_amount).unwrap();
 
-    fanout.last_balance = current_balance.checked_sub(dist_amount_u64).or_arith_error()?;
+    fanout.last_balance = ctx.accounts.fanout_account.amount.checked_sub(dist_amount_u64).or_arith_error()?;
     voucher.last_inflow = fanout.total_inflow;
 
     msg!("Transferring {} to destination", inflow_change);
