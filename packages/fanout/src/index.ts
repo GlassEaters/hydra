@@ -130,9 +130,16 @@ export class Fanout {
     )
   }
 
-  static async voucherKey(account: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
+  static async voucherKey(fanoutAccount: PublicKey, destination: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
-      [Buffer.from("voucher", "utf-8"), account.toBuffer()],
+      [Buffer.from("voucher", "utf-8"), fanoutAccount.toBuffer(), destination.toBuffer()],
+      programId
+    )
+  }
+
+  static async voucherCounterKey(account: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
+    return await PublicKey.findProgramAddress(
+      [Buffer.from("voucher-counter", "utf-8"), account.toBuffer()],
       programId
     )
   }
@@ -298,7 +305,6 @@ export class Fanout {
       );
     }
 
-    const [voucher, bumpSeed] = await Fanout.voucherKey(voucherAccount);
     const voucherAccountFetched = await getTokenAccount(this.provider, voucherAccount);
     const [freezeAuthority] = await Fanout.freezeAuthority(fanoutAcct.mint);
 
@@ -326,8 +332,15 @@ export class Fanout {
       }
     }
 
-    instructions.push(await this.instruction.stakeV0(bumpSeed, {
+    const [voucher, bumpSeed] = await Fanout.voucherKey(fanoutAcct.account, destination!);
+    const [voucherCounter, voucherCounterBumpSeed] = await Fanout.voucherCounterKey(voucherAccount);
+
+    instructions.push(await this.instruction.stakeV0({
+      bumpSeed,
+      voucherCounterBumpSeed
+    }, {
       accounts: {
+        voucherCounter,
         payer,
         fanout,
         voucher,

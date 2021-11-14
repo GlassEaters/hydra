@@ -45,7 +45,7 @@ pub struct InitializeFanoutV0<'info> {
  * staking on distributed accounts immediately. Unstake the owner must sign
  */
 #[derive(Accounts)]
-#[instruction(bump_seed: u8)]
+#[instruction(args: StakeV0Args)]
 pub struct StakeV0<'info> {
   #[account(mut, signer)]
   pub payer: AccountInfo<'info>,
@@ -56,10 +56,18 @@ pub struct StakeV0<'info> {
   )]
   pub fanout: Box<Account<'info, FanoutV0>>,
   #[account(
+    init_if_needed,
+    space = 100,
+    seeds = [b"voucher-counter", voucher_account.key().as_ref()],
+    bump = args.voucher_counter_bump_seed,
+    payer = payer
+  )]
+  pub voucher_counter: Box<Account<'info, VoucherCounterV0>>,
+  #[account(
     init,
     space = 300,
-    seeds = [b"voucher", voucher_account.key().as_ref()],
-    bump = bump_seed,
+    seeds = [b"voucher", fanout_account.key().as_ref(), destination.key().as_ref()],
+    bump = args.bump_seed,
     payer = payer
   )]
   pub voucher: Box<Account<'info, FanoutVoucherV0>>,
@@ -90,6 +98,12 @@ pub struct UnstakeV0<'info> {
   #[account(mut)]
   pub refund: AccountInfo<'info>,
   pub fanout: Account<'info, FanoutV0>,
+  #[account(
+    mut,
+    has_one = fanout,
+    has_one = account
+  )]
+  pub voucher_counter: Box<Account<'info, VoucherCounterV0>>,
   #[account(
     mut,
     has_one = fanout,

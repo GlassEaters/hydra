@@ -73,15 +73,17 @@ use super::*;
     Ok(())
   }
 
-  pub fn stake_v0(ctx: Context<StakeV0>, bump_seed: u8) -> ProgramResult {
+  pub fn stake_v0(ctx: Context<StakeV0>, args: StakeV0Args) -> ProgramResult {
     let voucher = &mut ctx.accounts.voucher;
     let fanout = &mut ctx.accounts.fanout;
 
     update_inflow(&ctx.accounts.fanout_account, fanout)?;
     fanout.total_staked += ctx.accounts.voucher_account.amount;
+    ctx.accounts.voucher_counter.count += 1;
+    ctx.accounts.voucher_counter.bump_seed = args.voucher_counter_bump_seed;
 
     voucher.fanout = fanout.key();
-    voucher.bump_seed = bump_seed;
+    voucher.bump_seed = args.bump_seed;
     voucher.account = ctx.accounts.voucher_account.key();
     voucher.shares = ctx.accounts.voucher_account.amount;
     voucher.inflow_at_stake = fanout.total_inflow;
@@ -107,20 +109,24 @@ use super::*;
 
   pub fn unstake_v0(ctx: Context<UnstakeV0>) -> ProgramResult {
     ctx.accounts.fanout.total_staked -= ctx.accounts.account.amount;
+    ctx.accounts.voucher_counter.count -= 1;
 
-    token::thaw_account(
-      CpiContext::new_with_signer(
-        ctx.accounts.token_program.to_account_info().clone(), 
-        ThawAccount {
-          account: ctx.accounts.account.to_account_info().clone(),
-          mint: ctx.accounts.mint.to_account_info().clone(),
-          authority: ctx.accounts.freeze_authority.to_account_info().clone()
-        },
-        &[
-          &[b"freeze-authority", ctx.accounts.mint.key().as_ref(), &[ctx.accounts.fanout.freeze_authority_bump_seed]]
-        ]
-      )
-    )?;
+    if ctx.accounts.voucher_counter.count == 0 {
+      token::thaw_account(
+        CpiContext::new_with_signer(
+          ctx.accounts.token_program.to_account_info().clone(), 
+          ThawAccount {
+            account: ctx.accounts.account.to_account_info().clone(),
+            mint: ctx.accounts.mint.to_account_info().clone(),
+            authority: ctx.accounts.freeze_authority.to_account_info().clone()
+          },
+          &[
+            &[b"freeze-authority", ctx.accounts.mint.key().as_ref(), &[ctx.accounts.fanout.freeze_authority_bump_seed]]
+          ]
+        )
+      )?;
+    }
+
     Ok(())
   }
 
