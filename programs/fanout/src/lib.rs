@@ -78,14 +78,14 @@ use super::*;
     let fanout = &mut ctx.accounts.fanout;
 
     update_inflow(&ctx.accounts.fanout_account, fanout)?;
-    fanout.total_staked += ctx.accounts.voucher_account.amount;
+    fanout.total_staked += ctx.accounts.shares_account.amount;
     ctx.accounts.voucher_counter.count += 1;
     ctx.accounts.voucher_counter.bump_seed = args.voucher_counter_bump_seed;
 
     voucher.fanout = fanout.key();
     voucher.bump_seed = args.bump_seed;
-    voucher.account = ctx.accounts.voucher_account.key();
-    voucher.shares = ctx.accounts.voucher_account.amount;
+    voucher.account = ctx.accounts.shares_account.key();
+    voucher.shares = ctx.accounts.shares_account.amount;
     voucher.inflow_at_stake = fanout.total_inflow;
     voucher.last_inflow = fanout.total_inflow;
     voucher.destination = ctx.accounts.destination.key();
@@ -94,7 +94,7 @@ use super::*;
       CpiContext::new_with_signer(
         ctx.accounts.token_program.to_account_info().clone(), 
         FreezeAccount {
-          account: ctx.accounts.voucher_account.to_account_info().clone(),
+          account: ctx.accounts.shares_account.to_account_info().clone(),
           mint: ctx.accounts.mint.to_account_info().clone(),
           authority: ctx.accounts.freeze_authority.to_account_info().clone()
         },

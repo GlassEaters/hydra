@@ -66,7 +66,7 @@ describe('fanout', () => {
       destination = result.destination;
       const { instructions, output: result2, signers } = await fanoutSdk.stakeInstructions({
         fanout,
-        voucherAccount: shareholder2VoucherAccount
+        sharesAccount: shareholder2VoucherAccount
       });
       await fanoutSdk.sendInstructions(instructions, [...signers, secondShareHolder], me);
       voucher2 = result2.voucher;

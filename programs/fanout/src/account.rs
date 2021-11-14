@@ -58,7 +58,7 @@ pub struct StakeV0<'info> {
   #[account(
     init_if_needed,
     space = 100,
-    seeds = [b"voucher-counter", voucher_account.key().as_ref()],
+    seeds = [b"voucher-counter", shares_account.key().as_ref()],
     bump = args.voucher_counter_bump_seed,
     payer = payer
   )]
@@ -76,7 +76,7 @@ pub struct StakeV0<'info> {
     has_one = mint,
     has_one = owner
   )]
-  pub voucher_account: Box<Account<'info, TokenAccount>>,
+  pub shares_account: Box<Account<'info, TokenAccount>>,
   pub owner: Signer<'info>,
   #[account(
     constraint = destination.mint == fanout_account.mint
