@@ -1,0 +1,67 @@
+Arguments: 
+  /usr/local/Cellar/node/16.11.1/bin/node /usr/local/bin/yarn add @strata-foundation/spl-utils @solana/spl-token
+
+PATH: 
+  /Users/nprince/.cargo/bin:/usr/local/opt/openvpn/sbin:/Users/nprince/kafka/bin:/Users/nprince/bin:/Users/nprince/.local/share/solana/install/active_release/bin:/Users/nprince/.cargo/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+
+Yarn version: 
+  1.22.11
+
+Node version: 
+  16.11.1
+
+Platform: 
+  darwin x64
+
+Trace: 
+  SyntaxError: /Users/nprince/source/hydra/package.json: Unexpected token } in JSON at position 769
+      at JSON.parse (<anonymous>)
+      at /usr/local/lib/node_modules/yarn/lib/cli.js:1625:59
+      at Generator.next (<anonymous>)
+      at step (/usr/local/lib/node_modules/yarn/lib/cli.js:310:30)
+      at /usr/local/lib/node_modules/yarn/lib/cli.js:321:13
+
+npm manifest: 
+  {
+    "name": "@hydra/fanout",
+    "version": "0.4.1",
+    "description": "Interface to the spl-fanout smart contract",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/GlassChewers/hydra"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "main": "dist/lib/index.js",
+    "types": "dist/lib/index.d.ts",
+    "exports": {
+        ".": "./dist/lib/index.js"
+    },
+    "files": [
+        "dist/lib/**/*"
+    ],
+    "scripts": {
+        "build": "tsc --project tsconfig.json",
+        "watch": "tsc --watch --project tsconfig.json",
+        "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+        "precommit": "yarn format"
+    },
+    "dependencies": {
+        "@project-serum/common": "^0.0.1-beta.3",
+        "@solana/web3.js": "^1.29.2",
+        "@strata-foundation/spl-utils": "^0.4.0",
+        "bn.js": "^5.2.0"
+    },
+    "devDependencies": {
+        "style-loader": "^2.0.0",
+        "ts-loader": "^9.2.3",
+        "typescript": "^4.3.4"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
