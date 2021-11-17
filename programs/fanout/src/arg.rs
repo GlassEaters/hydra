@@ -6,3 +6,9 @@ pub struct InitializeFanoutV0Args {
   pub freeze_authority_bump_seed: u8,
   pub account_owner_bump_seed: u8,
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
+pub struct StakeV0Args {
+  pub bump_seed: u8,
+  pub voucher_counter_bump_seed: u8,
+}

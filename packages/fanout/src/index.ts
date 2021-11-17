@@ -36,7 +36,7 @@ interface IStakeArgs {
   payer?: PublicKey;
   fanout: PublicKey;
   /** Account holding the fanout mint tokens. **Default:** The associated token account of this wallet */
-  voucherAccount?: PublicKey;
+  sharesAccount?: PublicKey;
   /** Destination for fanout tokens. **Default:** The associated token account of this wallet */
   destination?: PublicKey;
 }
@@ -130,9 +130,16 @@ export class Fanout {
     )
   }
 
-  static async voucherKey(account: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
+  static async voucherKey(fanoutAccount: PublicKey, destination: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
-      [Buffer.from("voucher", "utf-8"), account.toBuffer()],
+      [Buffer.from("voucher", "utf-8"), fanoutAccount.toBuffer(), destination.toBuffer()],
+      programId
+    )
+  }
+
+  static async voucherCounterKey(account: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
+    return await PublicKey.findProgramAddress(
+      [Buffer.from("voucher-counter", "utf-8"), account.toBuffer()],
       programId
     )
   }
@@ -279,7 +286,7 @@ export class Fanout {
   async stakeInstructions({
     payer = this.wallet.publicKey,
     fanout,
-    voucherAccount,
+    sharesAccount,
     destination
   }: IStakeArgs): Promise<
     InstructionResult<{ voucher: PublicKey; destination: PublicKey }>
@@ -288,8 +295,8 @@ export class Fanout {
     const tokenAccount = await getTokenAccount(this.provider, fanoutAcct.account);
     const instructions = [];
 
-    if (!voucherAccount) {
-      voucherAccount = await Token.getAssociatedTokenAddress(
+    if (!sharesAccount) {
+      sharesAccount = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         fanoutAcct.mint,
@@ -298,8 +305,7 @@ export class Fanout {
       );
     }
 
-    const [voucher, bumpSeed] = await Fanout.voucherKey(voucherAccount);
-    const voucherAccountFetched = await getTokenAccount(this.provider, voucherAccount);
+    const sharesAccountFetched = await getTokenAccount(this.provider, sharesAccount);
     const [freezeAuthority] = await Fanout.freezeAuthority(fanoutAcct.mint);
 
     if (!destination) {
@@ -307,7 +313,7 @@ export class Fanout {
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         tokenAccount.mint,
-        voucherAccountFetched.owner,
+        sharesAccountFetched.owner,
         true
       );
 
@@ -319,19 +325,27 @@ export class Fanout {
             TOKEN_PROGRAM_ID,
             tokenAccount.mint,
             destination,
-            voucherAccountFetched.owner,
+            sharesAccountFetched.owner,
             payer
           ),
         )
       }
     }
 
-    instructions.push(await this.instruction.stakeV0(bumpSeed, {
+    const [voucher, bumpSeed] = await Fanout.voucherKey(fanoutAcct.account, destination!);
+    const [voucherCounter, voucherCounterBumpSeed] = await Fanout.voucherCounterKey(sharesAccount);
+
+    instructions.push(await this.instruction.stakeV0({
+      bumpSeed,
+      voucherCounterBumpSeed
+    }, {
       accounts: {
+        voucherCounter,
         payer,
         fanout,
         voucher,
-        voucherAccount: voucherAccount!,
+        owner: sharesAccountFetched.owner,
+        sharesAccount: sharesAccount!,
         destination: destination!,
         fanoutAccount: fanoutAcct.account,
         mint: fanoutAcct.mint,
