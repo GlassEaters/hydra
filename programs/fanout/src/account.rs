@@ -1,5 +1,5 @@
-use anchor_lang::{prelude::*, solana_program, solana_program::{system_program, system_instruction, program::{invoke_signed, invoke}}};
-use anchor_spl::{token, token::{Mint, Token, TokenAccount}};
+use anchor_lang::{prelude::*, solana_program::{program::{invoke_signed, invoke}}};
+use anchor_spl::{token::{Mint, Token, TokenAccount, ID as tokenprogram_id}, associated_token};
 
 use crate::state::*;
 use crate::arg::*;
@@ -7,6 +7,65 @@ use crate::error::ErrorCode;
 
 #[derive(Accounts)]
 #[instruction(args: InitializeFanoutV0Args)]
+
+pub struct InitializeFanout<'info> {
+  #[account(mut, signer)]
+  pub authority: AccountInfo<'info>,
+  #[account(
+    init,
+    space = 300,
+    seeds = [b"fanout-config", account.key().as_ref()],
+    bump = args.bump_seed,
+    payer = authority
+  )]
+  pub fanout: Account<'info, FanoutV0>,
+  #[
+    account(
+      constraint = account.owner == 
+      Pubkey::create_program_address(&[b"account-owner", account.key().as_ref(), &[args.account_owner_bump_seed]], &crate::id())?,
+      constraint = account.delegate.is_none(),
+      constraint = account.close_authority.is_none()
+    )
+  ]
+  pub account: AccountInfo<'info>,
+  pub system_program: Program<'info, System>,
+  pub rent: Sysvar<'info, Rent>,
+  pub clock: Sysvar<'info, Clock>,
+}
+
+pub struct InitializeFanoutForMint<'info> {
+  #[account(mut, signer)]
+  pub authority: AccountInfo<'info>,
+  #[account(constraint= mint.owner == tokenprogram_id)]
+  pub mint: Account<'info, Mint>,
+  #[account(
+    mut,
+    seeds = [b"fanout-config", account.key().as_ref()],
+  )]
+  pub fanout: Account<'info, FanoutV0>,
+  #[account(
+    init,
+    space = 300,
+    seeds = [b"fanout-config", account.key().as_ref(), mint.key().as_ref()],
+    bump = args.bump_seed,
+    payer = authority
+  )]
+  pub fanoutForMint: Account<'info, FanoutV0>,
+  #[
+    account(
+      constraint = account.owner == 
+      Pubkey::create_program_address(&[b"account-owner", account.key().as_ref(), &[args.account_owner_bump_seed]], &crate::id())?,
+      constraint = account.delegate.is_none(),
+      constraint = account.close_authority.is_none()
+      constraint = account.mint.key().as_ref() == mint.key().as_ref()
+    )
+  ]
+  pub account: Account<'info, TokenAccount>,
+  pub system_program: Program<'info, System>,
+  pub rent: Sysvar<'info, Rent>,
+  pub clock: Sysvar<'info, Clock>
+}
+
 pub struct InitializeFanoutV0<'info> {
   #[account(mut, signer)]
   pub payer: AccountInfo<'info>,

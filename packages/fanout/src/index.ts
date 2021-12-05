@@ -125,7 +125,7 @@ export class Fanout {
 
   static async fanoutKey(account: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
-      [Buffer.from("fanout", "utf-8"), account.toBuffer()],
+      [Buffer.from("fanout-config", "utf-8"), account.toBuffer()],
       programId
     )
   }
@@ -143,7 +143,7 @@ export class Fanout {
       programId
     )
   }
-  
+
   static async freezeAuthority(mint: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
       [Buffer.from("freeze-authority", "utf-8"), mint.toBuffer()],
@@ -196,7 +196,7 @@ export class Fanout {
         this.wallet.publicKey,
         true
       );
-  
+
       instructions.push(
         ...[
           // Create the new mint
@@ -408,5 +408,5 @@ export class Fanout {
     await this.sendInstructions(instructions, signers, args.payer);
 
     return output
-  } 
+  }
 }
