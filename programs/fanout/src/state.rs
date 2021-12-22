@@ -32,7 +32,7 @@ pub struct Fanout {
     pub account: Pubkey,             //32
     pub total_shares: u32,           //4
     pub total_members: u32,          //4
-    pub total_inflow: u64,           //16
+    pub total_inflow: u64,           //8
     pub last_snapshot_amount: u64,   //8
     pub bump_seed: u8,               //1
     pub account_owner_bump_seed: u8, //1
@@ -44,10 +44,11 @@ pub struct Fanout {
 #[account]
 #[derive(Default)]
 pub struct FanoutMembershipVoucher {
-    pub membership_key: Pubkey,
-    pub shares: u32,
-    pub total_inflow: u64,
-    pub last_inflow: u64,
+    pub membership_key: Pubkey, //32
+    pub shares: u32,            //4
+    pub total_inflow: u64,      //8
+    pub last_inflow: u64,       //8
+    pub bump_seed: u8,          //1
 }
 
 //(shares / 100) * (last_snapshot_amount - last_inflow)

@@ -13,6 +13,8 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod fanout {
+    use crate::instruction::DistributeMember;
+
     use super::*;
 
     pub fn init(ctx: Context<InitializeFanout>, args: InitializeFanoutArgs) -> ProgramResult {
@@ -45,15 +47,16 @@ pub mod fanout {
         if less_shares > 0 {
             membership_account.shares = args.shares;
             membership_account.total_inflow = 0;
+            membership_account.bump_seed = args.voucher_bump_seed;
         } else {
             return Err(ErrorCode::InsufficientShares.into());
         }
         Ok(())
     }
 
-    pub fn transfer_shares(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
-    pub fn remove_member(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
-    pub fn distribute_member(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
-    pub fn distribute_bulk(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
-    pub fn close(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
+    // pub fn transfer_shares(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
+    // pub fn remove_member(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
+    pub fn distribute_member(ctx: Context<DistributeMember>) -> ProgramResult {}
+    // pub fn distribute_bulk(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
+    // pub fn close(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
 }
