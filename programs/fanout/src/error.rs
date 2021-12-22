@@ -6,5 +6,8 @@ pub enum ErrorCode {
   BadArtithmetic,
   
   #[msg("Invalid authority")]
-  InvalidAuthority
+  InvalidAuthority,
+
+  #[msg("Not Enough Available Shares")]
+  InsufficientShares
 }

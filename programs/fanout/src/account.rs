@@ -28,7 +28,7 @@ pub struct InitializeFanout<'info> {
         space = 1,
         payer = authority,
         constraint = native_account.owner ==
-        Pubkey::create_program_address(&[b"account-owner", fanout.key().as_ref(), &[args.account_owner_bump_seed]], &crate::id())?,
+        Pubkey::create_program_address(&[b"account-owner", fanout.key().as_ref(), &[args.account_owner_bump_seed]], &crate::id())?, // must assign ownership first
         constraint = native_account.delegate.is_none(),
         constraint = native_account.close_authority.is_none(),
         constraint = native_account.is_native() == true
@@ -48,6 +48,7 @@ pub struct AddMember<'info> {
         mut,
         seeds = [b"fanout-membership", fanout.account.key().as_ref(), account.key().as_ref()],
         bump = fanout.bump_seed,
+        has_one=authority
     )]
     pub fanout: Account<'info, Fanout>,
     #[account(

@@ -36,7 +36,7 @@ pub struct Fanout {
     pub last_snapshot_amount: u64,   //8
     pub bump_seed: u8,               //1
     pub account_owner_bump_seed: u8, //1
-    pub total_availabale_shares: u32, //4 
+    pub total_available_shares: u32, //4
     pub membership_model: MembershipModel, //1
                                      // + 100 padding
 }
