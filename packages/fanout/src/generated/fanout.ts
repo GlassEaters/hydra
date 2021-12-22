@@ -1,14 +1,13 @@
-import { IdlAccounts, Idl } from '@project-serum/anchor';
-export const FanoutIDLJson: Idl & { metadata?: { address: string } } = {
+export type Fanout = {
   "version": "0.0.0",
   "name": "fanout",
   "instructions": [
     {
-      "name": "initializeFanoutV0",
+      "name": "init",
       "accounts": [
         {
-          "name": "payer",
-          "isMut": true,
+          "name": "authority",
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -17,14 +16,9 @@ export const FanoutIDLJson: Idl & { metadata?: { address: string } } = {
           "isSigner": false
         },
         {
-          "name": "mint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "account",
-          "isMut": false,
-          "isSigner": false
+          "name": "nativeAccount",
+          "isMut": true,
+          "isSigner": true
         },
         {
           "name": "systemProgram",
@@ -41,287 +35,52 @@ export const FanoutIDLJson: Idl & { metadata?: { address: string } } = {
         {
           "name": "args",
           "type": {
-            "defined": "InitializeFanoutV0Args"
+            "defined": "InitializeFanoutArgs"
           }
         }
       ]
-    },
-    {
-      "name": "stakeV0",
-      "accounts": [
-        {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "fanout",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "voucherCounter",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "voucher",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "sharesAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "owner",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "destination",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "fanoutAccount",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "mint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "freezeAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": "StakeV0Args"
-          }
-        }
-      ]
-    },
-    {
-      "name": "unstakeV0",
-      "accounts": [
-        {
-          "name": "refund",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "fanout",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "voucherCounter",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "voucher",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "account",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "owner",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "mint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "freezeAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "distributeV0",
-      "accounts": [
-        {
-          "name": "fanout",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "voucher",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "fanoutAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "owner",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "destination",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
     }
   ],
   "accounts": [
     {
-      "name": "FanoutV0",
+      "name": "fanout",
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
           {
             "name": "account",
             "type": "publicKey"
           },
           {
-            "name": "mint",
-            "type": "publicKey"
+            "name": "totalShares",
+            "type": "u32"
           },
           {
-            "name": "totalShares",
-            "type": "u64"
+            "name": "totalMembers",
+            "type": "u32"
           },
           {
             "name": "totalInflow",
             "type": "u128"
           },
           {
-            "name": "lastBalance",
-            "type": "u64"
-          },
-          {
-            "name": "totalStaked",
+            "name": "lastSnapshotAmount",
             "type": "u64"
           },
           {
             "name": "bumpSeed",
-            "type": "u8"
-          },
-          {
-            "name": "freezeAuthorityBumpSeed",
             "type": "u8"
           },
           {
             "name": "accountOwnerBumpSeed",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "FanoutVoucherV0",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "fanout",
-            "type": "publicKey"
-          },
-          {
-            "name": "account",
-            "type": "publicKey"
-          },
-          {
-            "name": "destination",
-            "type": "publicKey"
-          },
-          {
-            "name": "shares",
-            "type": "u64"
-          },
-          {
-            "name": "inflowAtStake",
-            "type": "u128"
-          },
-          {
-            "name": "lastInflow",
-            "type": "u128"
-          },
-          {
-            "name": "bumpSeed",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "VoucherCounterV0",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "fanout",
-            "type": "publicKey"
-          },
-          {
-            "name": "account",
-            "type": "publicKey"
-          },
-          {
-            "name": "count",
-            "type": "u32"
-          },
-          {
-            "name": "bumpSeed",
             "type": "u8"
           }
         ]
@@ -330,7 +89,7 @@ export const FanoutIDLJson: Idl & { metadata?: { address: string } } = {
   ],
   "types": [
     {
-      "name": "InitializeFanoutV0Args",
+      "name": "InitializeFanoutArgs",
       "type": {
         "kind": "struct",
         "fields": [
@@ -339,28 +98,20 @@ export const FanoutIDLJson: Idl & { metadata?: { address: string } } = {
             "type": "u8"
           },
           {
-            "name": "freezeAuthorityBumpSeed",
+            "name": "nativeAccountBumpSeed",
             "type": "u8"
           },
           {
             "name": "accountOwnerBumpSeed",
             "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "StakeV0Args",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bumpSeed",
-            "type": "u8"
           },
           {
-            "name": "voucherCounterBumpSeed",
-            "type": "u8"
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "totalShares",
+            "type": "u32"
           }
         ]
       }
@@ -377,21 +128,138 @@ export const FanoutIDLJson: Idl & { metadata?: { address: string } } = {
       "name": "InvalidAuthority",
       "msg": "Invalid authority"
     }
-  ],
-  "metadata": {
-    "address": "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-  }
+  ]
 };
-export type FanoutIDL = {"version":"0.0.0","name":"fanout","instructions":[{"name":"initializeFanoutV0","accounts":[{"name":"payer","isMut":true,"isSigner":true},{"name":"fanout","isMut":true,"isSigner":false},{"name":"mint","isMut":false,"isSigner":false},{"name":"account","isMut":false,"isSigner":false},{"name":"systemProgram","isMut":false,"isSigner":false},{"name":"rent","isMut":false,"isSigner":false}],"args":[{"name":"args","type":{"defined":"InitializeFanoutV0Args"}}]},{"name":"stakeV0","accounts":[{"name":"payer","isMut":true,"isSigner":true},{"name":"fanout","isMut":true,"isSigner":false},{"name":"voucherCounter","isMut":true,"isSigner":false},{"name":"voucher","isMut":true,"isSigner":false},{"name":"sharesAccount","isMut":true,"isSigner":false},{"name":"owner","isMut":false,"isSigner":true},{"name":"destination","isMut":false,"isSigner":false},{"name":"fanoutAccount","isMut":false,"isSigner":false},{"name":"mint","isMut":false,"isSigner":false},{"name":"freezeAuthority","isMut":false,"isSigner":false},{"name":"tokenProgram","isMut":false,"isSigner":false},{"name":"systemProgram","isMut":false,"isSigner":false},{"name":"rent","isMut":false,"isSigner":false}],"args":[{"name":"args","type":{"defined":"StakeV0Args"}}]},{"name":"unstakeV0","accounts":[{"name":"refund","isMut":true,"isSigner":false},{"name":"fanout","isMut":false,"isSigner":false},{"name":"voucherCounter","isMut":true,"isSigner":false},{"name":"voucher","isMut":true,"isSigner":false},{"name":"account","isMut":false,"isSigner":false},{"name":"owner","isMut":false,"isSigner":true},{"name":"mint","isMut":false,"isSigner":false},{"name":"freezeAuthority","isMut":false,"isSigner":false},{"name":"tokenProgram","isMut":false,"isSigner":false},{"name":"systemProgram","isMut":false,"isSigner":false},{"name":"rent","isMut":false,"isSigner":false}],"args":[]},{"name":"distributeV0","accounts":[{"name":"fanout","isMut":true,"isSigner":false},{"name":"voucher","isMut":true,"isSigner":false},{"name":"fanoutAccount","isMut":true,"isSigner":false},{"name":"owner","isMut":false,"isSigner":false},{"name":"destination","isMut":true,"isSigner":false},{"name":"tokenProgram","isMut":false,"isSigner":false}],"args":[]}],"accounts":[{"name":"fanoutV0","type":{"kind":"struct","fields":[{"name":"account","type":"publicKey"},{"name":"mint","type":"publicKey"},{"name":"totalShares","type":"u64"},{"name":"totalInflow","type":"u128"},{"name":"lastBalance","type":"u64"},{"name":"totalStaked","type":"u64"},{"name":"bumpSeed","type":"u8"},{"name":"freezeAuthorityBumpSeed","type":"u8"},{"name":"accountOwnerBumpSeed","type":"u8"}]}},{"name":"fanoutVoucherV0","type":{"kind":"struct","fields":[{"name":"fanout","type":"publicKey"},{"name":"account","type":"publicKey"},{"name":"destination","type":"publicKey"},{"name":"shares","type":"u64"},{"name":"inflowAtStake","type":"u128"},{"name":"lastInflow","type":"u128"},{"name":"bumpSeed","type":"u8"}]}},{"name":"voucherCounterV0","type":{"kind":"struct","fields":[{"name":"fanout","type":"publicKey"},{"name":"account","type":"publicKey"},{"name":"count","type":"u32"},{"name":"bumpSeed","type":"u8"}]}}],"types":[{"name":"InitializeFanoutV0Args","type":{"kind":"struct","fields":[{"name":"bumpSeed","type":"u8"},{"name":"freezeAuthorityBumpSeed","type":"u8"},{"name":"accountOwnerBumpSeed","type":"u8"}]}},{"name":"StakeV0Args","type":{"kind":"struct","fields":[{"name":"bumpSeed","type":"u8"},{"name":"voucherCounterBumpSeed","type":"u8"}]}}],"errors":[{"code":300,"name":"BadArtithmetic","msg":"Encountered an arithmetic error"},{"code":301,"name":"InvalidAuthority","msg":"Invalid authority"}],"metadata":{"address":"Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"}};
 
-
-
-  
-
-export type FanoutV0 = IdlAccounts<FanoutIDL>["fanoutV0"]
-
-export type FanoutVoucherV0 = IdlAccounts<FanoutIDL>["fanoutVoucherV0"]
-
-export type VoucherCounterV0 = IdlAccounts<FanoutIDL>["voucherCounterV0"]
-  
-          
+export const IDL: Fanout = {
+  "version": "0.0.0",
+  "name": "fanout",
+  "instructions": [
+    {
+      "name": "init",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "fanout",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "nativeAccount",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "InitializeFanoutArgs"
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "fanout",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "account",
+            "type": "publicKey"
+          },
+          {
+            "name": "totalShares",
+            "type": "u32"
+          },
+          {
+            "name": "totalMembers",
+            "type": "u32"
+          },
+          {
+            "name": "totalInflow",
+            "type": "u128"
+          },
+          {
+            "name": "lastSnapshotAmount",
+            "type": "u64"
+          },
+          {
+            "name": "bumpSeed",
+            "type": "u8"
+          },
+          {
+            "name": "accountOwnerBumpSeed",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "InitializeFanoutArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bumpSeed",
+            "type": "u8"
+          },
+          {
+            "name": "nativeAccountBumpSeed",
+            "type": "u8"
+          },
+          {
+            "name": "accountOwnerBumpSeed",
+            "type": "u8"
+          },
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "totalShares",
+            "type": "u32"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 300,
+      "name": "BadArtithmetic",
+      "msg": "Encountered an arithmetic error"
+    },
+    {
+      "code": 301,
+      "name": "InvalidAuthority",
+      "msg": "Invalid authority"
+    }
+  ]
+};
