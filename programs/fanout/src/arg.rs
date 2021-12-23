@@ -12,7 +12,6 @@ pub struct InitializeFanoutArgs {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 
 pub struct AddMemberArgs {
-    pub member: Pubkey,
     pub voucher_bump_seed: u8,
     pub shares: u32,
 }

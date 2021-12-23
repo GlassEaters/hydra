@@ -63,7 +63,7 @@ pub struct AddMember<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(args: AddMemberArgs)]
+#[instruction()]
 pub struct DistributeMember<'info> {
     pub membership_key: Signer<'info>, //TODO -> Could be an NFT or a wallet, cannot be a token or ata.
     #[account(
@@ -79,6 +79,11 @@ pub struct DistributeMember<'info> {
         bump = fanout.bump_seed,
     )]
     pub fanout: Account<'info, Fanout>,
+    #[account(
+        constraint = holding_account.key() == fanout.account.key(), 
+        )
+    ]
+    pub holding_account: Account<'info, TokenAccount>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
 }
