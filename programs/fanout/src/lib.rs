@@ -15,7 +15,7 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod fanout {
     use state::Fanout;
 
-    use crate::instruction::DistributeMember;
+
 
     use super::*;
 
@@ -68,23 +68,29 @@ pub mod fanout {
         let member = &mut ctx.accounts.membership_key;
         let last_snapshot_amount = &mut fanout.last_snapshot_amount;
         let current_snapshot = ctx.accounts.holding_account.lamports;
-        let diff: u64 = if last_snapshot_amount > current_snapshot {
-            //TODO WTF - this is a problem
-            0
-        } else {
-            current_snapshot
-                .checked_sub(last_snapshot_amount)
-                .or_arith_error()?
-        };
+        if fanout.total_available_shares != 0 {
+            //does not allow for disrtubution before all members are added
+            return Err(ErrorCode::.into());
+        }
+        //todo spl tokens
+        let diff: u64 = current_snapshot
+            .checked_sub(last_snapshot_amount)
+            .or_arith_error()?;
+        fanout.total_inflow += diff;
+        fanout.last_snapshot_amount = current_snapshot;
         if diff < fanout.total_shares {
-            //TODO - cant distrubute less than total shares
+            //TODO - cant distribute less than total shares
             return Err(ErrorCode::InsufficientShares.into());
         }
-        let dif_dist = diff
-            .checked_div(membership_account.shares)
+        let dif_dist = (membership_account.shares as u64)
+            .checked_mul(diff)
+            .checked_div(fanout.total_shares)
             .or_arith_error()?;
+
+        membership_account.total_inflow += dif_dist;
         **ctx.accounts.holding_account.lamports = ctx.accounts.holding_account.lamports - dif_dist;
         **ctx.accounts.membership_key.lamports = ctx.accounts.membership_key.lamports + dif_dist;
+        Ok(())
     }
     // pub fn distribute_bulk(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
     // pub fn close(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}

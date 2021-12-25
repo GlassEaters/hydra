@@ -63,9 +63,8 @@ pub struct AddMember<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction()]
 pub struct DistributeMember<'info> {
-    pub membership_key: Signer<'info>, //TODO -> Could be an NFT or a wallet, cannot be a token or ata.
+    pub membership_key: UncheckedAccount<'info>, //TODO -> Could be an NFT or a wallet, cannot be a token or ata.
     #[account(
         mut,
         seeds = [b"fanout-membership", fanout.account.key().as_ref(), membership_key.key().as_ref()],
