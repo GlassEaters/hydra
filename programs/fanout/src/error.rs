@@ -13,4 +13,10 @@ pub enum ErrorCode {
 
     #[msg("All available shares must be assigned to a member")]
     SharesArentAtMax,
+
+    #[msg("A New mint account must be provided")]
+    NewMintAccountRequired,
+
+    #[msg("A Token type Fanout requires a Membership Mint")]
+    MintAccountRequired,
 }

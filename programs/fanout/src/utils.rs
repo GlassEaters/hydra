@@ -24,9 +24,8 @@ impl OrArithError<u128> for Option<u128> {
     }
 }
 
-pub fn calculate_dist_amount() -> Result<u64, ProgramError> {
+// pub fn calculate_dist_amount() -> Result<u64, ProgramError> {
 
-    
-}
+// }
 
-pub fn calculate_inflow_change() -> Result<u64, ProgramError> {}
+// pub fn calculate_inflow_change() -> Result<u64, ProgramError> {}

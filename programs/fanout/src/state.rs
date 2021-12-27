@@ -3,7 +3,8 @@ use std::default::Default;
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub enum MembershipModel {
     Wallet,
-    NFT, //TODO
+    Token, //TODO: implement token membership model
+    NFT,   //TODO: implement NFT membership model
 }
 
 impl Default for MembershipModel {
@@ -27,28 +28,40 @@ impl Default for AuthorityModel {
 #[account]
 #[derive(Default)]
 pub struct Fanout {
-    pub authority: Pubkey,           //32
-    pub name: String,                //50
-    pub account: Pubkey,             //32
-    pub total_shares: u32,           //4
-    pub total_members: u32,          //4
-    pub total_inflow: u64,           //8
-    pub last_snapshot_amount: u64,   //8
-    pub bump_seed: u8,               //1
-    pub account_owner_bump_seed: u8, //1
-    pub total_available_shares: u32, //4
+    pub authority: Pubkey,                 //32
+    pub name: String,                      //50
+    pub account: Pubkey,                   //32
+    pub total_shares: u32,                 //4
+    pub total_members: u32,                //4
+    pub total_inflow: u64,                 //8
+    pub last_snapshot_amount: u64,         //8
+    pub bump_seed: u8,                     //1
+    pub account_owner_bump_seed: u8,       //1
+    pub total_available_shares: u32,       //4
     pub membership_model: MembershipModel, //1
-                                     // + 100 padding
+    pub membership_mint: Option<Pubkey>,   // 32
+                                           //+ 100 padding
+}
+
+#[account]
+#[derive(Default)]
+pub struct FanoutMint {
+    pub fanout: Pubkey,            //32
+    pub token_account: Pubkey,     //32
+    pub total_inflow: u64,         //8
+    pub last_snapshot_amount: u64, //8
+    pub bump_seed: u8,             //1
+                                   // +50 padding
 }
 
 #[account]
 #[derive(Default)]
 pub struct FanoutMembershipVoucher {
-    pub membership_key: Pubkey, //32
-    pub shares: u32,            //4
-    pub total_inflow: u64,      //8
-    pub last_inflow: u64,       //8
-    pub bump_seed: u8,          //1
+    pub total_inflow: u64,              //8
+    pub last_inflow: u64,               //8
+    pub bump_seed: u8,                  //1
+    pub shares: Option<u32>,            //4
+    pub membership_key: Option<Pubkey>, //32
 }
 
 //(shares / 100) * (last_snapshot_amount - last_inflow)
