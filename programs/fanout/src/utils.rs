@@ -1,6 +1,9 @@
 use anchor_lang::prelude::*;
 
-use crate::error::ErrorCode;
+use crate::{
+    error::ErrorCode,
+    state::{Fanout, FanoutMembershipVoucher, MembershipModel},
+};
 
 pub trait OrArithError<T> {
     fn or_arith_error(self) -> Result<T, ProgramError>;
@@ -24,8 +27,100 @@ impl OrArithError<u128> for Option<u128> {
     }
 }
 
-// pub fn calculate_dist_amount() -> Result<u64, ProgramError> {
+pub fn update_fanout_for_add(
+    fanout: Account<Fanout>,
+    shares: u64,
+) -> Result<Account<Fanout>, ProgramError> {
+    let less_shares = fanout
+        .total_available_shares
+        .checked_sub(shares)
+        .or_arith_error()?;
+    fanout.total_members = fanout.total_members.checked_add(1).or_arith_error()?;
+    fanout.total_available_shares = less_shares;
+    if less_shares > 0 {
+        Ok(fanout)
+    } else {
+        Err(ErrorCode::InsufficientShares.into())
+    }
+}
 
-// }
+pub fn assert_membership_model(
+    fanout: Account<Fanout>,
+    model: MembershipModel,
+) -> Result<(), ProgramError> {
+    if fanout.membership_model != MembershipModel::Wallet {
+        return Err(ErrorCode::InvalidMembershipModel.into());
+    }
+    Ok(())
+}
 
-// pub fn calculate_inflow_change() -> Result<u64, ProgramError> {}
+pub fn assert_shares_distrubuted(fanout: Account<Fanout>) -> Result<(), ProgramError> {
+    if fanout.total_available_shares != 0 {
+        //does not allow for disrtubution before all members are added
+        return Err(ErrorCode::SharesArentAtMax.into());
+    }
+    Ok(())
+}
+
+pub fn assert_membership_voucher_valid(
+    voucher: Account<FanoutMembershipVoucher>,
+    model: MembershipModel,
+) -> Result<(), ProgramError> {
+    match model {
+        MembershipModel::Wallet | MembershipModel::NFT => {
+            if voucher.shares.is_none() || voucher.membership_key.is_none() {
+                return Err(ErrorCode::InvalidMembershipVoucher.into());
+            }
+        }
+        MembershipModel::Token => {
+            if voucher.shares.is_some()
+                || voucher.membership_key.is_some()
+                || voucher.amount_at_stake.is_none()
+            {
+                return Err(ErrorCode::InvalidMembershipVoucher.into());
+            }
+        }
+    }
+    Ok(())
+}
+
+pub fn calulate_inflow_change(
+    current_snapshot: u64,
+    total_shares: u32,
+    last_snapshot_amount: u64,
+) -> Result<u64, ProgramError> {
+    let total_shares = total_shares as u64;
+    let diff: u64 = current_snapshot
+        .checked_sub(last_snapshot_amount)
+        .or_arith_error()?;
+    Ok(diff)
+}
+
+pub fn calculate_dist_amount(
+    member_shares: u64,
+    inflow_diff: u64,
+    total_shares: u64,
+) -> Result<u64, ProgramError> {
+}
+
+pub fn update_inflow(
+    fanout: &mut Account<Fanout>,
+    current_snapshot: u64,
+    diff: u64,
+) -> Result<(), ProgramError> {
+    fanout.total_inflow = fanout.total_inflow.checked_add(diff).or_arith_error()?;
+    if fanout.total_staked_shares.is_some() && fanout.total_staked_shares.unwrap() > 0 {
+        let tss = fanout.total_staked_shares.unwrap();
+        let shares_diff = (fanout.total_shares as u64)
+            .checked_sub(tss)
+            .or_arith_error()?;
+        let unstaked_correction = diff
+            .checked_mul(shares_diff)
+            .or_arith_error()?
+            .checked_div(tss)
+            .or_arith_error()?;
+        fanout.total_inflow += unstaked_correction;
+    }
+    fanout.last_snapshot_amount = current_snapshot;
+    Ok(())
+}

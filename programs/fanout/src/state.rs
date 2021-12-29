@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use std::default::Default;
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
 pub enum MembershipModel {
     Wallet,
     Token, //TODO: implement token membership model
@@ -13,34 +13,22 @@ impl Default for MembershipModel {
     }
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub enum AuthorityModel {
-    Single,
-    Mulit,      //TODO
-    MemberVote, //TODO
-}
-
-impl Default for AuthorityModel {
-    fn default() -> Self {
-        AuthorityModel::Single
-    }
-}
 #[account]
 #[derive(Default)]
 pub struct Fanout {
     pub authority: Pubkey,                 //32
     pub name: String,                      //50
     pub account: Pubkey,                   //32
-    pub total_shares: u32,                 //4
+    pub total_shares: u64,                 //8
     pub total_members: u32,                //4
     pub total_inflow: u64,                 //8
     pub last_snapshot_amount: u64,         //8
     pub bump_seed: u8,                     //1
     pub account_owner_bump_seed: u8,       //1
-    pub total_available_shares: u32,       //4
+    pub total_available_shares: u64,       //8
     pub membership_model: MembershipModel, //1
-    pub membership_mint: Option<Pubkey>,   // 32
-                                           //+ 100 padding
+    pub membership_mint: Option<Pubkey>,   //32
+    pub total_staked_shares: Option<u64>,  //4
 }
 
 #[account]
@@ -57,11 +45,14 @@ pub struct FanoutMint {
 #[account]
 #[derive(Default)]
 pub struct FanoutMembershipVoucher {
-    pub total_inflow: u64,              //8
-    pub last_inflow: u64,               //8
-    pub bump_seed: u8,                  //1
-    pub shares: Option<u32>,            //4
+    //78 bytes
+    pub total_inflow: u64,            //8
+    pub last_inflow: u64,             //8
+    pub amount_at_stake: Option<u64>, //8
+    pub bump_seed: u8,                //1
+    pub shares: Option<u64>,          //4
     pub membership_key: Option<Pubkey>, //32
+                                      //10 bytes padding
 }
 
 //(shares / 100) * (last_snapshot_amount - last_inflow)

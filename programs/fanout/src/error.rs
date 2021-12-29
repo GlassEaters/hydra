@@ -19,4 +19,10 @@ pub enum ErrorCode {
 
     #[msg("A Token type Fanout requires a Membership Mint")]
     MintAccountRequired,
+
+    #[msg("Invalid Membership Model")]
+    InvalidMembershipModel,
+
+    #[msg("Invalid Membership Voucher")]
+    InvalidMembershipVoucher,
 }

@@ -4,7 +4,7 @@
     };
     use anchor_spl::{
         associated_token,
-        token::{Mint, Token, TokenAccount, ID as tokenprogram_id},
+        token::{Mint, Token, TokenAccount},
     };
 
     use crate::arg::*;
@@ -45,6 +45,7 @@
         #[account(
             mut,
             seeds = [b"fanout-config", fanout.account.key().as_ref()],
+            has_one=authority,
             bump = fanout.bump_seed,
         )]
         pub fanout: Account<'info, Fanout>,
@@ -86,17 +87,18 @@
         pub membership_key: UncheckedAccount<'info>, 
         #[
         account(
-        constraint = shares_account.owner == 
+        constraint = membership_mint_token_account.owner == 
         *membership_key.owner,
-        constraint = shares_account.delegate.is_none(),
-        constraint = shares_account.close_authority.is_none(),
-        constraint = shares_account.mint == membership_mint.key(),
+        constraint = membership_mint_token_account.delegate.is_none(),
+        constraint = membership_mint_token_account.close_authority.is_none(),
+        constraint = membership_mint_token_account.mint == membership_mint.key(),
         )
         ]
-        pub shares_account: Account<'info, TokenAccount>,
+        pub membership_mint_token_account: Account<'info, TokenAccount>,
         #[account(
             mut,
             seeds = [b"fanout-config", fanout.account.key().as_ref()],
+            has_one=authority,
             bump = fanout.bump_seed,
         )]
         pub fanout: Account<'info, Fanout>,
@@ -119,6 +121,19 @@
             bump = fanout.bump_seed,
         )]
         pub fanout: Account<'info, Fanout>,
+        #[account(
+            init,
+            space = 78,
+            seeds = [b"fanout-membership", fanout.account.key().as_ref(), signer.key().as_ref()],
+            bump = fanout.bump_seed,
+            payer = signer
+        )]
+        pub membership_account: Account<'info, FanoutMembershipVoucher>,
+        #[account(
+            mut,
+            constraint = membership_mint.key() == fanout.membership_mint.unwrap().key(),
+        )]
+        pub membership_mint: Account<'info, Mint>,
     }
 
     #[derive(Accounts)]
@@ -136,6 +151,7 @@
             bump = fanout_for_mint.bump_seed
         )]
         pub fanout_for_mint: Account<'info, Fanout>,
+        pub mint: Account<'info, Mint>,
     }
 
     /*
@@ -151,12 +167,13 @@
         #[account(
             mut,
             seeds = [b"fanout-config", fanout.account.key().as_ref()],
+            has_one=authority,
             bump = fanout.bump_seed,
         )]
         pub fanout: Account<'info, Fanout>,
         #[account(
             init,
-            space = 60,
+            space = 78,
             seeds = [b"fanout-membership", fanout.account.key().as_ref(), account.key().as_ref()],
             bump = fanout.bump_seed,
             payer = authority
@@ -180,17 +197,28 @@
         #[account(
             mut,
             seeds = [b"fanout-config", fanout.account.key().as_ref()],
+            has_one=authority,
             bump = fanout.bump_seed,
         )]
         pub fanout: Account<'info, Fanout>,
         #[account(
             init,
-            space = 60,
-            seeds = [b"fanout-membership", fanout.account.key().as_ref(), account.key().as_ref()],
+            space = 78,
+            seeds = [b"fanout-membership", fanout.account.key().as_ref(), mint.key().as_ref()],
             bump = fanout.bump_seed,
             payer = authority
         )]
         pub membership_account: Account<'info, FanoutMembershipVoucher>,
+        pub mint: Account<'info, Mint>,
+        #[
+        account(
+        constraint = token_account.owner == account.key(),
+        constraint = token_account.delegate.is_none(),
+        constraint = token_account.close_authority.is_none(),
+        constraint = token_account.mint == mint.key(),
+        )
+        ]
+        pub token_account: Account<'info, TokenAccount>, //User must have a token account for the mint, but it can be empty
         pub system_program: Program<'info, System>,
         pub rent: Sysvar<'info, Rent>,
         pub token_program: Program<'info, Token>,
@@ -199,13 +227,45 @@
 
     
     #[derive(Accounts)]
-    pub struct DistributeMember<'info> {
-        pub membership_key: UncheckedAccount<'info>, 
+    pub struct DistributeWalletMember<'info> {
+        pub membership_key: UncheckedAccount<'info>,
         #[account(
             mut,
             seeds = [b"fanout-membership", fanout.account.key().as_ref(), membership_key.key().as_ref()],
+            has_one = membership_key,
+            bump = membership_account.bump_seed,
+        )]
+        pub membership_account: Account<'info, FanoutMembershipVoucher>,
+        #[account(
+            mut,
+            seeds = [b"fanout-config", fanout.account.key().as_ref()],
             bump = fanout.bump_seed,
-            has_one = membership_key
+        )]
+        pub fanout: Account<'info, Fanout>,
+        #[account(constraint = holding_account.key() == fanout.account.key())]
+        pub holding_account: UncheckedAccount<'info>,
+        pub system_program: Program<'info, System>,
+        pub rent: Sysvar<'info, Rent>,
+    }
+
+    #[derive(Accounts)]
+    pub struct DistributeNFTMember<'info> {
+        pub member: UncheckedAccount<'info>,
+        #[
+        account(
+        constraint = membership_mint_token_account.owner == *member.owner,
+        constraint = membership_mint_token_account.delegate.is_none(),
+        constraint = membership_mint_token_account.close_authority.is_none(),
+        constraint = membership_mint_token_account.mint == membership_mint.key(),
+        constraint = membership_mint_token_account.amount == 1,
+        )]
+        pub membership_mint_token_account: Account<'info, TokenAccount>,
+        pub membership_mint: Account<'info, Mint>,
+        #[account(
+            mut,
+            seeds = [b"fanout-membership", fanout.account.key().as_ref(), membership_mint.key().as_ref()],
+            constraint = membership_account.membership_key == Some(membership_mint.key()),
+            bump = membership_account.bump_seed,
         )]
         pub membership_account: Account<'info, FanoutMembershipVoucher>,
         #[account(
@@ -222,3 +282,68 @@
         pub system_program: Program<'info, System>,
         pub rent: Sysvar<'info, Rent>,
     }
+
+    #[derive(Accounts)]
+    pub struct DistributeTokenMember<'info> {
+        pub member: UncheckedAccount<'info>,
+        #[
+        account(
+        constraint = membership_mint_token_account.owner == *member.owner,
+        constraint = membership_mint_token_account.delegate.is_none(),
+        constraint = membership_mint_token_account.close_authority.is_none(),
+        constraint = membership_mint_token_account.mint == membership_mint.key(),
+        constraint =membership_mint_token_account.amount > 0,
+        )]
+        pub membership_mint_token_account: Account<'info, TokenAccount>,
+        pub membership_mint: Account<'info, Mint>,
+        #[account(
+            mut,
+            seeds = [b"fanout-membership", fanout.account.key().as_ref(), membership_mint.key().as_ref()],
+            bump = membership_account.bump_seed,
+        )]
+        pub membership_account: Account<'info, FanoutMembershipVoucher>,
+        #[account(
+            mut,
+            seeds = [b"fanout-config", fanout.account.key().as_ref()],
+            bump = fanout.bump_seed,
+        )]
+        pub fanout: Account<'info, Fanout>,
+        #[account(
+            constraint = holding_account.key() == fanout.account.key(), 
+            )
+        ]
+        pub holding_account: UncheckedAccount<'info>,
+        pub system_program: Program<'info, System>,
+        pub rent: Sysvar<'info, Rent>,
+    }
+
+    // #[derive(Accounts)]
+    // pub struct DistributeMemberForMint<'info> {
+    //     pub membership_key: UncheckedAccount<'info>, 
+    //     #[account(
+    //         mut,
+    //         seeds = [b"fanout-membership", fanout.account.key().as_ref(), membership_key.key().as_ref()],
+    //         bump = fanout.bump_seed,
+    //         has_one = membership_key
+    //     )]
+    //     pub membership_account: Account<'info, FanoutMembershipVoucher>,
+    //     #[account(
+    //         mut,
+    //         seeds = [b"fanout-config", fanout.account.key().as_ref()],
+    //         bump = fanout.bump_seed,
+    //     )]
+    //     pub fanout: Account<'info, Fanout>,
+    //     #[account(
+    //         mut,
+    //         seeds = [b"fanout-config-mint", fanout.key().as_ref()],
+    //         bump = fanout_for_mint.bump_seed
+    //     )]
+    //     pub fanout_for_mint: Account<'info, Fanout>,
+    //     #[account(
+    //         constraint = holding_account.key() == fanout.account.key(), 
+    //         )
+    //     ]
+    //     pub holding_account: UncheckedAccount<'info>,
+    //     pub system_program: Program<'info, System>,
+    //     pub rent: Sysvar<'info, Rent>,
+    // }
