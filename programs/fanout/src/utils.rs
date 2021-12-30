@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     error::ErrorCode,
-    state::{Fanout, FanoutMembershipVoucher, MembershipModel},
+    state::{Fanout, FanoutMembershipMintVoucher, FanoutMembershipVoucher, MembershipModel},
 };
 
 pub trait OrArithError<T> {
@@ -84,15 +84,8 @@ pub fn assert_membership_voucher_valid(
     Ok(())
 }
 
-pub fn calulate_inflow_change(
-    current_snapshot: u64,
-    total_shares: u32,
-    last_snapshot_amount: u64,
-) -> Result<u64, ProgramError> {
-    let total_shares = total_shares as u64;
-    let diff: u64 = current_snapshot
-        .checked_sub(last_snapshot_amount)
-        .or_arith_error()?;
+pub fn calulate_inflow_change(total_inflow: u64, last_inflow: u64) -> Result<u64, ProgramError> {
+    let diff: u64 = total_inflow.checked_sub(last_inflow).or_arith_error()?;
     Ok(diff)
 }
 
@@ -101,13 +94,24 @@ pub fn calculate_dist_amount(
     inflow_diff: u64,
     total_shares: u64,
 ) -> Result<u64, ProgramError> {
+    let member_shares = member_shares as u128;
+    let total_shares = total_shares as u128;
+    let inflow_diff = inflow_diff as u128;
+    let dist_amount = member_shares
+        .checked_mul(inflow_diff)
+        .or_arith_error()?
+        .checked_div(total_shares)
+        .or_arith_error()?;
+    Ok(dist_amount as u64)
 }
 
 pub fn update_inflow(
     fanout: &mut Account<Fanout>,
     current_snapshot: u64,
-    diff: u64,
 ) -> Result<(), ProgramError> {
+    let diff = current_snapshot
+        .checked_sub(fanout.last_snapshot_amount)
+        .or_arith_error()?;
     fanout.total_inflow = fanout.total_inflow.checked_add(diff).or_arith_error()?;
     if fanout.total_staked_shares.is_some() && fanout.total_staked_shares.unwrap() > 0 {
         let tss = fanout.total_staked_shares.unwrap();
@@ -123,4 +127,37 @@ pub fn update_inflow(
     }
     fanout.last_snapshot_amount = current_snapshot;
     Ok(())
+}
+
+pub fn update_snapshot(
+    fanout: &mut Account<Fanout>,
+    fanout_voucher: &mut Account<FanoutMembershipVoucher>,
+    distrobution_amount: u64,
+) -> Result<(), ProgramError> {
+    fanout_voucher.last_inflow = fanout.total_inflow;
+    fanout.last_snapshot_amount = fanout
+        .last_snapshot_amount
+        .checked_sub(distrobution_amount)
+        .or_arith_error()?;
+    Ok(())
+}
+
+pub fn assert_derivation(
+    program_id: &Pubkey,
+    account: &AccountInfo,
+    path: &[&[u8]],
+) -> Result<u8, ProgramError> {
+    let (key, bump) = Pubkey::find_program_address(&path, program_id);
+    if key != *account.key {
+        return Err(ErrorCode::DerivedKeyInvalid.into());
+    }
+    Ok(bump)
+}
+
+pub fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> ProgramResult {
+    if account.owner != owner {
+        Err(ErrorCode::IncorrectOwner.into())
+    } else {
+        Ok(())
+    }
 }

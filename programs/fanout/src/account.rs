@@ -3,7 +3,7 @@
         solana_program::program::{invoke, invoke_signed},
     };
     use anchor_spl::{
-        associated_token,
+        associated_token::{AssociatedToken},
         token::{Mint, Token, TokenAccount},
     };
 
@@ -58,11 +58,8 @@
         )]
         pub fanout_for_mint: Account<'info, Fanout>,
         #[account(
-            init,
-            space = 1,
-            payer = authority,
-            constraint = mint_holding_account.owner ==
-            Pubkey::create_program_address(&[b"account-owner", fanout.key().as_ref(), &[args.account_owner_bump_seed]], &crate::id())?, // must assign ownership first
+            mut,
+            constraint = mint_holding_account.owner == fanout.key().as_ref(), // must assign ownership first
             constraint = mint_holding_account.delegate.is_none(),
             constraint = mint_holding_account.close_authority.is_none(),
             constraint = mint_holding_account.is_native() == true,
@@ -137,7 +134,7 @@
     }
 
     #[derive(Accounts)]
-    pub struct StakeTokenMenberForMint<'info> {
+    pub struct StakeTokenMemberForMint<'info> {
         pub signer: Signer<'info>, 
         #[account(
             mut,
@@ -249,6 +246,7 @@
     }
 
     #[derive(Accounts)]
+    #[instruction(args: DistributeMemberArgs)]
     pub struct DistributeNFTMember<'info> {
         pub member: UncheckedAccount<'info>,
         #[
@@ -274,13 +272,13 @@
             bump = fanout.bump_seed,
         )]
         pub fanout: Account<'info, Fanout>,
-        #[account(
-            constraint = holding_account.key() == fanout.account.key(), 
-            )
-        ]
         pub holding_account: UncheckedAccount<'info>,
+        pub fanout_mint: UncheckedAccount<'info>,
+        pub fanout_mint_membership: UncheckedAccount<'info>,
+        pub mint: Account<'info, Mint>,
         pub system_program: Program<'info, System>,
         pub rent: Sysvar<'info, Rent>,
+        pub token_program: Program<'info, Token>,
     }
 
     #[derive(Accounts)]

@@ -25,4 +25,13 @@ pub enum ErrorCode {
 
     #[msg("Invalid Membership Voucher")]
     InvalidMembershipVoucher,
+
+    #[msg("Invalid Mint for the config")]
+    MintDoesNotMatch,
+
+    #[msg("Holding account does not match the config")]
+    InvalidHoldingAccount,
+
+    #[msg("A Mint holding account must be an ata for the mint owned by the config")]
+    HoldingAccountMustBeAnATA,
 }

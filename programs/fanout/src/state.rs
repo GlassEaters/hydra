@@ -52,6 +52,18 @@ pub struct FanoutMembershipVoucher {
     pub bump_seed: u8,                //1
     pub shares: Option<u64>,          //4
     pub membership_key: Option<Pubkey>, //32
+    
+                                      //10 bytes padding
+}
+
+#[account]
+#[derive(Default)]
+pub struct FanoutMembershipMintVoucher {
+    //78 bytes
+    pub fanout_mint: Pubkey,          //32
+    pub last_inflow: u64,             //8
+    pub amount_at_stake: Option<u64>, //8
+    pub bump_seed: u8,                //1
                                       //10 bytes padding
 }
 
