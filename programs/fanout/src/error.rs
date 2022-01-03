@@ -34,4 +34,11 @@ pub enum ErrorCode {
 
     #[msg("A Mint holding account must be an ata for the mint owned by the config")]
     HoldingAccountMustBeAnATA,
+
+    DerivedKeyInvalid,
+
+    IncorrectOwner,
+
+    #[msg("Wallet Does not Own Membership Token")]
+    WalletDoesNotOwnMembershipToken,
 }

@@ -34,6 +34,7 @@ pub struct Fanout {
 #[account]
 #[derive(Default)]
 pub struct FanoutMint {
+    pub mint: Pubkey,              //32
     pub fanout: Pubkey,            //32
     pub token_account: Pubkey,     //32
     pub total_inflow: u64,         //8
@@ -52,7 +53,7 @@ pub struct FanoutMembershipVoucher {
     pub bump_seed: u8,                //1
     pub shares: Option<u64>,          //4
     pub membership_key: Option<Pubkey>, //32
-    
+
                                       //10 bytes padding
 }
 

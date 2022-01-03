@@ -3,12 +3,10 @@
         solana_program::program::{invoke, invoke_signed},
     };
     use anchor_spl::{
-        associated_token::{AssociatedToken},
         token::{Mint, Token, TokenAccount},
     };
 
     use crate::arg::*;
-    use crate::error::ErrorCode;
     use crate::state::*;
 
     #[derive(Accounts)]
@@ -26,7 +24,7 @@
         #[account(
             init,
             space = 1,
-            seeds = [b"fanout-native-account", holding_account.key().as_ref()],
+            seeds = [b"fanout-native-account", fanout.key().as_ref()],
             bump = args.native_account_bump_seed,
             payer = authority
         )
@@ -56,10 +54,10 @@
             seeds = [b"fanout-config", fanout.key().as_ref(), mint.key().as_ref()],
             bump = args.bump_seed
         )]
-        pub fanout_for_mint: Account<'info, Fanout>,
+        pub fanout_for_mint: Account<'info, FanoutMint>,
         #[account(
             mut,
-            constraint = mint_holding_account.owner == fanout.key().as_ref(), // must assign ownership first
+            constraint = mint_holding_account.owner == fanout.key(), // must assign ownership first
             constraint = mint_holding_account.delegate.is_none(),
             constraint = mint_holding_account.close_authority.is_none(),
             constraint = mint_holding_account.is_native() == true,
@@ -221,8 +219,6 @@
         pub token_program: Program<'info, Token>,
     }
 
-
-    
     #[derive(Accounts)]
     pub struct DistributeWalletMember<'info> {
         pub membership_key: UncheckedAccount<'info>,
@@ -239,7 +235,6 @@
             bump = fanout.bump_seed,
         )]
         pub fanout: Account<'info, Fanout>,
-        #[account(constraint = holding_account.key() == fanout.account.key())]
         pub holding_account: UncheckedAccount<'info>,
         pub system_program: Program<'info, System>,
         pub rent: Sysvar<'info, Rent>,
@@ -314,34 +309,3 @@
         pub system_program: Program<'info, System>,
         pub rent: Sysvar<'info, Rent>,
     }
-
-    // #[derive(Accounts)]
-    // pub struct DistributeMemberForMint<'info> {
-    //     pub membership_key: UncheckedAccount<'info>, 
-    //     #[account(
-    //         mut,
-    //         seeds = [b"fanout-membership", fanout.account.key().as_ref(), membership_key.key().as_ref()],
-    //         bump = fanout.bump_seed,
-    //         has_one = membership_key
-    //     )]
-    //     pub membership_account: Account<'info, FanoutMembershipVoucher>,
-    //     #[account(
-    //         mut,
-    //         seeds = [b"fanout-config", fanout.account.key().as_ref()],
-    //         bump = fanout.bump_seed,
-    //     )]
-    //     pub fanout: Account<'info, Fanout>,
-    //     #[account(
-    //         mut,
-    //         seeds = [b"fanout-config-mint", fanout.key().as_ref()],
-    //         bump = fanout_for_mint.bump_seed
-    //     )]
-    //     pub fanout_for_mint: Account<'info, Fanout>,
-    //     #[account(
-    //         constraint = holding_account.key() == fanout.account.key(), 
-    //         )
-    //     ]
-    //     pub holding_account: UncheckedAccount<'info>,
-    //     pub system_program: Program<'info, System>,
-    //     pub rent: Sysvar<'info, Rent>,
-    // }

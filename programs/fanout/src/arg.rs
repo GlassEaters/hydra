@@ -26,6 +26,7 @@ pub struct AddMemberArgs {
     pub shares: u64,
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct DistributeMemberArgs {
     pub mint: Option<Pubkey>,
     pub mint_fanout_membership_bump: u8,
