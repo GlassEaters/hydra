@@ -66,6 +66,7 @@ export class Fanout {
     );
     // @ts-ignore
     const prgrm = new anchor.Program<FanoutIDL>(
+      // @ts-ignore
       FanoutIDLJson!,
       FanoutProgramId,
       provider
@@ -205,9 +206,9 @@ export class Fanout {
           bumpSeed: fanoutConfigBumpSeed,
           nativeAccountBumpSeed: holdingAccountBumpSeed,
           totalShares: new anchor.BN(opts.totalShares),
-          membershipModel: opts.membershipModel,
           name: opts.name,
         },
+        opts.membershipModel,
         {
           accounts: {
             authority: this.wallet.publicKey,

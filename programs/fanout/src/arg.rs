@@ -6,7 +6,6 @@ pub struct InitializeFanoutArgs {
     pub native_account_bump_seed: u8,
     pub name: String,
     pub total_shares: u64,
-    pub membership_model: MembershipModel,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]

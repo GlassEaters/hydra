@@ -24,7 +24,11 @@ pub mod fanout {
 
     use super::*;
 
-    pub fn init(ctx: Context<InitializeFanout>, args: InitializeFanoutArgs) -> ProgramResult {
+    pub fn init(
+        ctx: Context<InitializeFanout>,
+        args: InitializeFanoutArgs,
+        model: MembershipModel,
+    ) -> ProgramResult {
         let fanout = &mut ctx.accounts.fanout;
         fanout.authority = ctx.accounts.authority.to_account_info().key();
         fanout.account = ctx.accounts.holding_account.to_account_info().key();
@@ -35,7 +39,7 @@ pub mod fanout {
         fanout.total_inflow = account.to_account_info().lamports();
         fanout.last_snapshot_amount = fanout.total_inflow;
         fanout.bump_seed = args.bump_seed;
-        fanout.membership_model = args.membership_model;
+        fanout.membership_model = model;
         fanout.membership_mint = if ctx.accounts.membership_mint.to_account_info().key()
             == spl_token::native_mint::id()
         {
