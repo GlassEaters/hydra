@@ -1,7 +1,7 @@
 const { watch, readdir, readFile, writeFile } = require('fs/promises');
 const camelcase = require("camelcase");
 
-const rootDir = `${process.env.PWD}/../..`;
+const rootDir = `${process.env.PWD}`;
 const idl = `${rootDir}/target/idl/`;
 
 function enumVariantToTs(variant) {

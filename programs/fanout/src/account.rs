@@ -16,7 +16,7 @@
         #[account(
             init,
             space = 300,
-            seeds = [b"fanout-config", holding_account.key().as_ref()],
+            seeds = [b"fanout-config", args.name.as_bytes()],
             bump = args.bump_seed,
             payer = authority
         )]
@@ -57,7 +57,7 @@
         pub fanout_for_mint: Account<'info, FanoutMint>,
         #[account(
             mut,
-            constraint = mint_holding_account.owner == fanout.key(), // must assign ownership first
+            constraint = mint_holding_account.owner == fanout.key(), // must create and assign ownership first
             constraint = mint_holding_account.delegate.is_none(),
             constraint = mint_holding_account.close_authority.is_none(),
             constraint = mint_holding_account.is_native() == true,
@@ -126,9 +126,11 @@
         pub membership_account: Account<'info, FanoutMembershipVoucher>,
         #[account(
             mut,
-            constraint = membership_mint.key() == fanout.membership_mint.unwrap().key(),
+            constraint = fanout.membership_mint.is_some() && membership_mint.key() == fanout.membership_mint.unwrap().key(),
         )]
         pub membership_mint: Account<'info, Mint>,
+        pub system_program: Program<'info, System>,
+        pub token_program: Program<'info, Token>,
     }
 
     #[derive(Accounts)]
@@ -225,7 +227,7 @@
         #[account(
             mut,
             seeds = [b"fanout-membership", fanout.account.key().as_ref(), membership_key.key().as_ref()],
-            has_one = membership_key,
+            constraint = membership_account.membership_key.is_some() && membership_account.membership_key.unwrap() == membership_account.key(),
             bump = membership_account.bump_seed,
         )]
         pub membership_account: Account<'info, FanoutMembershipVoucher>,

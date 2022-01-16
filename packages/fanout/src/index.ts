@@ -1,35 +1,32 @@
 import * as anchor from "@project-serum/anchor";
 import { Program, Provider } from "@project-serum/anchor";
+import account from "@project-serum/anchor/dist/cjs/program/namespace/account";
 import { getTokenAccount, parseMintAccount } from "@project-serum/common";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  NATIVE_MINT,
   Token,
-  TOKEN_PROGRAM_ID
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
   PublicKey,
   Signer,
-  SystemProgram, SYSVAR_RENT_PUBKEY,
-  TransactionInstruction
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import {
   InstructionResult,
-  sendInstructions
+  sendInstructions,
 } from "@strata-foundation/spl-utils";
-import { FanoutIDL } from "./generated/fanout";
+import { FanoutIDL, MembershipModel } from "./generated/fanout";
 export * from "./generated/fanout";
 
-interface IInitializeFanoutArgs {
-  payer?: PublicKey;
-  /** The account to fanout on. Must either be owned by the program or it will be transfered to the program */
-  account: PublicKey;
-  /** The mint to create the fanout around. Should have no mint authority and freeze authority set to this program. 
-  * 
-  * If not provided, will create a mint for you and mint `supply` tokens to your account.
-  */
+interface InitializeFanoutArgs {
+  name: string;
+  membershipModel: MembershipModel;
+  totalShares: number;
   mint?: PublicKey;
-  /** If `mint` not provided, params for the created mint */
-  shares?: number;
 }
 
 interface IStakeArgs {
@@ -40,7 +37,6 @@ interface IStakeArgs {
   /** Destination for fanout tokens. **Default:** The associated token account of this wallet */
   destination?: PublicKey;
 }
-
 
 interface IUnstakeArgs {
   /** The account that will receive the sol locked in the voucher acct. **Default:** This wallet */
@@ -69,15 +65,16 @@ export class Fanout {
       provider
     );
     // @ts-ignore
-    const Fanout = new anchor.Program(FanoutIDLJson!, FanoutProgramId, provider) as anchor.Program<FanoutIDL>;
+    const prgrm = new anchor.Program<FanoutIDL>(
+      FanoutIDLJson!,
+      FanoutProgramId,
+      provider
+    );
 
-    return new this(provider, Fanout);
+    return new Fanout(provider, prgrm);
   }
 
-  constructor(
-    provider: Provider,
-    program: Program<FanoutIDL>,
-  ) {
+  constructor(provider: Provider, program: Program<FanoutIDL>) {
     this.provider = provider;
     this.program = program;
   }
@@ -103,10 +100,13 @@ export class Fanout {
   }
 
   get errors() {
-    return this.program.idl.errors.reduce((acc, err) => {
-      acc.set(err.code, `${err.name}: ${err.msg}`);
-      return acc;
-    }, new Map<number, string>());
+    let ret = new Map<number, string>();
+    return (
+      this.program.idl?.errors?.reduce((acc, err) => {
+        acc.set(err.code, `${err.name}`);
+        return acc;
+      }, ret) || ret
+    );
   }
 
   sendInstructions(
@@ -123,290 +123,126 @@ export class Fanout {
     );
   }
 
-  static async fanoutKey(account: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
+  static async fanoutKey(
+    name: String,
+    programId: PublicKey = Fanout.ID
+  ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
-      [Buffer.from("fanout-config", "utf-8"), account.toBuffer()],
+      [Buffer.from("fanout-config", "utf-8"), Buffer.from(name)],
       programId
-    )
+    );
   }
 
-  static async voucherKey(fanoutAccount: PublicKey, destination: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
+  static async voucherKey(
+    fanoutAccount: PublicKey,
+    destination: PublicKey,
+    programId: PublicKey = Fanout.ID
+  ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
-      [Buffer.from("voucher", "utf-8"), fanoutAccount.toBuffer(), destination.toBuffer()],
+      [
+        Buffer.from("voucher", "utf-8"),
+        fanoutAccount.toBuffer(),
+        destination.toBuffer(),
+      ],
       programId
-    )
+    );
   }
 
-  static async voucherCounterKey(account: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
+  static async voucherCounterKey(
+    account: PublicKey,
+    programId: PublicKey = Fanout.ID
+  ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
       [Buffer.from("voucher-counter", "utf-8"), account.toBuffer()],
       programId
-    )
+    );
   }
 
-  static async freezeAuthority(mint: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
+  static async freezeAuthority(
+    mint: PublicKey,
+    programId: PublicKey = Fanout.ID
+  ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
       [Buffer.from("freeze-authority", "utf-8"), mint.toBuffer()],
       programId
-    )
+    );
   }
 
-  static async accountOwner(account: PublicKey, programId: PublicKey = Fanout.ID): Promise<[PublicKey, number]> {
+  static async nativeAccount(
+    fanoutAccountKey: PublicKey,
+    programId: PublicKey = Fanout.ID
+  ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
-      [Buffer.from("account-owner", "utf-8"), account.toBuffer()],
+      [Buffer.from("native-account", "utf-8"), fanoutAccountKey.toBuffer()],
       programId
-    )
+    );
   }
 
-  async initializeFanoutInstructions({
-    payer = this.wallet.publicKey,
-    account,
-    mint,
-    shares,
-  }: IInitializeFanoutArgs): Promise<
-    InstructionResult<{ fanout: PublicKey; mint: PublicKey; }>
-  > {
-    const [fanout, bumpSeed] = await Fanout.fanoutKey(account);
-    const [accountOwner, accountOwnerBumpSeed] = await Fanout.accountOwner(account);
+  async initializeFanoutInstructions(
+    opts: InitializeFanoutArgs
+  ): Promise<InstructionResult<{ fanout: PublicKey }>> {
+    const [fanoutConfig, fanoutConfigBumpSeed] = await Fanout.fanoutKey(
+      opts.name
+    );
+    const [holdingAccount, holdingAccountBumpSeed] = await Fanout.nativeAccount(
+      fanoutConfig
+    );
     const instructions: TransactionInstruction[] = [];
-    const signers = [];
-
-    const tokenAccount = await getTokenAccount(this.provider, account);
-    if (!tokenAccount.owner.equals(accountOwner)) {
-      instructions.push(Token.createSetAuthorityInstruction(
-        TOKEN_PROGRAM_ID,
-        account,
-        accountOwner,
-        'AccountOwner',
-        tokenAccount.owner,
-        []
-      ));
-    }
-
-    if (!mint) {
-      const mintKeypair = anchor.web3.Keypair.generate();
-      mint = mintKeypair.publicKey;
-      const [freezeAuthority, freezeAuthorityBumpSeed] = await Fanout.freezeAuthority(mint);
-      signers.push(mintKeypair);
-
-      const destAcct = await Token.getAssociatedTokenAddress(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
-        mint,
-        this.wallet.publicKey,
-        true
-      );
-
-      instructions.push(
-        ...[
-          // Create the new mint
-          SystemProgram.createAccount({
-            fromPubkey: this.wallet.publicKey,
-            newAccountPubkey: mintKeypair.publicKey,
-            space: 82,
-            lamports:
-              await this.provider.connection.getMinimumBalanceForRentExemption(
-                82
-              ),
-            programId: TOKEN_PROGRAM_ID,
-          }),
-          Token.createInitMintInstruction(
-            TOKEN_PROGRAM_ID,
-            mintKeypair.publicKey,
-            0,
-            this.wallet.publicKey,
-            freezeAuthority
-          ),
-          // Create an ata to receive tokens for this mint
-          Token.createAssociatedTokenAccountInstruction(
-            ASSOCIATED_TOKEN_PROGRAM_ID,
-            TOKEN_PROGRAM_ID,
-            mint,
-            destAcct,
-            this.wallet.publicKey,
-            payer
-          ),
-          // Mint some tokens to ourself
-          Token.createMintToInstruction(
-            TOKEN_PROGRAM_ID,
-            mintKeypair.publicKey,
-            destAcct,
-            this.wallet.publicKey,
-            [],
-            shares!
-          ),
-          // Remove mint authority
-          Token.createSetAuthorityInstruction(
-            TOKEN_PROGRAM_ID,
-            mint,
-            null,
-            'MintTokens',
-            this.wallet.publicKey,
-            []
-          )
-        ]
-      );
-    }
-
-    const [freezeAuthority, freezeAuthorityBumpSeed] = await Fanout.freezeAuthority(mint);
-
-    instructions.push(await this.instruction.initializeFanoutV0({
-      bumpSeed,
-      freezeAuthorityBumpSeed,
-      accountOwnerBumpSeed
-    }, {
-      accounts: {
-        payer,
-        fanout,
-        mint,
-        account,
-        systemProgram: SystemProgram.programId,
-        rent: SYSVAR_RENT_PUBKEY
+    const signers: Signer[] = [];
+    let membershipMint = NATIVE_MINT;
+    if (opts.membershipModel == MembershipModel.Token) {
+      if (!opts.mint) {
+        throw new Error(
+          "Missing mint account for token bases membership model"
+        );
       }
-    }));
+      membershipMint = opts.mint;
+    }
+    console.log(this.instruction);
+    instructions.push(
+      await this.instruction.init(
+        {
+          bumpSeed: fanoutConfigBumpSeed,
+          nativeAccountBumpSeed: holdingAccountBumpSeed,
+          totalShares: new anchor.BN(opts.totalShares),
+          membershipModel: opts.membershipModel,
+          name: opts.name,
+        },
+        {
+          accounts: {
+            authority: this.wallet.publicKey,
+            holdingAccount: holdingAccount,
+            fanout: fanoutConfig,
+            membershipMint: membershipMint,
+            rent: SYSVAR_RENT_PUBKEY,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            systemProgram: SystemProgram.programId,
+          },
+        }
+      )
+    );
 
     return {
       output: {
-        fanout,
-        mint
+        fanout: fanoutConfig,
       },
       instructions,
       signers,
     };
   }
 
-  async initializeFanout(args: IInitializeFanoutArgs): Promise<{ fanout: PublicKey; mint: PublicKey }> {
-    const { instructions, signers, output } = await this.initializeFanoutInstructions(args);
-
-    await this.sendInstructions(instructions, signers, args.payer);
-
-    return output
-  }
-
-  async stakeInstructions({
-    payer = this.wallet.publicKey,
-    fanout,
-    sharesAccount,
-    destination
-  }: IStakeArgs): Promise<
-    InstructionResult<{ voucher: PublicKey; destination: PublicKey }>
-  > {
-    const fanoutAcct = await this.account.fanoutV0.fetch(fanout);
-    const tokenAccount = await getTokenAccount(this.provider, fanoutAcct.account);
-    const instructions = [];
-
-    if (!sharesAccount) {
-      sharesAccount = await Token.getAssociatedTokenAddress(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
-        fanoutAcct.mint,
-        this.wallet.publicKey,
-        true
-      );
-    }
-
-    const sharesAccountFetched = await getTokenAccount(this.provider, sharesAccount);
-    const [freezeAuthority] = await Fanout.freezeAuthority(fanoutAcct.mint);
-
-    if (!destination) {
-      destination = await Token.getAssociatedTokenAddress(
-        ASSOCIATED_TOKEN_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
-        tokenAccount.mint,
-        sharesAccountFetched.owner,
-        true
-      );
-
-      if (!await this.provider.connection.getAccountInfo(destination)) {
-        instructions.push(
-          // Create an ata to receive tokens for this mint
-          Token.createAssociatedTokenAccountInstruction(
-            ASSOCIATED_TOKEN_PROGRAM_ID,
-            TOKEN_PROGRAM_ID,
-            tokenAccount.mint,
-            destination,
-            sharesAccountFetched.owner,
-            payer
-          ),
-        )
-      }
-    }
-
-    const [voucher, bumpSeed] = await Fanout.voucherKey(fanoutAcct.account, destination!);
-    const [voucherCounter, voucherCounterBumpSeed] = await Fanout.voucherCounterKey(sharesAccount);
-
-    instructions.push(await this.instruction.stakeV0({
-      bumpSeed,
-      voucherCounterBumpSeed
-    }, {
-      accounts: {
-        voucherCounter,
-        payer,
-        fanout,
-        voucher,
-        owner: sharesAccountFetched.owner,
-        sharesAccount: sharesAccount!,
-        destination: destination!,
-        fanoutAccount: fanoutAcct.account,
-        mint: fanoutAcct.mint,
-        freezeAuthority,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
-        rent: SYSVAR_RENT_PUBKEY
-      }
-    }));
-
-
-    return {
-      output: {
-        destination: destination!,
-        voucher
-      },
+  async initializeFanout(
+    opts: InitializeFanoutArgs
+  ): Promise<{ fanout: PublicKey }> {
+    const { instructions, signers, output } =
+      await this.initializeFanoutInstructions(opts);
+    await this.sendInstructions(
       instructions,
-      signers: []
-    }
+      signers,
+      this.provider.wallet.publicKey
+    );
+    return output;
   }
 
-  async stake(args: IStakeArgs): Promise<{ voucher: PublicKey; destination: PublicKey }> {
-    const { instructions, signers, output } = await this.stakeInstructions(args);
-
-    await this.sendInstructions(instructions, signers, args.payer);
-
-    return output
-  }
-
-  async distributeInstructionns({
-    voucher
-  }: IDistributeArgs): Promise<
-    InstructionResult<null>
-  > {
-    const voucherAcct = await this.account.fanoutVoucherV0.fetch(voucher);
-    const fanoutAcct = await this.account.fanoutV0.fetch(voucherAcct.fanout);
-    const [accountOwner] = await Fanout.accountOwner(fanoutAcct.account);
-
-    return {
-      output: null,
-      instructions: [
-        await this.instruction.distributeV0({
-          accounts: {
-            fanout: voucherAcct.fanout,
-            voucher,
-            fanoutAccount: fanoutAcct.account,
-            owner: accountOwner,
-            destination: voucherAcct.destination,
-            tokenProgram: TOKEN_PROGRAM_ID
-          }
-        })
-      ],
-      signers: []
-    }
-  }
-
-  async distribute(args: IDistributeArgs): Promise<null> {
-    const { instructions, signers, output } = await this.distributeInstructionns(args);
-
-    await this.sendInstructions(instructions, signers, args.payer);
-
-    return output
-  }
+  async initializeFanoutForMit() {}
 }

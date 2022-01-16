@@ -1,10 +1,10 @@
 use anchor_lang::prelude::*;
 use std::default::Default;
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Copy)]
 pub enum MembershipModel {
-    Wallet,
-    Token, //TODO: implement token membership model
-    NFT,   //TODO: implement NFT membership model
+    Wallet = 0,
+    Token = 1,
+    NFT = 2,
 }
 
 impl Default for MembershipModel {

@@ -1,11 +1,12 @@
 import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
-import { Fanout, FanoutIDL } from '@hydra/fanout';
+
 import { PublicKey, Keypair } from "@solana/web3.js";
 import { createMint } from "@project-serum/common";
 import { TokenUtils } from './utils/token';
 import { expect, use } from 'chai';
 import ChaiAsPromised from "chai-as-promised";
+import { Fanout, MembershipModel } from "@hydra/fanout";
 
 use(ChaiAsPromised);
 
@@ -15,7 +16,7 @@ describe('fanout', () => {
   anchor.setProvider(anchor.Provider.env());
   const provider = anchor.getProvider();
 
-  const program = anchor.workspace.Fanout as Program<FanoutIDL>;
+  const program = anchor.workspace.Fanout;
   const fanoutSdk = new Fanout(provider, program);
   const tokenUtils = new TokenUtils(provider);
 
@@ -26,79 +27,94 @@ describe('fanout', () => {
   const splitWallet = Keypair.generate()
   let fanout: PublicKey;
 
-  before(async () => {
-    mintToSplit = await createMint(provider, me, 0);
-    accountToSplit = await tokenUtils.createAtaAndMint(provider, mintToSplit, 0, splitWallet.publicKey);
 
-    const { instructions, signers, output: { fanout: fanoutOut, mint: mintOut } } = await fanoutSdk.initializeFanoutInstructions({
-      shares: 100,
-      account: accountToSplit
-    })
-    sharesMint = mintOut;
 
-    fanout = fanoutOut;
+  describe('NFT membership model', () => {
 
-    await fanoutSdk.sendInstructions(instructions, [...signers, splitWallet], provider.wallet.publicKey);
-  })
+    it("Init", async () => {
+      const { fanout } = await fanoutSdk.initializeFanout({
+        totalShares: 1000,
+        name: "Test",
+        membershipModel: MembershipModel.NFT,
+      });
 
-  it('Correctly initializes a fanout', async () => {
-    const fanoutAcct = await fanoutSdk.account.fanoutV0.fetch(fanout);
-    expect(fanoutAcct.account.toBase58()).to.equal(accountToSplit.toBase58());
+
+      console.log(fanout);
+    });
   });
-
-  describe("after staking", () => {
-    let voucher: PublicKey;
-    let destination: PublicKey;
-    let voucher2: PublicKey;
-    let destination2: PublicKey;
-    const secondShareHolder = Keypair.generate()
-    const unstakedShareHolder = Keypair.generate()
-
-    before(async () => {
-      // Send some shares to another shareholder
-      const shareholder2VoucherAccount = await tokenUtils.sendTokens(provider, sharesMint, secondShareHolder.publicKey, 20);
-      // Send some to someone not staked
-      await tokenUtils.sendTokens(provider, sharesMint, unstakedShareHolder.publicKey, 20);
-      const result = await fanoutSdk.stake({
-        fanout
-      });
-      voucher = result.voucher;
-      destination = result.destination;
-      const { instructions, output: result2, signers } = await fanoutSdk.stakeInstructions({
-        fanout,
-        sharesAccount: shareholder2VoucherAccount
-      });
-      await fanoutSdk.sendInstructions(instructions, [...signers, secondShareHolder], me);
-      voucher2 = result2.voucher;
-      destination2 = result2.destination;
-      
-      await tokenUtils.mintTo(mintToSplit, 1000, accountToSplit);
-    })
-
-    it('creates the staking voucher', async () => {
-      const voucherAcct = await fanoutSdk.account.fanoutVoucherV0.fetch(voucher);
-      expect(voucherAcct.fanout.toBase58()).to.equal(fanout.toBase58())
-    })
-
-    it('gives us our share of the account', async () => {
-      await fanoutSdk.distribute({
-        voucher
-      });
-      await fanoutSdk.distribute({
-        voucher: voucher2
-      });
-      await tokenUtils.expectBalance(destination, 60/80 * 1000);
-      await tokenUtils.expectBalance(destination2, 20/80 * 1000);
-      await tokenUtils.mintTo(mintToSplit, 500, accountToSplit);
-      await fanoutSdk.distribute({
-        voucher
-      });
-      await tokenUtils.expectBalance(destination, 60/80 * 1000 + (60/80) * 500);
-      await tokenUtils.mintTo(mintToSplit, 250, accountToSplit);
-      await fanoutSdk.distribute({
-        voucher: voucher2
-      });
-      await tokenUtils.expectBalance(destination2, 20/80 * 1000 + Math.floor((20/80) * 750));
-    })
-  })
 });
+
+
+//   before(async () => {
+//     mintToSplit = await createMint(provider, me, 0);
+//     accountToSplit = await tokenUtils.createAtaAndMint(provider, mintToSplit, 0, splitWallet.publicKey);
+
+
+//     sharesMint = mintOut;
+
+//     fanout = fanoutOut;
+
+//     await fanoutSdk.sendInstructions(instructions, [...signers, splitWallet], provider.wallet.publicKey);
+//   })
+
+//   it('Correctly initializes a fanout', async () => {
+//     const fanoutAcct = await fanoutSdk.account.fanoutV0.fetch(fanout);
+//     expect(fanoutAcct.account.toBase58()).to.equal(accountToSplit.toBase58());
+//   });
+
+//   describe("after staking", () => {
+//     let voucher: PublicKey;
+//     let destination: PublicKey;
+//     let voucher2: PublicKey;
+//     let destination2: PublicKey;
+//     const secondShareHolder = Keypair.generate()
+//     const unstakedShareHolder = Keypair.generate()
+
+//     before(async () => {
+//       // Send some shares to another shareholder
+//       const shareholder2VoucherAccount = await tokenUtils.sendTokens(provider, sharesMint, secondShareHolder.publicKey, 20);
+//       // Send some to someone not staked
+//       await tokenUtils.sendTokens(provider, sharesMint, unstakedShareHolder.publicKey, 20);
+//       const result = await fanoutSdk.stake({
+//         fanout
+//       });
+//       voucher = result.voucher;
+//       destination = result.destination;
+//       const { instructions, output: result2, signers } = await fanoutSdk.stakeInstructions({
+//         fanout,
+//         sharesAccount: shareholder2VoucherAccount
+//       });
+//       await fanoutSdk.sendInstructions(instructions, [...signers, secondShareHolder], me);
+//       voucher2 = result2.voucher;
+//       destination2 = result2.destination;
+
+//       await tokenUtils.mintTo(mintToSplit, 1000, accountToSplit);
+//     })
+
+//     it('creates the staking voucher', async () => {
+//       const voucherAcct = await fanoutSdk.account.fanoutVoucherV0.fetch(voucher);
+//       expect(voucherAcct.fanout.toBase58()).to.equal(fanout.toBase58())
+//     })
+
+//     it('gives us our share of the account', async () => {
+//       await fanoutSdk.distribute({
+//         voucher
+//       });
+//       await fanoutSdk.distribute({
+//         voucher: voucher2
+//       });
+//       await tokenUtils.expectBalance(destination, 60 / 80 * 1000);
+//       await tokenUtils.expectBalance(destination2, 20 / 80 * 1000);
+//       await tokenUtils.mintTo(mintToSplit, 500, accountToSplit);
+//       await fanoutSdk.distribute({
+//         voucher
+//       });
+//       await tokenUtils.expectBalance(destination, 60 / 80 * 1000 + (60 / 80) * 500);
+//       await tokenUtils.mintTo(mintToSplit, 250, accountToSplit);
+//       await fanoutSdk.distribute({
+//         voucher: voucher2
+//       });
+//       await tokenUtils.expectBalance(destination2, 20 / 80 * 1000 + Math.floor((20 / 80) * 750));
+//     })
+//   })
+// });

@@ -4,7 +4,6 @@ use anchor_lang::prelude::*;
 pub struct InitializeFanoutArgs {
     pub bump_seed: u8,
     pub native_account_bump_seed: u8,
-    pub account_owner_bump_seed: u8,
     pub name: String,
     pub total_shares: u64,
     pub membership_model: MembershipModel,
@@ -13,8 +12,6 @@ pub struct InitializeFanoutArgs {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct InitializeFanoutForMintArgs {
     pub bump_seed: u8,
-    pub native_account_bump_seed: u8,
-    pub account_owner_bump_seed: u8,
     pub name: String,
     pub total_shares: u64,
     pub membership_model: MembershipModel,

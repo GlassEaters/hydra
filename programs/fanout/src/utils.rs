@@ -28,9 +28,9 @@ impl OrArithError<u128> for Option<u128> {
 }
 
 pub fn update_fanout_for_add(
-    fanout: Account<Fanout>,
+    fanout: &mut Account<Fanout>,
     shares: u64,
-) -> Result<Account<Fanout>, ProgramError> {
+) -> Result<(), ProgramError> {
     let less_shares = fanout
         .total_available_shares
         .checked_sub(shares)
@@ -38,23 +38,23 @@ pub fn update_fanout_for_add(
     fanout.total_members = fanout.total_members.checked_add(1).or_arith_error()?;
     fanout.total_available_shares = less_shares;
     if less_shares > 0 {
-        Ok(fanout)
+        Ok(())
     } else {
         Err(ErrorCode::InsufficientShares.into())
     }
 }
 
 pub fn assert_membership_model(
-    fanout: Account<Fanout>,
+    fanout: &Account<Fanout>,
     model: MembershipModel,
 ) -> Result<(), ProgramError> {
-    if fanout.membership_model != MembershipModel::Wallet {
+    if fanout.membership_model == model {
         return Err(ErrorCode::InvalidMembershipModel.into());
     }
     Ok(())
 }
 
-pub fn assert_shares_distrubuted(fanout: Account<Fanout>) -> Result<(), ProgramError> {
+pub fn assert_shares_distrubuted(fanout: &Account<Fanout>) -> Result<(), ProgramError> {
     if fanout.total_available_shares != 0 {
         //does not allow for disrtubution before all members are added
         return Err(ErrorCode::SharesArentAtMax.into());
@@ -63,7 +63,7 @@ pub fn assert_shares_distrubuted(fanout: Account<Fanout>) -> Result<(), ProgramE
 }
 
 pub fn assert_membership_voucher_valid(
-    voucher: Account<FanoutMembershipVoucher>,
+    voucher: &Account<FanoutMembershipVoucher>,
     model: MembershipModel,
 ) -> Result<(), ProgramError> {
     match model {
