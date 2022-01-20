@@ -1,17 +1,16 @@
-import * as anchor from '@project-serum/anchor';
-import { Program } from '@project-serum/anchor';
+import * as anchor from "@project-serum/anchor";
+import { Program } from "@project-serum/anchor";
 
 import { PublicKey, Keypair } from "@solana/web3.js";
 import { createMint } from "@project-serum/common";
-import { TokenUtils } from './utils/token';
-import { expect, use } from 'chai';
+import { TokenUtils } from "./utils/token";
+import { expect, use } from "chai";
 import ChaiAsPromised from "chai-as-promised";
 import { Fanout, MembershipModel } from "@hydra/fanout";
 
 use(ChaiAsPromised);
 
-describe('fanout', () => {
-
+describe("fanout", () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(anchor.Provider.env());
   const provider = anchor.getProvider();
@@ -24,31 +23,34 @@ describe('fanout', () => {
   let mintToSplit: PublicKey;
   let accountToSplit: PublicKey;
   const me = provider.wallet.publicKey;
-  const splitWallet = Keypair.generate()
+  const splitWallet = Keypair.generate();
   let fanout: PublicKey;
 
-
-
-  describe('NFT membership model', () => {
-
+  describe("NFT membership model", () => {
     it("Init", async () => {
       const { fanout } = await fanoutSdk.initializeFanout({
-        totalShares: 1000,
+        totalShares: 100,
         name: "Test",
         membershipModel: MembershipModel.NFT,
       });
 
-
-      console.log(fanout);
+      const fanoutAccount = await fanoutSdk.account.fanout.fetch(fanout);
+      console.log(fanoutAccount);
+      expect(Object.keys(fanoutAccount.membershipModel)[0]).to.equal("nft");
+      expect(fanoutAccount.lastSnapshotAmount.toString(10)).to.equal("0");
+      expect(fanoutAccount.totalMembers).to.equal(0);
+      expect(fanoutAccount.totalInflow.toString(10)).to.equal("0");
+      expect(fanoutAccount.totalAvailableShares.toString(10)).to.equal("100");
+      expect(fanoutAccount.totalShares.toString(10)).to.equal("100");
+      expect(fanoutAccount.membershipMint).to.equal(null);
+      expect(fanoutAccount.totalStakedShares).to.equal(null);
     });
   });
 });
 
-
 //   before(async () => {
 //     mintToSplit = await createMint(provider, me, 0);
 //     accountToSplit = await tokenUtils.createAtaAndMint(provider, mintToSplit, 0, splitWallet.publicKey);
-
 
 //     sharesMint = mintOut;
 

@@ -129,7 +129,7 @@ export class Fanout {
     programId: PublicKey = Fanout.ID
   ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
-      [Buffer.from("fanout-config", "utf-8"), Buffer.from(name)],
+      [Buffer.from("fanout-config"), Buffer.from(name)],
       programId
     );
   }
@@ -164,7 +164,7 @@ export class Fanout {
     programId: PublicKey = Fanout.ID
   ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
-      [Buffer.from("freeze-authority", "utf-8"), mint.toBuffer()],
+      [Buffer.from("freeze-authority"), mint.toBuffer()],
       programId
     );
   }
@@ -174,7 +174,7 @@ export class Fanout {
     programId: PublicKey = Fanout.ID
   ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
-      [Buffer.from("native-account", "utf-8"), fanoutAccountKey.toBuffer()],
+      [Buffer.from("fanout-native-account"), fanoutAccountKey.toBuffer()],
       programId
     );
   }

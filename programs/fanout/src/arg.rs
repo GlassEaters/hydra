@@ -1,5 +1,6 @@
 use crate::state::*;
 use anchor_lang::prelude::*;
+
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct InitializeFanoutArgs {
     pub bump_seed: u8,

@@ -10,17 +10,14 @@ pub mod arg;
 pub mod error;
 pub mod state;
 pub mod utils;
+
+use std::cell::RefMut;
+
+use anchor_spl::token::TokenAccount;
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
-pub mod fanout_logic {
-    pub fn distribute_logic() {}
-}
 #[program]
 pub mod fanout {
-
-    use std::cell::RefMut;
-
-    use anchor_spl::token::TokenAccount;
 
     use super::*;
 
@@ -36,7 +33,7 @@ pub mod fanout {
         fanout.total_shares = args.total_shares;
         fanout.total_available_shares = args.total_shares;
         let account = &ctx.accounts.holding_account;
-        fanout.total_inflow = account.to_account_info().lamports();
+        fanout.total_inflow = 0;
         fanout.last_snapshot_amount = fanout.total_inflow;
         fanout.bump_seed = args.bump_seed;
         fanout.membership_model = model;
