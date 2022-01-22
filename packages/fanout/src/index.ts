@@ -1,7 +1,12 @@
 import * as anchor from "@project-serum/anchor";
 import { Program, Provider } from "@project-serum/anchor";
 import account from "@project-serum/anchor/dist/cjs/program/namespace/account";
-import { getTokenAccount, parseMintAccount } from "@project-serum/common";
+import {
+  createTokenAccount,
+  getTokenAccount,
+  parseMintAccount,
+} from "@project-serum/common";
+
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   NATIVE_MINT,
@@ -19,6 +24,7 @@ import {
   InstructionResult,
   sendInstructions,
 } from "@strata-foundation/spl-utils";
+import { min } from "bn.js";
 import { FanoutIDL, MembershipModel } from "./generated/fanout";
 export * from "./generated/fanout";
 
@@ -27,6 +33,21 @@ interface InitializeFanoutArgs {
   membershipModel: MembershipModel;
   totalShares: number;
   mint?: PublicKey;
+}
+
+interface InitializeFanoutForMintArgs {
+  fanout: PublicKey;
+  fanoutNativeAccount: PublicKey;
+  mint: PublicKey;
+  mintTokenAccount?: PublicKey;
+}
+
+interface AddMemberArgs {
+  shares: number;
+  voucherBumpSeed: number;
+  fanout: PublicKey;
+  fanoutNativeAccount: PublicKey;
+  mint: PublicKey;
 }
 
 interface IStakeArgs {
@@ -134,27 +155,28 @@ export class Fanout {
     );
   }
 
-  static async voucherKey(
-    fanoutAccount: PublicKey,
-    destination: PublicKey,
+  static async fanoutForMintKey(
+    fanout: PublicKey,
+    mint: PublicKey,
     programId: PublicKey = Fanout.ID
   ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
-      [
-        Buffer.from("voucher", "utf-8"),
-        fanoutAccount.toBuffer(),
-        destination.toBuffer(),
-      ],
+      [Buffer.from("fanout-config"), fanout.toBuffer(), mint.toBuffer()],
       programId
     );
   }
 
-  static async voucherCounterKey(
-    account: PublicKey,
+  static async membershipAccount(
+    fanoutAccount: PublicKey,
+    membershipKey: PublicKey,
     programId: PublicKey = Fanout.ID
   ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
-      [Buffer.from("voucher-counter", "utf-8"), account.toBuffer()],
+      [
+        Buffer.from("fanout-membership"),
+        fanoutAccount.toBuffer(),
+        membershipKey.toBuffer(),
+      ],
       programId
     );
   }
@@ -199,7 +221,6 @@ export class Fanout {
       }
       membershipMint = opts.mint;
     }
-    console.log(this.instruction);
     instructions.push(
       await this.instruction.init(
         {
@@ -232,6 +253,97 @@ export class Fanout {
     };
   }
 
+  async initializeFanoutForMintInstructions(
+    opts: InitializeFanoutForMintArgs
+  ): Promise<
+    InstructionResult<{ fanoutForMint: PublicKey; tokenAccount: PublicKey }>
+  > {
+    const [fanoutMintConfig, fanoutConfigBumpSeed] =
+      await Fanout.fanoutForMintKey(opts.fanout, opts.mint);
+    const instructions: TransactionInstruction[] = [];
+    const signers: Signer[] = [];
+    let tokenAccountForMint =
+      opts.mintTokenAccount ||
+      (await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        opts.mint,
+        opts.fanoutNativeAccount,
+        true
+      ));
+    instructions.push(
+      Token.createAssociatedTokenAccountInstruction(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        opts.mint,
+        tokenAccountForMint,
+        opts.fanoutNativeAccount,
+        this.wallet.publicKey
+      )
+    );
+    instructions.push(
+      await this.instruction.initForMint(fanoutConfigBumpSeed, {
+        accounts: {
+          authority: this.wallet.publicKey,
+          mintHoldingAccount: tokenAccountForMint,
+          fanout: opts.fanout,
+          mint: opts.mint,
+          fanoutForMint: fanoutMintConfig,
+          rent: SYSVAR_RENT_PUBKEY,
+          systemProgram: SystemProgram.programId,
+        },
+      })
+    );
+
+    return {
+      output: {
+        tokenAccount: tokenAccountForMint,
+        fanoutForMint: fanoutMintConfig,
+      },
+      instructions,
+      signers,
+    };
+  }
+
+  async addMemberNftInstructions(
+    opts: AddMemberArgs
+  ): Promise<
+    InstructionResult<{ fanoutForMint: PublicKey; tokenAccount: PublicKey }>
+  > {
+    const [fanoutMembership, fanoutMembershipBump] =
+      await Fanout.membershipAccount(opts.fanout, opts.mint);
+    const instructions: TransactionInstruction[] = [];
+    const signers: Signer[] = [];
+    instructions.push(
+      await this.instruction.addMemberNft(
+        {
+          voucherBumpSeed: fanoutMembershipBump,
+          shares: opts.shares,
+        },
+        {
+          accounts: {
+            authority: this.wallet.publicKey,
+            account: opts.fanoutNativeAccount,
+            fanout: opts.fanout,
+            membershipAccount: fanoutMembership,
+            mint: opts.mint,
+            rent: SYSVAR_RENT_PUBKEY,
+            systemProgram: SystemProgram.programId,
+          },
+        }
+      )
+    );
+
+    return {
+      output: {
+        tokenAccount: tokenAccountForMint,
+        fanoutForMint: fanoutMintConfig,
+      },
+      instructions,
+      signers,
+    };
+  }
+
   async initializeFanout(
     opts: InitializeFanoutArgs
   ): Promise<{ fanout: PublicKey }> {
@@ -245,5 +357,29 @@ export class Fanout {
     return output;
   }
 
-  async initializeFanoutForMit() {}
+  async initializeFanoutForMint(
+    opts: InitializeFanoutForMintArgs
+  ): Promise<{ fanoutForMint: PublicKey; tokenAccount: PublicKey }> {
+    const { instructions, signers, output } =
+      await this.initializeFanoutForMintInstructions(opts);
+    await this.sendInstructions(
+      instructions,
+      signers,
+      this.provider.wallet.publicKey
+    );
+    return output;
+  }
+
+  async addNFTMember(
+    opts: InitializeFanoutForMintArgs
+  ): Promise<{ fanoutForMint: PublicKey; tokenAccount: PublicKey }> {
+    const { instructions, signers, output } =
+      await this.initializeFanoutForMintInstructions(opts);
+    await this.sendInstructions(
+      instructions,
+      signers,
+      this.provider.wallet.publicKey
+    );
+    return output;
+  }
 }

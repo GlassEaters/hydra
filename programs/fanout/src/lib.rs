@@ -32,7 +32,6 @@ pub mod fanout {
         fanout.name = args.name;
         fanout.total_shares = args.total_shares;
         fanout.total_available_shares = args.total_shares;
-        let account = &ctx.accounts.holding_account;
         fanout.total_inflow = 0;
         fanout.last_snapshot_amount = fanout.total_inflow;
         fanout.bump_seed = args.bump_seed;
@@ -75,17 +74,15 @@ pub mod fanout {
         Ok(())
     }
 
-    pub fn init_for_mint(
-        ctx: Context<InitializeFanoutForMint>,
-        args: InitializeFanoutForMintArgs,
-    ) -> ProgramResult {
+    pub fn init_for_mint(ctx: Context<InitializeFanoutForMint>, bump_seed: u8) -> ProgramResult {
         let fanout_mint = &mut ctx.accounts.fanout_for_mint;
         let fanout = &ctx.accounts.fanout;
         let mint_holding_account = &ctx.accounts.mint_holding_account;
         fanout_mint.fanout = fanout.to_account_info().key();
         fanout_mint.total_inflow = mint_holding_account.amount;
-        fanout_mint.last_snapshot_amount = fanout.total_inflow;
-        fanout_mint.bump_seed = args.bump_seed;
+        fanout_mint.last_snapshot_amount = mint_holding_account.amount;
+        fanout_mint.bump_seed = bump_seed;
+        fanout_mint.mint = ctx.accounts.mint.to_account_info().key();
         assert_derivation(
             &anchor_spl::associated_token::ID,
             &mint_holding_account.to_account_info(),

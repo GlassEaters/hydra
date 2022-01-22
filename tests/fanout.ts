@@ -35,7 +35,6 @@ describe("fanout", () => {
       });
 
       const fanoutAccount = await fanoutSdk.account.fanout.fetch(fanout);
-      console.log(fanoutAccount);
       expect(Object.keys(fanoutAccount.membershipModel)[0]).to.equal("nft");
       expect(fanoutAccount.lastSnapshotAmount.toString(10)).to.equal("0");
       expect(fanoutAccount.totalMembers).to.equal(0);
@@ -45,6 +44,46 @@ describe("fanout", () => {
       expect(fanoutAccount.membershipMint).to.equal(null);
       expect(fanoutAccount.totalStakedShares).to.equal(null);
     });
+
+    it("Init For mint", async () => {
+      const { fanout } = await fanoutSdk.initializeFanout({
+        totalShares: 100,
+        name: "Test2",
+        membershipModel: MembershipModel.NFT,
+      });
+      const fanoutAccount = await fanoutSdk.account.fanout.fetch(fanout);
+
+      const mintKey = new Keypair();
+      const mint = await createMint(provider, mintKey.publicKey, 0);
+      const { fanoutForMint, tokenAccount } =
+        await fanoutSdk.initializeFanoutForMint({
+          fanout,
+          fanoutNativeAccount: fanoutAccount.account,
+          mint: mint,
+        });
+
+      const fanoutMintAccount = await fanoutSdk.account.fanoutMint.fetch(
+        fanoutForMint
+      );
+
+      expect(fanoutMintAccount.mint.toBase58()).to.equal(mint.toBase58());
+      expect(fanoutMintAccount.fanout.toBase58()).to.equal(fanout.toBase58());
+      expect(fanoutMintAccount.tokenAccount.toBase58()).to.equal(
+        tokenAccount.toBase58()
+      );
+      expect(fanoutMintAccount.totalInflow.toString(10)).to.equal("0");
+      expect(fanoutMintAccount.lastSnapshotAmount.toString(10)).to.equal("0");
+    });
+  });
+
+  it("Add Members With NFT", async () => {
+    const { fanout } = await fanoutSdk.initializeFanout({
+      totalShares: 100,
+      name: "Test3",
+      membershipModel: MembershipModel.NFT,
+    });
+    const fanoutAccount = await fanoutSdk.account.fanout.fetch(fanout);
+    
   });
 });
 

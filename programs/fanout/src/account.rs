@@ -37,13 +37,13 @@
     }
 
     #[derive(Accounts)]
-    #[instruction(args: InitializeFanoutArgs)]
+    #[instruction(bump_seed: u8)]
     pub struct InitializeFanoutForMint<'info> {
         pub authority: Signer<'info>,
         #[account(
             mut,
-            seeds = [b"fanout-config", fanout.account.key().as_ref()],
-            has_one=authority,
+            seeds = [b"fanout-config", fanout.name.as_bytes()],
+            has_one = authority,
             bump = fanout.bump_seed,
         )]
         pub fanout: Account<'info, Fanout>,
@@ -52,15 +52,15 @@
             payer=authority,
             space = 200,
             seeds = [b"fanout-config", fanout.key().as_ref(), mint.key().as_ref()],
-            bump = args.bump_seed
+            bump = bump_seed
         )]
         pub fanout_for_mint: Account<'info, FanoutMint>,
         #[account(
             mut,
-            constraint = mint_holding_account.owner == fanout.key(), // must create and assign ownership first
+            constraint = mint_holding_account.owner == fanout.account, // must create and assign ownership first
             constraint = mint_holding_account.delegate.is_none(),
             constraint = mint_holding_account.close_authority.is_none(),
-            constraint = mint_holding_account.is_native() == true,
+            constraint = mint_holding_account.is_native() == false,
             constraint = mint_holding_account.mint.key() == mint.key(),
             )
         ]
@@ -193,7 +193,7 @@
         pub account: UncheckedAccount<'info>, 
         #[account(
             mut,
-            seeds = [b"fanout-config", fanout.account.key().as_ref()],
+            seeds = [b"fanout-config", fanout.account.as_ref()],
             has_one=authority,
             bump = fanout.bump_seed,
         )]
@@ -201,7 +201,7 @@
         #[account(
             init,
             space = 78,
-            seeds = [b"fanout-membership", fanout.account.key().as_ref(), mint.key().as_ref()],
+            seeds = [b"fanout-membership", fanout.account.as_ref(), mint.key().as_ref()],
             bump = fanout.bump_seed,
             payer = authority
         )]
