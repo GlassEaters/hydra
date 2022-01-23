@@ -207,15 +207,6 @@
         )]
         pub membership_account: Account<'info, FanoutMembershipVoucher>,
         pub mint: Account<'info, Mint>,
-        #[
-        account(
-        constraint = token_account.owner == account.key(),
-        constraint = token_account.delegate.is_none(),
-        constraint = token_account.close_authority.is_none(),
-        constraint = token_account.mint == mint.key(),
-        )
-        ]
-        pub token_account: Account<'info, TokenAccount>, //User must have a token account for the mint, but it can be empty
         pub system_program: Program<'info, System>,
         pub rent: Sysvar<'info, Rent>,
         pub token_program: Program<'info, Token>,

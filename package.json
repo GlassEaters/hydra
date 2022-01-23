@@ -10,6 +10,7 @@
   "license": "MIT",
   "author": "Hydra GlassEaters",
   "devDependencies": {
+    
     "@project-serum/anchor": "^0.20.1",
     "@types/chai": "^4.2.21",
     "@types/chai-as-promised": "^7.1.4",
@@ -22,9 +23,12 @@
     "ts-mocha": "^8.0.0",
     "ts-node": "^10.2.1",
     "typescript": "^4.4.3",
-    "@types/node": "^8.0.0"
+    "@types/node": "^8.0.0",
+    "@metaplex-foundation/amman": "^0.0.9",
+    "@metaplex-foundation/solita": "metaplex-foundation/solita#thlorenz\/chore\/improvements-via-gumdrop"
   },
   "scripts": {
+    "api:gen": "node scripts/api-gen-ts.cjs && prettier --write ./packages/**/*.ts",
     "watch": "npx lerna run --parallel watch",
     "build": "npx lerna run build",
     "test": "ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""

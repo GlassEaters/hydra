@@ -1,12 +1,5 @@
 import * as anchor from "@project-serum/anchor";
 import { Program, Provider } from "@project-serum/anchor";
-import account from "@project-serum/anchor/dist/cjs/program/namespace/account";
-import {
-  createTokenAccount,
-  getTokenAccount,
-  parseMintAccount,
-} from "@project-serum/common";
-
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   NATIVE_MINT,
@@ -18,16 +11,21 @@ import {
   Signer,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
+  Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
+import { InstructionResult } from "@strata-foundation/spl-utils";
+import { ProgramError } from "./generated/errors";
 import {
-  InstructionResult,
-  sendInstructions,
-} from "@strata-foundation/spl-utils";
-import { min } from "bn.js";
-import { FanoutIDL, MembershipModel } from "./generated/fanout";
-export * from "./generated/fanout";
-
+  createAddMemberNftInstruction,
+  createInitForMintInstruction,
+  createInitInstruction,
+} from "./generated/instructions";
+import { MembershipModel } from "./generated/types";
+export * from "./generated/types";
+export * from "./generated/instructions";
+export * from "./generated/accounts";
+export * from "./generated/errors";
 interface InitializeFanoutArgs {
   name: string;
   membershipModel: MembershipModel;
@@ -72,7 +70,6 @@ interface IDistributeArgs {
 }
 
 export class Fanout {
-  program: Program<FanoutIDL>;
   provider: Provider;
 
   static ID = new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
@@ -81,68 +78,37 @@ export class Fanout {
     provider: Provider,
     FanoutProgramId: PublicKey = Fanout.ID
   ): Promise<Fanout> {
-    const FanoutIDLJson = await anchor.Program.fetchIdl(
-      FanoutProgramId,
-      provider
-    );
-    // @ts-ignore
-    const prgrm = new anchor.Program<FanoutIDL>(
-      // @ts-ignore
-      FanoutIDLJson!,
-      FanoutProgramId,
-      provider
-    );
-
-    return new Fanout(provider, prgrm);
+    return new Fanout(provider);
   }
 
-  constructor(provider: Provider, program: Program<FanoutIDL>) {
+  constructor(provider: Provider) {
     this.provider = provider;
-    this.program = program;
   }
 
-  get programId() {
-    return this.program.programId;
+  async fetch<T>(key: PublicKey, type: any): Promise<T> {
+    let a = await this.provider.connection.getAccountInfo(key);
+    return type.fromAccountInfo(a)[0] as T;
   }
 
-  get rpc() {
-    return this.program.rpc;
-  }
-
-  get instruction() {
-    return this.program.instruction;
-  }
-
-  get wallet() {
-    return this.provider.wallet;
-  }
-
-  get account() {
-    return this.program.account;
-  }
-
-  get errors() {
-    let ret = new Map<number, string>();
-    return (
-      this.program.idl?.errors?.reduce((acc, err) => {
-        acc.set(err.code, `${err.name}`);
-        return acc;
-      }, ret) || ret
-    );
-  }
-
-  sendInstructions(
+  async sendInstructions(
     instructions: TransactionInstruction[],
     signers: Signer[],
     payer?: PublicKey
   ): Promise<string> {
-    return sendInstructions(
-      this.errors,
-      this.provider,
-      instructions,
-      signers,
-      payer
-    );
+    const tx = new Transaction();
+    tx.feePayer = payer || this.provider.wallet.publicKey;
+    tx.add(...instructions);
+
+    try {
+      return await this.provider.send(tx, signers, {
+        commitment: "confirmed",
+        preflightCommitment: "confirmed",
+      });
+    } catch (e) {
+      console.error(e);
+      const wrappedE = ProgramError.parse(e);
+      throw wrappedE == null ? e : wrappedE;
+    }
   }
 
   static async fanoutKey(
@@ -222,28 +188,24 @@ export class Fanout {
       membershipMint = opts.mint;
     }
     instructions.push(
-      await this.instruction.init(
+      createInitInstruction(
         {
-          bumpSeed: fanoutConfigBumpSeed,
-          nativeAccountBumpSeed: holdingAccountBumpSeed,
-          totalShares: new anchor.BN(opts.totalShares),
-          name: opts.name,
+          authority: this.provider.wallet.publicKey,
+          holdingAccount: holdingAccount,
+          fanout: fanoutConfig,
+          membershipMint: membershipMint,
         },
-        opts.membershipModel,
         {
-          accounts: {
-            authority: this.wallet.publicKey,
-            holdingAccount: holdingAccount,
-            fanout: fanoutConfig,
-            membershipMint: membershipMint,
-            rent: SYSVAR_RENT_PUBKEY,
-            tokenProgram: TOKEN_PROGRAM_ID,
-            systemProgram: SystemProgram.programId,
+          args: {
+            bumpSeed: fanoutConfigBumpSeed,
+            nativeAccountBumpSeed: holdingAccountBumpSeed,
+            totalShares: new anchor.BN(opts.totalShares),
+            name: opts.name,
           },
+          model: opts.membershipModel,
         }
       )
     );
-
     return {
       output: {
         fanout: fanoutConfig,
@@ -278,21 +240,22 @@ export class Fanout {
         opts.mint,
         tokenAccountForMint,
         opts.fanoutNativeAccount,
-        this.wallet.publicKey
+        this.provider.wallet.publicKey
       )
     );
     instructions.push(
-      await this.instruction.initForMint(fanoutConfigBumpSeed, {
-        accounts: {
-          authority: this.wallet.publicKey,
+      createInitForMintInstruction(
+        {
+          authority: this.provider.wallet.publicKey,
           mintHoldingAccount: tokenAccountForMint,
           fanout: opts.fanout,
           mint: opts.mint,
           fanoutForMint: fanoutMintConfig,
-          rent: SYSVAR_RENT_PUBKEY,
-          systemProgram: SystemProgram.programId,
         },
-      })
+        {
+          bumpSeed: fanoutConfigBumpSeed,
+        }
+      )
     );
 
     return {
@@ -307,28 +270,24 @@ export class Fanout {
 
   async addMemberNftInstructions(
     opts: AddMemberArgs
-  ): Promise<
-    InstructionResult<{ fanoutForMint: PublicKey; tokenAccount: PublicKey }>
-  > {
+  ): Promise<InstructionResult<{ membershipAccount: PublicKey }>> {
     const [fanoutMembership, fanoutMembershipBump] =
       await Fanout.membershipAccount(opts.fanout, opts.mint);
     const instructions: TransactionInstruction[] = [];
     const signers: Signer[] = [];
     instructions.push(
-      await this.instruction.addMemberNft(
+      createAddMemberNftInstruction(
         {
-          voucherBumpSeed: fanoutMembershipBump,
-          shares: opts.shares,
+          authority: this.provider.wallet.publicKey,
+          account: opts.fanoutNativeAccount,
+          fanout: opts.fanout,
+          membershipAccount: fanoutMembership,
+          mint: opts.mint,
         },
         {
-          accounts: {
-            authority: this.wallet.publicKey,
-            account: opts.fanoutNativeAccount,
-            fanout: opts.fanout,
-            membershipAccount: fanoutMembership,
-            mint: opts.mint,
-            rent: SYSVAR_RENT_PUBKEY,
-            systemProgram: SystemProgram.programId,
+          args: {
+            voucherBumpSeed: fanoutMembershipBump,
+            shares: new anchor.BN(opts.shares),
           },
         }
       )
@@ -336,8 +295,7 @@ export class Fanout {
 
     return {
       output: {
-        tokenAccount: tokenAccountForMint,
-        fanoutForMint: fanoutMintConfig,
+        membershipAccount: fanoutMembership,
       },
       instructions,
       signers,

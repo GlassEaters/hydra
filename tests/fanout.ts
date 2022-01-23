@@ -7,6 +7,7 @@ import { TokenUtils } from "./utils/token";
 import { expect, use } from "chai";
 import ChaiAsPromised from "chai-as-promised";
 import { Fanout, MembershipModel } from "@hydra/fanout";
+import { FanoutAccountData, FanoutMintAccountData } from "@hydra/fanout";
 
 use(ChaiAsPromised);
 
@@ -16,7 +17,7 @@ describe("fanout", () => {
   const provider = anchor.getProvider();
 
   const program = anchor.workspace.Fanout;
-  const fanoutSdk = new Fanout(provider, program);
+  const fanoutSdk = new Fanout(provider);
   const tokenUtils = new TokenUtils(provider);
 
   let sharesMint: PublicKey;
@@ -34,8 +35,13 @@ describe("fanout", () => {
         membershipModel: MembershipModel.NFT,
       });
 
-      const fanoutAccount = await fanoutSdk.account.fanout.fetch(fanout);
-      expect(Object.keys(fanoutAccount.membershipModel)[0]).to.equal("nft");
+      const fanoutAccount = await fanoutSdk.fetch<FanoutAccountData>(
+        fanout,
+        FanoutAccountData
+      );
+      expect(MembershipModel[fanoutAccount.membershipModel]).to.equal(
+        MembershipModel.NFT
+      );
       expect(fanoutAccount.lastSnapshotAmount.toString(10)).to.equal("0");
       expect(fanoutAccount.totalMembers).to.equal(0);
       expect(fanoutAccount.totalInflow.toString(10)).to.equal("0");
@@ -51,7 +57,10 @@ describe("fanout", () => {
         name: "Test2",
         membershipModel: MembershipModel.NFT,
       });
-      const fanoutAccount = await fanoutSdk.account.fanout.fetch(fanout);
+      const fanoutAccount = await fanoutSdk.fetch<FanoutAccountData>(
+        fanout,
+        FanoutAccountData
+      );
 
       const mintKey = new Keypair();
       const mint = await createMint(provider, mintKey.publicKey, 0);
@@ -62,8 +71,9 @@ describe("fanout", () => {
           mint: mint,
         });
 
-      const fanoutMintAccount = await fanoutSdk.account.fanoutMint.fetch(
-        fanoutForMint
+      const fanoutMintAccount = await fanoutSdk.fetch<FanoutMintAccountData>(
+        fanoutForMint,
+        FanoutMintAccountData
       );
 
       expect(fanoutMintAccount.mint.toBase58()).to.equal(mint.toBase58());
@@ -82,8 +92,10 @@ describe("fanout", () => {
       name: "Test3",
       membershipModel: MembershipModel.NFT,
     });
-    const fanoutAccount = await fanoutSdk.account.fanout.fetch(fanout);
-    
+    const fanoutAccount = await fanoutSdk.fetch<FanoutAccountData>(
+      fanout,
+      FanoutAccountData
+    );
   });
 });
 
