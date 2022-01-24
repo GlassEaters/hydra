@@ -16,7 +16,6 @@ use std::cell::RefMut;
 use anchor_spl::token::TokenAccount;
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
-#[program]
 pub mod fanout {
 
     use super::*;
@@ -97,11 +96,12 @@ pub mod fanout {
         Ok(())
     }
 
-    pub fn add_member_wallet(ctx: Context<AddMemberWallet>, args: AddMemberArgs) -> ProgramResult {
+    pub fn add_member_wallet(ctx: Context<AddMemberWithNFT>, args: AddMemberArgs) -> ProgramResult {
         let fanout = &mut ctx.accounts.fanout;
         let account = ctx.accounts.account.to_account_info();
         let membership_account = &mut ctx.accounts.membership_account;
-        let authority = ctx.accounts.authority.to_account_info();
+        let metadata = &mut ctx.accounts.metadata;
+
         update_fanout_for_add(fanout, args.shares)?;
         membership_account.membership_key = Some(account.key());
         membership_account.shares = Some(args.shares);

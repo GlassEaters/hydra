@@ -96,6 +96,10 @@ describe("fanout", () => {
       fanout,
       FanoutAccountData
     );
+
+    const nft = new Keypair();  
+    const mint = await createMint(provider, nft.publicKey, 0);
+    
   });
 });
 

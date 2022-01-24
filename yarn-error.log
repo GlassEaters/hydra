@@ -1,0 +1,68 @@
+Arguments: 
+  /Users/austbot/.nvm/versions/node/v16.11.0/bin/node /Users/austbot/.nvm/versions/node/v16.11.0/bin/yarn
+
+PATH: 
+  /Users/austbot/.cargo/bin:/Users/austbot/.nvm/versions/node/v16.11.0/bin:/Users/austbot/.local/share/solana/install/active_release/bin:/Users/austbot/.local/share/solana/install/active_release/bin:/Users/austbot/.pyenv/shims:/Users/austbot/.pyenv/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/Users/austbot/.cargo/bin:/Users/austbot/.nvm/versions/node/v16.11.0/bin:/Users/austbot/.local/share/solana/install/active_release/bin:/Users/austbot/.pyenv/shims:/Users/austbot/.pyenv/bin:/Users/austbot/flutter/bin:/Users/austbot/.rvm/bin:/Users/austbot/flutter/bin:/Users/austbot/.rvm/bin
+
+Yarn version: 
+  1.22.15
+
+Node version: 
+  16.11.0
+
+Platform: 
+  darwin x64
+
+Trace: 
+  Error: https://registry.yarnpkg.com/@metaplex-foundation%2fsolita: Not found
+      at Request.params.callback [as _callback] (/Users/austbot/.nvm/versions/node/v16.11.0/lib/node_modules/yarn/lib/cli.js:66140:18)
+      at Request.self.callback (/Users/austbot/.nvm/versions/node/v16.11.0/lib/node_modules/yarn/lib/cli.js:140885:22)
+      at Request.emit (node:events:390:28)
+      at Request.<anonymous> (/Users/austbot/.nvm/versions/node/v16.11.0/lib/node_modules/yarn/lib/cli.js:141857:10)
+      at Request.emit (node:events:390:28)
+      at IncomingMessage.<anonymous> (/Users/austbot/.nvm/versions/node/v16.11.0/lib/node_modules/yarn/lib/cli.js:141779:12)
+      at Object.onceWrapper (node:events:509:28)
+      at IncomingMessage.emit (node:events:402:35)
+      at endReadableNT (node:internal/streams/readable:1343:12)
+      at processTicksAndRejections (node:internal/process/task_queues:83:21)
+
+npm manifest: 
+  {
+    "name": "@glass-eaters/hydra",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": [
+      "packages/*"
+    ],
+    "type": "module",
+    "description": "Hydra",
+    "license": "MIT",
+    "author": "Hydra GlassEaters",
+    "devDependencies": {
+      "@project-serum/anchor": "^0.18.2",
+      "@types/chai": "^4.2.21",
+      "@types/chai-as-promised": "^7.1.4",
+      "@metaplex-foundation/solita": "0.0.0",
+      "@types/mocha": "^9.0.0",
+      "chai": "^4.3.4",
+      "chai-as-promised": "^7.1.1",
+      "concurrently": "^6.2.1",
+      "mocha": "^8.1.0",
+      "prettier": "2.3.1",
+      "ts-mocha": "^8.0.0",
+      "ts-node": "^10.2.1",
+      "typescript": "^4.4.3",
+      "@types/node": "^8.0.0"
+    },
+    "scripts": {
+      "watch": "npx lerna run --parallel watch",
+      "build": "npx lerna run build",
+      "test": "ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

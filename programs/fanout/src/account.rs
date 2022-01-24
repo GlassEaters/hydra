@@ -207,6 +207,9 @@
         )]
         pub membership_account: Account<'info, FanoutMembershipVoucher>,
         pub mint: Account<'info, Mint>,
+        pub metadata: Account<'info, >,
+        #[account(address = mpl_token_metadata::id())]
+        pub token_metadata_program: UncheckedAccount<'info>,
         pub system_program: Program<'info, System>,
         pub rent: Sysvar<'info, Rent>,
         pub token_program: Program<'info, Token>,

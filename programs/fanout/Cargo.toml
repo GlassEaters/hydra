@@ -18,3 +18,5 @@ default = []
 anchor-lang = "0.20.1"
 anchor-spl = "0.20.1"
 spl-token = "3.2.0"
+mpl-token-metadata = {git="https://github.com/metaplex-foundation/metaplex-program-library", package="mpl-token-metadata", branch="master"}
+ 
