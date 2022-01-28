@@ -7,15 +7,18 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
+  Commitment,
+  Connection,
   PublicKey,
+  RpcResponseAndContext,
+  SignatureResult,
   Signer,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { InstructionResult } from "@strata-foundation/spl-utils";
-import { ProgramError } from "./generated/errors";
+import { ProgramError } from "./systemErrors";
 import {
   createAddMemberNftInstruction,
   createInitForMintInstruction,
@@ -26,6 +29,15 @@ export * from "./generated/types";
 export * from "./generated/instructions";
 export * from "./generated/accounts";
 export * from "./generated/errors";
+import { MetadataProgram } from "@metaplex-foundation/mpl-token-metadata";
+import BN from "bn.js";
+
+export interface InstructionResult<A> {
+  instructions: TransactionInstruction[];
+  signers: Signer[];
+  output: A;
+}
+
 interface InitializeFanoutArgs {
   name: string;
   membershipModel: MembershipModel;
@@ -68,25 +80,37 @@ interface IDistributeArgs {
   /** The staking voucher to distribute funds to */
   voucher: PublicKey;
 }
+const MPL_TM_BUF = MetadataProgram.PUBKEY.toBuffer();
+const MPL_TM_PREFIX = "metadata";
+
+export interface Wallet {
+  signTransaction(tx: Transaction): Promise<Transaction>;
+  signAllTransactions(txs: Transaction[]): Promise<Transaction[]>;
+  publicKey: PublicKey;
+}
+
+function promiseLog(c: any): any {
+  console.info(c);
+  return c;
+}
 
 export class Fanout {
-  provider: Provider;
+  connection: Connection;
+  wallet: Wallet;
 
   static ID = new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
-  static async init(
-    provider: Provider,
-    FanoutProgramId: PublicKey = Fanout.ID
-  ): Promise<Fanout> {
-    return new Fanout(provider);
+  static async init(connection: Connection, wallet: Wallet): Promise<Fanout> {
+    return new Fanout(connection, wallet);
   }
 
-  constructor(provider: Provider) {
-    this.provider = provider;
+  constructor(connection: Connection, wallet: Wallet) {
+    this.connection = connection;
+    this.wallet = wallet;
   }
 
   async fetch<T>(key: PublicKey, type: any): Promise<T> {
-    let a = await this.provider.connection.getAccountInfo(key);
+    let a = await this.connection.getAccountInfo(key);
     return type.fromAccountInfo(a)[0] as T;
   }
 
@@ -94,16 +118,19 @@ export class Fanout {
     instructions: TransactionInstruction[],
     signers: Signer[],
     payer?: PublicKey
-  ): Promise<string> {
-    const tx = new Transaction();
-    tx.feePayer = payer || this.provider.wallet.publicKey;
+  ): Promise<RpcResponseAndContext<SignatureResult>> {
+    let tx = new Transaction();
+    tx.feePayer = payer || this.wallet.publicKey;
     tx.add(...instructions);
 
+    tx.recentBlockhash = (await this.connection.getRecentBlockhash()).blockhash;
+    tx = await this.wallet.signTransaction(tx);
     try {
-      return await this.provider.send(tx, signers, {
-        commitment: "confirmed",
-        preflightCommitment: "confirmed",
-      });
+       const sig = await this.connection
+        .sendRawTransaction(tx.serialize(), {
+          skipPreflight: false,
+        });
+      return await this.connection.confirmTransaction(sig, this.connection.commitment);
     } catch (e) {
       console.error(e);
       const wrappedE = ProgramError.parse(e);
@@ -182,7 +209,7 @@ export class Fanout {
     if (opts.membershipModel == MembershipModel.Token) {
       if (!opts.mint) {
         throw new Error(
-          "Missing mint account for token bases membership model"
+          "Missing mint account for token based membership model"
         );
       }
       membershipMint = opts.mint;
@@ -190,7 +217,7 @@ export class Fanout {
     instructions.push(
       createInitInstruction(
         {
-          authority: this.provider.wallet.publicKey,
+          authority: this.wallet.publicKey,
           holdingAccount: holdingAccount,
           fanout: fanoutConfig,
           membershipMint: membershipMint,
@@ -199,7 +226,7 @@ export class Fanout {
           args: {
             bumpSeed: fanoutConfigBumpSeed,
             nativeAccountBumpSeed: holdingAccountBumpSeed,
-            totalShares: new anchor.BN(opts.totalShares),
+            totalShares: opts.totalShares,
             name: opts.name,
           },
           model: opts.membershipModel,
@@ -240,13 +267,13 @@ export class Fanout {
         opts.mint,
         tokenAccountForMint,
         opts.fanoutNativeAccount,
-        this.provider.wallet.publicKey
+        this.wallet.publicKey
       )
     );
     instructions.push(
       createInitForMintInstruction(
         {
-          authority: this.provider.wallet.publicKey,
+          authority: this.wallet.publicKey,
           mintHoldingAccount: tokenAccountForMint,
           fanout: opts.fanout,
           mint: opts.mint,
@@ -275,19 +302,24 @@ export class Fanout {
       await Fanout.membershipAccount(opts.fanout, opts.mint);
     const instructions: TransactionInstruction[] = [];
     const signers: Signer[] = [];
+    const [metadata, metabump] = await PublicKey.findProgramAddress(
+      [Buffer.from(MPL_TM_PREFIX), MPL_TM_BUF, opts.mint.toBuffer()],
+      MetadataProgram.PUBKEY
+    );
     instructions.push(
       createAddMemberNftInstruction(
         {
-          authority: this.provider.wallet.publicKey,
+          authority: this.wallet.publicKey,
           account: opts.fanoutNativeAccount,
           fanout: opts.fanout,
           membershipAccount: fanoutMembership,
           mint: opts.mint,
+          metadata,
         },
         {
           args: {
             voucherBumpSeed: fanoutMembershipBump,
-            shares: new anchor.BN(opts.shares),
+            shares: opts.shares,
           },
         }
       )
@@ -310,7 +342,7 @@ export class Fanout {
     await this.sendInstructions(
       instructions,
       signers,
-      this.provider.wallet.publicKey
+      this.wallet.publicKey
     );
     return output;
   }
@@ -323,7 +355,7 @@ export class Fanout {
     await this.sendInstructions(
       instructions,
       signers,
-      this.provider.wallet.publicKey
+      this.wallet.publicKey
     );
     return output;
   }
@@ -336,7 +368,7 @@ export class Fanout {
     await this.sendInstructions(
       instructions,
       signers,
-      this.provider.wallet.publicKey
+      this.wallet.publicKey
     );
     return output;
   }

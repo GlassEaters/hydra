@@ -1,6 +1,6 @@
 import * as beet from "@metaplex-foundation/beet";
 export enum MembershipModel {
-  Wallet ,
+  Wallet,
   Token,
   NFT,
 }

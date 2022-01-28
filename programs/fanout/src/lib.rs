@@ -11,11 +11,9 @@ pub mod error;
 pub mod state;
 pub mod utils;
 
-use std::cell::RefMut;
-
 use anchor_spl::token::TokenAccount;
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
-
+#[program]
 pub mod fanout {
 
     use super::*;
@@ -96,12 +94,10 @@ pub mod fanout {
         Ok(())
     }
 
-    pub fn add_member_wallet(ctx: Context<AddMemberWithNFT>, args: AddMemberArgs) -> ProgramResult {
+    pub fn add_member_wallet(ctx: Context<AddMemberWallet>, args: AddMemberArgs) -> ProgramResult {
         let fanout = &mut ctx.accounts.fanout;
         let account = ctx.accounts.account.to_account_info();
         let membership_account = &mut ctx.accounts.membership_account;
-        let metadata = &mut ctx.accounts.metadata;
-
         update_fanout_for_add(fanout, args.shares)?;
         membership_account.membership_key = Some(account.key());
         membership_account.shares = Some(args.shares);
@@ -111,6 +107,7 @@ pub mod fanout {
     pub fn add_member_nft(ctx: Context<AddMemberWithNFT>, args: AddMemberArgs) -> ProgramResult {
         let fanout = &mut ctx.accounts.fanout;
         let membership_account = &mut ctx.accounts.membership_account;
+        let _metadata = &mut ctx.accounts.metadata;
         update_fanout_for_add(fanout, args.shares)?;
         membership_account.membership_key = Some(ctx.accounts.mint.to_account_info().key());
         membership_account.shares = Some(args.shares);
@@ -136,60 +133,6 @@ pub mod fanout {
         Ok(())
     }
 
-    pub fn stake_token_member(ctx: Context<StakeTokenMenber>) -> ProgramResult {
-        Ok(())
-    }
-
-    pub fn unstake_token_member(ctx: Context<AddMemberWithNFT>) -> ProgramResult {
-        Ok(())
-    }
-
-    // pub fn transfer_shares(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {
-
-    // }
-    // pub fn remove_member(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
-    // pub fn distribute_mint(ctx: Context) -> ProgramResult {
-    //     //TODO UPSERT membership mint account
-    //     Ok(())
-    // }
-
-    // pub fn distribute_for_wallet(ctx: Context<DistributeWalletMember>) -> ProgramResult {
-    //     let fanout = &mut ctx.accounts.fanout;
-    //     let membership_account = &mut ctx.accounts.membership_account;
-    //     let member = &mut ctx.accounts.membership_key;
-    //     let last_snapshot_amount = &mut fanout.last_snapshot_amount;
-    //     let current_snapshot = ctx.accounts.holding_account.lamports.borrow();
-    //     assert_membership_model(*fanout, MembershipModel::Wallet)?;
-    //     assert_shares_distrubuted(*fanout)?;
-    //     assert_membership_voucher_valid(*membership_account, MembershipModel::Wallet)?;
-    //     //todo spl tokens
-    //     let total_shares = fanout.total_shares as u64;
-    //     let diff: u64 = current_snapshot
-    //         .checked_sub(*last_snapshot_amount)
-    //         .or_arith_error()?;
-    //     fanout.total_inflow += diff;
-    //     fanout.last_snapshot_amount = **current_snapshot;
-    //     if diff < total_shares {
-    //         //TODO - cant distribute less than total shares
-    //         return Err(ErrorCode::InsufficientShares.into());
-    //     }
-    //     let shares = membership_account.shares.unwrap() as u64;
-    //     let dif_dist = shares
-    //         .checked_mul(diff)
-    //         .or_arith_error()?
-    //         .checked_div(total_shares)
-    //         .or_arith_error()?;
-
-    //     membership_account.total_inflow += dif_dist;
-
-    //     **ctx.accounts.holding_account.lamports.borrow_mut() =
-    //         **ctx.accounts.holding_account.lamports.borrow() - dif_dist;
-    //     **ctx.accounts.membership_key.lamports.borrow_mut() =
-    //         **ctx.accounts.membership_key.lamports.borrow() + dif_dist;
-
-    //     Ok(())
-    // }
-
     pub fn distribute_for_nft<'info>(
         ctx: Context<'_, '_, '_, 'info, DistributeNFTMember<'info>>,
         args: DistributeMemberArgs,
@@ -214,7 +157,7 @@ pub mod fanout {
 
             let mut mint_membership_account_data: &[u8] =
                 &ctx.accounts.fanout_mint_membership.try_borrow_data()?;
-            let fanout_mint_membership_account =
+            let _fanout_mint_membership_account =
                 FanoutMembershipMintVoucher::try_deserialize(&mut mint_membership_account_data)?;
             let mint = &ctx.accounts.mint;
             if fanout_mint.mint != mint.to_account_info().key() {
@@ -236,7 +179,7 @@ pub mod fanout {
             }
             let mut holding_account_data: &[u8] = &holding_account.try_borrow_data()?;
             let holding_account_ata = TokenAccount::try_deserialize(&mut holding_account_data)?;
-            let last_snapshot_amount = fanout_mint.last_snapshot_amount;
+            let _last_snapshot_amount = fanout_mint.last_snapshot_amount;
             let current_snapshot = holding_account_ata.amount;
             //todo spl tokens
             update_inflow(fanout, current_snapshot);
@@ -268,7 +211,7 @@ pub mod fanout {
             if holding_account_key != fanout.account {
                 return Err(ErrorCode::InvalidHoldingAccount.into());
             }
-            let last_snapshot_amount = &mut fanout.last_snapshot_amount;
+            let _last_snapshot_amount = &mut fanout.last_snapshot_amount;
             let current_snapshot = ctx.accounts.holding_account.lamports.borrow();
             //todo spl tokens
             update_inflow(fanout, **current_snapshot);
@@ -287,3 +230,57 @@ pub mod fanout {
 
     // pub fn close(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
 }
+
+// pub fn stake_token_member(ctx: Context<StakeTokenMenber>) -> ProgramResult {
+//     Ok(())
+// }
+
+// pub fn unstake_token_member(ctx: Context<AddMemberWithNFT>) -> ProgramResult {
+//     Ok(())
+// }
+
+// pub fn transfer_shares(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {
+
+// }
+// pub fn remove_member(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
+// pub fn distribute_mint(ctx: Context) -> ProgramResult {
+//     //TODO UPSERT membership mint account
+//     Ok(())
+// }
+
+// pub fn distribute_for_wallet(ctx: Context<DistributeWalletMember>) -> ProgramResult {
+//     let fanout = &mut ctx.accounts.fanout;
+//     let membership_account = &mut ctx.accounts.membership_account;
+//     let member = &mut ctx.accounts.membership_key;
+//     let last_snapshot_amount = &mut fanout.last_snapshot_amount;
+//     let current_snapshot = ctx.accounts.holding_account.lamports.borrow();
+//     assert_membership_model(*fanout, MembershipModel::Wallet)?;
+//     assert_shares_distrubuted(*fanout)?;
+//     assert_membership_voucher_valid(*membership_account, MembershipModel::Wallet)?;
+//     //todo spl tokens
+//     let total_shares = fanout.total_shares as u64;
+//     let diff: u64 = current_snapshot
+//         .checked_sub(*last_snapshot_amount)
+//         .or_arith_error()?;
+//     fanout.total_inflow += diff;
+//     fanout.last_snapshot_amount = **current_snapshot;
+//     if diff < total_shares {
+//         //TODO - cant distribute less than total shares
+//         return Err(ErrorCode::InsufficientShares.into());
+//     }
+//     let shares = membership_account.shares.unwrap() as u64;
+//     let dif_dist = shares
+//         .checked_mul(diff)
+//         .or_arith_error()?
+//         .checked_div(total_shares)
+//         .or_arith_error()?;
+
+//     membership_account.total_inflow += dif_dist;
+
+//     **ctx.accounts.holding_account.lamports.borrow_mut() =
+//         **ctx.accounts.holding_account.lamports.borrow() - dif_dist;
+//     **ctx.accounts.membership_key.lamports.borrow_mut() =
+//         **ctx.accounts.membership_key.lamports.borrow() + dif_dist;
+
+//     Ok(())
+// }

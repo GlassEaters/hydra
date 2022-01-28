@@ -1,5 +1,3 @@
-import { LangErrorMessage, SystemErrorMessage } from "./systemErrors";
-
 type ErrorWithCode = Error & { code: number };
 type MaybeErrorWithCode = ErrorWithCode | null | undefined;
 
@@ -10,7 +8,7 @@ const createErrorFromNameLookup: Map<string, () => ErrorWithCode> = new Map();
  * BadArtithmetic: 'Encountered an arithmetic error'
  */
 export class BadArtithmeticError extends Error {
-  readonly code: number = 0x12c;
+  readonly code: number = 0x1770;
   readonly name: string = "BadArtithmetic";
   constructor() {
     super("Encountered an arithmetic error");
@@ -20,7 +18,7 @@ export class BadArtithmeticError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x12c, () => new BadArtithmeticError());
+createErrorFromCodeLookup.set(0x1770, () => new BadArtithmeticError());
 createErrorFromNameLookup.set(
   "BadArtithmetic",
   () => new BadArtithmeticError()
@@ -30,7 +28,7 @@ createErrorFromNameLookup.set(
  * InvalidAuthority: 'Invalid authority'
  */
 export class InvalidAuthorityError extends Error {
-  readonly code: number = 0x12d;
+  readonly code: number = 0x1771;
   readonly name: string = "InvalidAuthority";
   constructor() {
     super("Invalid authority");
@@ -40,7 +38,7 @@ export class InvalidAuthorityError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x12d, () => new InvalidAuthorityError());
+createErrorFromCodeLookup.set(0x1771, () => new InvalidAuthorityError());
 createErrorFromNameLookup.set(
   "InvalidAuthority",
   () => new InvalidAuthorityError()
@@ -50,7 +48,7 @@ createErrorFromNameLookup.set(
  * InsufficientShares: 'Not Enough Available Shares'
  */
 export class InsufficientSharesError extends Error {
-  readonly code: number = 0x12e;
+  readonly code: number = 0x1772;
   readonly name: string = "InsufficientShares";
   constructor() {
     super("Not Enough Available Shares");
@@ -60,7 +58,7 @@ export class InsufficientSharesError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x12e, () => new InsufficientSharesError());
+createErrorFromCodeLookup.set(0x1772, () => new InsufficientSharesError());
 createErrorFromNameLookup.set(
   "InsufficientShares",
   () => new InsufficientSharesError()
@@ -70,7 +68,7 @@ createErrorFromNameLookup.set(
  * SharesArentAtMax: 'All available shares must be assigned to a member'
  */
 export class SharesArentAtMaxError extends Error {
-  readonly code: number = 0x12f;
+  readonly code: number = 0x1773;
   readonly name: string = "SharesArentAtMax";
   constructor() {
     super("All available shares must be assigned to a member");
@@ -80,7 +78,7 @@ export class SharesArentAtMaxError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x12f, () => new SharesArentAtMaxError());
+createErrorFromCodeLookup.set(0x1773, () => new SharesArentAtMaxError());
 createErrorFromNameLookup.set(
   "SharesArentAtMax",
   () => new SharesArentAtMaxError()
@@ -90,7 +88,7 @@ createErrorFromNameLookup.set(
  * NewMintAccountRequired: 'A New mint account must be provided'
  */
 export class NewMintAccountRequiredError extends Error {
-  readonly code: number = 0x130;
+  readonly code: number = 0x1774;
   readonly name: string = "NewMintAccountRequired";
   constructor() {
     super("A New mint account must be provided");
@@ -100,7 +98,7 @@ export class NewMintAccountRequiredError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x130, () => new NewMintAccountRequiredError());
+createErrorFromCodeLookup.set(0x1774, () => new NewMintAccountRequiredError());
 createErrorFromNameLookup.set(
   "NewMintAccountRequired",
   () => new NewMintAccountRequiredError()
@@ -110,7 +108,7 @@ createErrorFromNameLookup.set(
  * MintAccountRequired: 'A Token type Fanout requires a Membership Mint'
  */
 export class MintAccountRequiredError extends Error {
-  readonly code: number = 0x131;
+  readonly code: number = 0x1775;
   readonly name: string = "MintAccountRequired";
   constructor() {
     super("A Token type Fanout requires a Membership Mint");
@@ -120,7 +118,7 @@ export class MintAccountRequiredError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x131, () => new MintAccountRequiredError());
+createErrorFromCodeLookup.set(0x1775, () => new MintAccountRequiredError());
 createErrorFromNameLookup.set(
   "MintAccountRequired",
   () => new MintAccountRequiredError()
@@ -130,7 +128,7 @@ createErrorFromNameLookup.set(
  * InvalidMembershipModel: 'Invalid Membership Model'
  */
 export class InvalidMembershipModelError extends Error {
-  readonly code: number = 0x132;
+  readonly code: number = 0x1776;
   readonly name: string = "InvalidMembershipModel";
   constructor() {
     super("Invalid Membership Model");
@@ -140,7 +138,7 @@ export class InvalidMembershipModelError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x132, () => new InvalidMembershipModelError());
+createErrorFromCodeLookup.set(0x1776, () => new InvalidMembershipModelError());
 createErrorFromNameLookup.set(
   "InvalidMembershipModel",
   () => new InvalidMembershipModelError()
@@ -150,7 +148,7 @@ createErrorFromNameLookup.set(
  * InvalidMembershipVoucher: 'Invalid Membership Voucher'
  */
 export class InvalidMembershipVoucherError extends Error {
-  readonly code: number = 0x133;
+  readonly code: number = 0x1777;
   readonly name: string = "InvalidMembershipVoucher";
   constructor() {
     super("Invalid Membership Voucher");
@@ -160,7 +158,10 @@ export class InvalidMembershipVoucherError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x133, () => new InvalidMembershipVoucherError());
+createErrorFromCodeLookup.set(
+  0x1777,
+  () => new InvalidMembershipVoucherError()
+);
 createErrorFromNameLookup.set(
   "InvalidMembershipVoucher",
   () => new InvalidMembershipVoucherError()
@@ -170,7 +171,7 @@ createErrorFromNameLookup.set(
  * MintDoesNotMatch: 'Invalid Mint for the config'
  */
 export class MintDoesNotMatchError extends Error {
-  readonly code: number = 0x134;
+  readonly code: number = 0x1778;
   readonly name: string = "MintDoesNotMatch";
   constructor() {
     super("Invalid Mint for the config");
@@ -180,7 +181,7 @@ export class MintDoesNotMatchError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x134, () => new MintDoesNotMatchError());
+createErrorFromCodeLookup.set(0x1778, () => new MintDoesNotMatchError());
 createErrorFromNameLookup.set(
   "MintDoesNotMatch",
   () => new MintDoesNotMatchError()
@@ -190,7 +191,7 @@ createErrorFromNameLookup.set(
  * InvalidHoldingAccount: 'Holding account does not match the config'
  */
 export class InvalidHoldingAccountError extends Error {
-  readonly code: number = 0x135;
+  readonly code: number = 0x1779;
   readonly name: string = "InvalidHoldingAccount";
   constructor() {
     super("Holding account does not match the config");
@@ -200,7 +201,7 @@ export class InvalidHoldingAccountError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x135, () => new InvalidHoldingAccountError());
+createErrorFromCodeLookup.set(0x1779, () => new InvalidHoldingAccountError());
 createErrorFromNameLookup.set(
   "InvalidHoldingAccount",
   () => new InvalidHoldingAccountError()
@@ -210,7 +211,7 @@ createErrorFromNameLookup.set(
  * HoldingAccountMustBeAnATA: 'A Mint holding account must be an ata for the mint owned by the config'
  */
 export class HoldingAccountMustBeAnATAError extends Error {
-  readonly code: number = 0x136;
+  readonly code: number = 0x177a;
   readonly name: string = "HoldingAccountMustBeAnATA";
   constructor() {
     super(
@@ -223,7 +224,7 @@ export class HoldingAccountMustBeAnATAError extends Error {
 }
 
 createErrorFromCodeLookup.set(
-  0x136,
+  0x177a,
   () => new HoldingAccountMustBeAnATAError()
 );
 createErrorFromNameLookup.set(
@@ -235,7 +236,7 @@ createErrorFromNameLookup.set(
  * DerivedKeyInvalid: ''
  */
 export class DerivedKeyInvalidError extends Error {
-  readonly code: number = 0x137;
+  readonly code: number = 0x177b;
   readonly name: string = "DerivedKeyInvalid";
   constructor() {
     super("");
@@ -245,7 +246,7 @@ export class DerivedKeyInvalidError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x137, () => new DerivedKeyInvalidError());
+createErrorFromCodeLookup.set(0x177b, () => new DerivedKeyInvalidError());
 createErrorFromNameLookup.set(
   "DerivedKeyInvalid",
   () => new DerivedKeyInvalidError()
@@ -255,7 +256,7 @@ createErrorFromNameLookup.set(
  * IncorrectOwner: ''
  */
 export class IncorrectOwnerError extends Error {
-  readonly code: number = 0x138;
+  readonly code: number = 0x177c;
   readonly name: string = "IncorrectOwner";
   constructor() {
     super("");
@@ -265,7 +266,7 @@ export class IncorrectOwnerError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x138, () => new IncorrectOwnerError());
+createErrorFromCodeLookup.set(0x177c, () => new IncorrectOwnerError());
 createErrorFromNameLookup.set(
   "IncorrectOwner",
   () => new IncorrectOwnerError()
@@ -275,7 +276,7 @@ createErrorFromNameLookup.set(
  * WalletDoesNotOwnMembershipToken: 'Wallet Does not Own Membership Token'
  */
 export class WalletDoesNotOwnMembershipTokenError extends Error {
-  readonly code: number = 0x139;
+  readonly code: number = 0x177d;
   readonly name: string = "WalletDoesNotOwnMembershipToken";
   constructor() {
     super("Wallet Does not Own Membership Token");
@@ -286,7 +287,7 @@ export class WalletDoesNotOwnMembershipTokenError extends Error {
 }
 
 createErrorFromCodeLookup.set(
-  0x139,
+  0x177d,
   () => new WalletDoesNotOwnMembershipTokenError()
 );
 createErrorFromNameLookup.set(
@@ -308,48 +309,4 @@ export function errorFromCode(code: number): MaybeErrorWithCode {
 export function errorFromName(name: string): MaybeErrorWithCode {
   const createError = createErrorFromNameLookup.get(name);
   return createError != null ? createError() : null;
-}
-
-// An error from a user defined program.
-export class ProgramError {
-  constructor(readonly code: number, readonly msg: string, ...params: any[]) {}
-
-  public static parse(err: any): ProgramError | null {
-    let errorCode: number | null = null;
-    if (err.InstructionError) {
-      if (err.InstructionError[1]?.Custom) {
-        errorCode = err.InstructionError[1].Custom;
-      }
-    }
-
-    if (errorCode == null) {
-      // TODO: don't rely on the error string. web3.js should preserve the error
-      //       code information instead of giving us an untyped string.
-      let components = err.toString().split("custom program error: ");
-      if (errorCode == null && components.length !== 2) {
-        return null;
-      }
-
-      try {
-        errorCode = parseInt(components[1]);
-      } catch (parseErr) {
-        return null;
-      }
-    }
-
-    let errorMsg =
-      errorFromCode(errorCode)?.message ||
-      LangErrorMessage.get(errorCode) ||
-      SystemErrorMessage.get(errorCode);
-    if (errorMsg !== undefined) {
-      return new ProgramError(errorCode, errorMsg, errorCode + ": " + errorMsg);
-    }
-
-    // Unable to parse the error. Just return the untranslated error.
-    return null;
-  }
-
-  public toString(): string {
-    return this.msg;
-  }
 }

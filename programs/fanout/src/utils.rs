@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use crate::{
     error::ErrorCode,
-    state::{Fanout, FanoutMembershipMintVoucher, FanoutMembershipVoucher, MembershipModel},
+    state::{Fanout, FanoutMembershipVoucher, MembershipModel},
 };
 
 pub trait OrArithError<T> {

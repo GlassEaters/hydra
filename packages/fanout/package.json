@@ -24,10 +24,11 @@
         "precommit": "yarn format"
     },
     "dependencies": {
-        "@project-serum/common": "^0.0.1-beta.3",
+        "@metaplex-foundation/beet": ">0.0.5",
+        "@metaplex-foundation/mpl-token-metadata": "1.1.0",
+        "@project-serum/common": "0.0.1-beta.3",
         "@solana/spl-token": "^0.1.8",
-        "@solana/web3.js": "^1.29.2",
-        "@strata-foundation/spl-utils": "^0.4.0",
+        "@solana/web3.js": "^1.31.0",
         "bn.js": "^5.2.0"
     },
     "devDependencies": {

@@ -4,12 +4,14 @@ version = "0.1.0"
 description = "Created with Anchor"
 edition = "2018"
 
+
 [lib]
 crate-type = ["cdylib", "lib"]
 name = "fanout"
 
 [features]
 no-entrypoint = []
+test-bpf = []
 no-idl = []
 cpi = ["no-entrypoint"]
 default = []
@@ -17,6 +19,5 @@ default = []
 [dependencies]
 anchor-lang = "0.20.1"
 anchor-spl = "0.20.1"
-spl-token = "3.2.0"
-mpl-token-metadata = {git="https://github.com/metaplex-foundation/metaplex-program-library", package="mpl-token-metadata", branch="master"}
- 
+spl-token = {version="3.3.0", features = [ "no-entrypoint" ]}
+mpl-token-metadata = {version="1.1.0", features = [ "no-entrypoint" ]}

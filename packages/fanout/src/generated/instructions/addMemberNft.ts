@@ -23,6 +23,7 @@ export type AddMemberNftInstructionAccounts = {
   fanout: web3.PublicKey;
   membershipAccount: web3.PublicKey;
   mint: web3.PublicKey;
+  metadata: web3.PublicKey;
 };
 
 const addMemberNftInstructionDiscriminator = [
@@ -39,7 +40,8 @@ export function createAddMemberNftInstruction(
   accounts: AddMemberNftInstructionAccounts,
   args: AddMemberNftInstructionArgs
 ) {
-  const { authority, account, fanout, membershipAccount, mint } = accounts;
+  const { authority, account, fanout, membershipAccount, mint, metadata } =
+    accounts;
 
   const [data] = addMemberNftStruct.serialize({
     instructionDiscriminator: addMemberNftInstructionDiscriminator,
@@ -68,6 +70,11 @@ export function createAddMemberNftInstruction(
     },
     {
       pubkey: mint,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: metadata,
       isWritable: false,
       isSigner: false,
     },

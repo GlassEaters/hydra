@@ -1,6 +1,5 @@
     use anchor_lang::{
         prelude::*,
-        solana_program::program::{invoke, invoke_signed},
     };
     use anchor_spl::{
         token::{Mint, Token, TokenAccount},
@@ -207,9 +206,8 @@
         )]
         pub membership_account: Account<'info, FanoutMembershipVoucher>,
         pub mint: Account<'info, Mint>,
-        pub metadata: Account<'info, >,
-        #[account(address = mpl_token_metadata::id())]
-        pub token_metadata_program: UncheckedAccount<'info>,
+        
+        pub metadata: UncheckedAccount<'info>,
         pub system_program: Program<'info, System>,
         pub rent: Sysvar<'info, Rent>,
         pub token_program: Program<'info, Token>,
