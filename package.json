@@ -10,7 +10,7 @@
   "author": "Hydra GlassEaters",
   "devDependencies": {
     "@metaplex-foundation/amman": "^0.0.9",
-    "@metaplex-foundation/solita": "0.0.2",
+    "@metaplex-foundation/solita": "0.1.0",
     "@project-serum/anchor": "^0.20.1",
     "@types/chai": "^4.2.21",
     "@types/chai-as-promised": "^7.1.4",
@@ -34,8 +34,5 @@
     "test": "ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""
   },
   "private": true,
-  "packageManager": "yarn@3.2.0-rc.12",
-  "resolutions": {
-    "@metaplex-foundation/beet": "portal:../beet/beet"
-  }
+  "packageManager": "yarn@3.2.0-rc.12"
 }
