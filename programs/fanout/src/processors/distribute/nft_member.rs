@@ -1,11 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
-
-
 use crate::error::ErrorCode;
 use crate::state::{
     Fanout, FanoutMembershipMintVoucher, FanoutMembershipVoucher, FanoutMint, MembershipModel,
+    HOLDING_ACCOUNT_SIZE,
 };
 use crate::utils::logic::calculation::*;
 use crate::utils::validation::*;
@@ -27,13 +26,12 @@ pub struct DistributeNftMember<'info> {
     )]
     pub membership_mint_token_account: Account<'info, TokenAccount>,
     pub membership_key: Account<'info, Mint>,
-    // #[account(
-    // mut,
-    // seeds = [b"fanout-membership", fanout.key().as_ref(), membership_key.key().as_ref()],
-    // constraint = membership_voucher.membership_key == Some(membership_key.key()),
-    // bump = membership_voucher.bump_seed,
-    // )]
-    #[account(mut)]
+    #[account(
+    mut,
+    seeds = [b"fanout-membership", fanout.key().as_ref(), membership_key.key().as_ref()],
+    constraint = membership_voucher.membership_key == Some(membership_key.key()),
+    bump = membership_voucher.bump_seed,
+    )]
     pub membership_voucher: Box<Account<'info, FanoutMembershipVoucher>>,
     #[account(
     mut,
@@ -66,7 +64,6 @@ pub fn distribute_for_nft(
     let holding_account_key = holding_account.to_account_info().key();
     let membership_mint_token_account = &ctx.accounts.membership_mint_token_account;
     let membership_key = &ctx.accounts.membership_key;
-    msg!("memberhsip {:?}", membership_voucher.key());
     assert_membership_model(fanout, MembershipModel::NFT)?;
     assert_shares_distributed(fanout)?;
     assert_membership_voucher_valid(membership_voucher, MembershipModel::NFT)?;
@@ -75,16 +72,7 @@ pub fn distribute_for_nft(
         membership_mint_token_account,
         &membership_key.to_account_info(),
     )?;
-    assert_derivation(
-        &crate::id(),
-        &membership_voucher.to_account_info(),
-        &[
-            b"fanout-membership",
-            fanout.key().as_ref(),
-            membership_key.key().as_ref(),
-        ],
-        None,
-    )?;
+
     if distribute_for_mint {
         assert_owned_by(&ctx.accounts.fanout_for_mint.to_account_info(), &crate::ID)?;
         assert_owned_by(
@@ -174,7 +162,14 @@ pub fn distribute_for_nft(
             return Err(ErrorCode::InvalidHoldingAccount.into());
         }
         let current_snapshot = ctx.accounts.holding_account.lamports();
-        update_inflow(fanout, current_snapshot)?;
+        let current_snapshot_less_min =
+            current_lamports(&ctx.accounts.rent, HOLDING_ACCOUNT_SIZE, current_snapshot)?;
+
+        let minimum = fanout.total_members as u64;
+        if current_snapshot.le(&minimum) {
+            return Err(ErrorCode::InsufficientBalanceToDistribute.into());
+        }
+        update_inflow(fanout, current_snapshot_less_min)?;
         let inflow_diff =
             calculate_inflow_change(fanout.total_inflow, membership_voucher.last_inflow)?;
         let shares = membership_voucher.shares.unwrap() as u64;
@@ -187,7 +182,10 @@ pub fn distribute_for_nft(
             .lamports()
             .checked_add(dif_dist)
             .ok_or(ErrorCode::NumericalOverflow)?;
+        membership_voucher.total_inflow = membership_voucher
+            .total_inflow
+            .checked_add(dif_dist)
+            .ok_or(ErrorCode::NumericalOverflow)?;
     }
-    membership_voucher.last_inflow = fanout.total_inflow;
     Ok(())
 }

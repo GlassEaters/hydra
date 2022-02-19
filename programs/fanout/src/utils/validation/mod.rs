@@ -3,7 +3,6 @@ use crate::state::{Fanout, FanoutMembershipVoucher, MembershipModel};
 use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 
-
 pub fn assert_derivation(
     program_id: &Pubkey,
     account: &AccountInfo,
@@ -11,7 +10,6 @@ pub fn assert_derivation(
     error: Option<ProgramError>,
 ) -> Result<u8, ProgramError> {
     let (key, bump) = Pubkey::find_program_address(&path, program_id);
-    msg!("{:?} memberhsip", key);
     if key != *account.key {
         if error.is_some() {
             return Err(error.unwrap());

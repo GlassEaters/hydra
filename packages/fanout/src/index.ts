@@ -396,7 +396,6 @@ export class FanoutClient {
     );
     const [membershipVoucher, membershipVoucherBump] =
       await FanoutClient.membershipVoucher(opts.fanout, opts.membershipKey);
-    console.log("m", membershipVoucher.toBase58());
     instructions.push(
       createProcessDistributeNftInstruction(
         {

@@ -68,4 +68,6 @@ pub enum ErrorCode {
     InvalidMetadata,
 
     NumericalOverflow,
+
+    InsufficientBalanceToDistribute,
 }

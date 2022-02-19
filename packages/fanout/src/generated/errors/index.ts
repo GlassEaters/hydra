@@ -391,6 +391,32 @@ createErrorFromNameLookup.set(
 );
 
 /**
+ * InsufficientBalanceToDistribute: ''
+ *
+ * @category Errors
+ * @category generated
+ */
+export class InsufficientBalanceToDistributeError extends Error {
+  readonly code: number = 0x1780;
+  readonly name: string = "InsufficientBalanceToDistribute";
+  constructor() {
+    super("");
+    if (typeof Error.captureStackTrace === "function") {
+      Error.captureStackTrace(this, InsufficientBalanceToDistributeError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(
+  0x1780,
+  () => new InsufficientBalanceToDistributeError()
+);
+createErrorFromNameLookup.set(
+  "InsufficientBalanceToDistribute",
+  () => new InsufficientBalanceToDistributeError()
+);
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

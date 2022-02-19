@@ -1,5 +1,8 @@
 use anchor_lang::prelude::*;
 use std::default::Default;
+
+pub const HOLDING_ACCOUNT_SIZE: usize = 1;
+
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Copy, Debug)]
 pub enum MembershipModel {
     Wallet = 0,

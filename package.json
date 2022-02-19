@@ -26,7 +26,7 @@
     "typescript": "^4.4.3"
   },
   "scripts": {
-    "amman:start": "DEBUG=\"*\" amman validator .ammanrc.cjs",
+    "amman:start": "amman validator .ammanrc.cjs",
     "amman:stop": "pkill solana-test-validator",
     "api:gen": "node scripts/api-gen-ts.cjs && prettier --write ./packages/**/*.ts",
     "watch": "npx lerna run --parallel watch",

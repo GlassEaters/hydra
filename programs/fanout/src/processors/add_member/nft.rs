@@ -43,5 +43,6 @@ pub fn add_member_nft(ctx: Context<AddMemberWithNFT>, args: AddMemberArgs) -> Pr
     update_fanout_for_add(fanout, args.shares)?;
     membership_account.membership_key = Some(ctx.accounts.mint.to_account_info().key());
     membership_account.shares = Some(args.shares);
+    membership_account.bump_seed = args.voucher_bump_seed;
     Ok(())
 }

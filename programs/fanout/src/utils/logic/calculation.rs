@@ -33,7 +33,7 @@ pub fn update_fanout_for_add(
         .or_arith_error()?;
     fanout.total_members = fanout.total_members.checked_add(1).or_arith_error()?;
     fanout.total_available_shares = less_shares;
-    if less_shares >= 0 {
+    if less_shares.ge(&0) {
         Ok(())
     } else {
         Err(ErrorCode::InsufficientShares.into())
@@ -75,4 +75,15 @@ pub fn update_snapshot(
         .checked_sub(distribution_amount)
         .or_arith_error()?;
     Ok(())
+}
+
+pub fn current_lamports(
+    rent: &Sysvar<Rent>,
+    size: usize,
+    holding_account_lamports: u64,
+) -> Result<u64, ProgramError> {
+    let subtract_size = rent.minimum_balance(size).max(1);
+    holding_account_lamports
+        .checked_sub(subtract_size)
+        .ok_or(ErrorCode::NumericalOverflow.into())
 }
