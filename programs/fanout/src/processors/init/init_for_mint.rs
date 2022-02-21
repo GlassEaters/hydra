@@ -1,5 +1,5 @@
 use crate::state::{Fanout, FanoutMint};
-use crate::utils::validation::assert_derivation;
+use crate::utils::validation::{assert_derivation, assert_fanout_mint_ata};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, TokenAccount};
 
@@ -46,15 +46,10 @@ pub fn init_for_mint(ctx: Context<InitializeFanoutForMint>, bump_seed: u8) -> Pr
     fanout_mint.last_snapshot_amount = mint_holding_account.amount;
     fanout_mint.bump_seed = bump_seed;
     fanout_mint.mint = ctx.accounts.mint.to_account_info().key();
-    assert_derivation(
-        &anchor_spl::associated_token::ID,
+    assert_fanout_mint_ata(
         &mint_holding_account.to_account_info(),
-        &[
-            fanout.key().as_ref(),
-            anchor_spl::token::ID.as_ref(),
-            ctx.accounts.mint.to_account_info().key().as_ref(),
-        ],
-        None,
+        &fanout.key(),
+        &ctx.accounts.mint.key(),
     )?;
     fanout_mint.token_account = mint_holding_account.to_account_info().key();
     Ok(())

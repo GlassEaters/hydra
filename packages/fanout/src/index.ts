@@ -64,7 +64,6 @@ interface DistributeNftMemberArgs {
   member: PublicKey;
   membershipKey: PublicKey;
   fanout: PublicKey;
-  fanoutForMint?: PublicKey;
   fanoutMint?: PublicKey;
   payer: PublicKey;
 }
@@ -365,16 +364,19 @@ export class FanoutClient {
   > {
     const instructions: TransactionInstruction[] = [];
     const signers: Signer[] = [];
-    let fanoutForMint = SystemProgram.programId;
-    let fanoutMint = SystemProgram.programId;
-    let fanoutMintMembership = SystemProgram.programId;
-    let fanoutMintMemberTokenAccount = SystemProgram.programId;
-    let fanoutForMintMembershipVoucherBumpSeed;
-    const [nativeAccount, _nativeAccountBump] =
-      await FanoutClient.nativeAccount(opts.fanout);
-    let holdingAccount = nativeAccount;
-    fanoutMint = opts.fanoutMint || NATIVE_MINT;
-    fanoutMintMemberTokenAccount = await Token.getAssociatedTokenAddress(
+    let fanoutMint = opts.fanoutMint || NATIVE_MINT;
+    let holdingAccount;
+    let [fanoutForMint, fanoutForMintBump] =
+      await FanoutClient.fanoutForMintKey(opts.fanout, fanoutMint);
+    let [
+      fanoutForMintMembershipVoucher,
+      fanoutForMintMembershipVoucherBumpSeed,
+    ] = await FanoutClient.mintMembershipVoucher(
+      fanoutForMint,
+      opts.membershipKey,
+      fanoutMint
+    );
+    let fanoutMintMemberTokenAccount = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       fanoutMint,
@@ -385,8 +387,31 @@ export class FanoutClient {
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         fanoutMint,
-        nativeAccount
+        opts.fanout,
+        true
       );
+      try {
+        console.log(
+          await this.connection.getTokenAccountBalance(
+            fanoutMintMemberTokenAccount
+          )
+        );
+      } catch (e) {
+        instructions.push(
+          Token.createAssociatedTokenAccountInstruction(
+            ASSOCIATED_TOKEN_PROGRAM_ID,
+            TOKEN_PROGRAM_ID,
+            fanoutMint,
+            fanoutMintMemberTokenAccount,
+            opts.member,
+            opts.payer
+          )
+        );
+      }
+    } else {
+      const [nativeAccount, _nativeAccountBump] =
+        await FanoutClient.nativeAccount(opts.fanout);
+      holdingAccount = nativeAccount;
     }
     const membershipKeyTokenAccount = await Token.getAssociatedTokenAddress(
       ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -403,7 +428,7 @@ export class FanoutClient {
           fanoutMint: fanoutMint,
           membershipKey: opts.membershipKey,
           membershipVoucher: membershipVoucher,
-          fanoutForMintMembershipVoucher: fanoutMintMembership,
+          fanoutForMintMembershipVoucher,
           holdingAccount,
           membershipMintTokenAccount: membershipKeyTokenAccount,
           fanoutMintMemberTokenAccount,
@@ -422,7 +447,7 @@ export class FanoutClient {
     return {
       output: {
         membershipVoucher,
-        fanoutForMintMembershipVoucher: fanoutMintMembership,
+        fanoutForMintMembershipVoucher,
         holdingAccount,
       },
       instructions,

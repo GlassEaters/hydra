@@ -70,4 +70,6 @@ pub enum ErrorCode {
     NumericalOverflow,
 
     InsufficientBalanceToDistribute,
+
+    InvalidFanoutForMint,
 }

@@ -417,6 +417,29 @@ createErrorFromNameLookup.set(
 );
 
 /**
+ * InvalidFanoutForMint: ''
+ *
+ * @category Errors
+ * @category generated
+ */
+export class InvalidFanoutForMintError extends Error {
+  readonly code: number = 0x1781;
+  readonly name: string = "InvalidFanoutForMint";
+  constructor() {
+    super("");
+    if (typeof Error.captureStackTrace === "function") {
+      Error.captureStackTrace(this, InvalidFanoutForMintError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x1781, () => new InvalidFanoutForMintError());
+createErrorFromNameLookup.set(
+  "InvalidFanoutForMint",
+  () => new InvalidFanoutForMintError()
+);
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

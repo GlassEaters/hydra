@@ -1,11 +1,11 @@
 use super::arg::AddMemberArgs;
 use crate::error::ErrorCode;
+use crate::state::FANOUT_MEMBERSHIP_VOUCHER_SIZE;
 use crate::state::{Fanout, FanoutMembershipVoucher};
 use crate::utils::logic::calculation::*;
 use crate::utils::validation::assert_owned_by;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token};
-
 #[derive(Accounts)]
 #[instruction(args: AddMemberArgs)]
 pub struct AddMemberWithNFT<'info> {
@@ -19,7 +19,7 @@ pub struct AddMemberWithNFT<'info> {
     pub fanout: Account<'info, Fanout>,
     #[account(
     init,
-    space = 78,
+    space = FANOUT_MEMBERSHIP_VOUCHER_SIZE,
     seeds = [b"fanout-membership", fanout.key().as_ref(), mint.key().as_ref()],
     bump = args.voucher_bump_seed,
     payer = authority

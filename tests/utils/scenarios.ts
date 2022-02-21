@@ -15,6 +15,7 @@ type NftFanoutMember = {
     mint: PublicKey;
     wallet: Keypair;
 }
+
 export async function builtNFTFanout(fanoutSdk: FanoutClient, shares: number, numberMembers: number): Promise<BuiltFanout> {
     const name = `Test${Date.now()}`;
     const init = await fanoutSdk.initializeFanout({

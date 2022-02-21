@@ -1,5 +1,5 @@
 use crate::error::{ErrorCode, OrArithError};
-use crate::state::{Fanout, FanoutMembershipVoucher};
+use crate::state::{Fanout, FanoutMembershipMintVoucher, FanoutMembershipVoucher, FanoutMint};
 use anchor_lang::prelude::*;
 
 pub fn calculate_inflow_change(total_inflow: u64, last_inflow: u64) -> Result<u64, ProgramError> {
@@ -40,10 +40,35 @@ pub fn update_fanout_for_add(
     }
 }
 
-pub fn update_inflow(
+pub fn update_inflow_for_mint(
     fanout: &mut Account<Fanout>,
+    fanout_for_mint: &mut FanoutMint,
     current_snapshot: u64,
 ) -> Result<(), ProgramError> {
+    let diff = current_snapshot
+        .checked_sub(fanout.last_snapshot_amount)
+        .or_arith_error()?;
+    fanout_for_mint.total_inflow = fanout_for_mint
+        .total_inflow
+        .checked_add(diff)
+        .or_arith_error()?;
+    if fanout.total_staked_shares.is_some() && fanout.total_staked_shares.unwrap() > 0 {
+        let tss = fanout.total_staked_shares.unwrap();
+        let shares_diff = (fanout.total_shares as u64)
+            .checked_sub(tss)
+            .or_arith_error()?;
+        let unstaked_correction = diff
+            .checked_mul(shares_diff)
+            .or_arith_error()?
+            .checked_div(tss)
+            .or_arith_error()?;
+        fanout_for_mint.total_inflow += unstaked_correction;
+    }
+    fanout_for_mint.last_snapshot_amount = current_snapshot;
+    Ok(())
+}
+
+pub fn update_inflow(fanout: &mut Fanout, current_snapshot: u64) -> Result<(), ProgramError> {
     let diff = current_snapshot
         .checked_sub(fanout.last_snapshot_amount)
         .or_arith_error()?;
@@ -71,6 +96,19 @@ pub fn update_snapshot(
 ) -> Result<(), ProgramError> {
     fanout_voucher.last_inflow = fanout.total_inflow;
     fanout.last_snapshot_amount = fanout
+        .last_snapshot_amount
+        .checked_sub(distribution_amount)
+        .or_arith_error()?;
+    Ok(())
+}
+
+pub fn update_snapshot_for_mint(
+    fanout_mint: &mut FanoutMint,
+    fanout_mint_voucher: &mut FanoutMembershipMintVoucher,
+    distribution_amount: u64,
+) -> Result<(), ProgramError> {
+    fanout_mint_voucher.last_inflow = fanout_mint.total_inflow;
+    fanout_mint.last_snapshot_amount = fanout_mint
         .last_snapshot_amount
         .checked_sub(distribution_amount)
         .or_arith_error()?;
