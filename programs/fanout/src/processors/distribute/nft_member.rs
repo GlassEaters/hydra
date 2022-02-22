@@ -120,7 +120,7 @@ pub fn distribute_for_nft(
             &ctx.accounts.fanout_mint.key(),
         )?;
         let mint_voucher_empty = fanout_for_mint_membership_voucher_info.data_is_empty();
-        let fanout_for_mint_membership_voucher: &mut FanoutMembershipMintVoucher =
+        let mut fanout_for_mint_membership_voucher: &mut FanoutMembershipMintVoucher =
             &mut if mint_voucher_empty {
                 create_or_allocate_account_raw(
                     crate::ID,
@@ -156,16 +156,18 @@ pub fn distribute_for_nft(
                 }
                 membership
             };
-msg!("dkjhkfj");
-        let mut holding_account_data: &[u8] = &holding_account.try_borrow_data()?;
 
+        let holding_account_ref = holding_account.try_borrow_data()?;
+        let mut holding_account_data: &[u8] = &holding_account_ref;
         let holding_account_ata = TokenAccount::try_deserialize(&mut holding_account_data)?;
         if holding_account_ata.owner != fanout.key() {
             msg!("Ata has wrong owner");
             return Err(ProgramError::IllegalOwner);
         }
-        let mut fanout_mint_data: &[u8] = &ctx.accounts.fanout_for_mint.try_borrow_data()?;
-        let fanout_mint: &mut FanoutMint = &mut FanoutMint::try_deserialize(&mut fanout_mint_data)?;
+
+        let mut fanout_mint_data: &mut [u8] = &mut ctx.accounts.fanout_for_mint.try_borrow_mut_data()?;
+
+        let mut fanout_mint: &mut FanoutMint = &mut FanoutMint::try_deserialize(&mut fanout_mint_data.as_ref())?;
         if fanout_mint_bump != fanout_mint.bump_seed {
             msg!("InvalidFanoutForMint");
             return Err(ErrorCode::InvalidFanoutForMint.into());
@@ -177,8 +179,10 @@ msg!("dkjhkfj");
         if fanout_mint.mint != mint.to_account_info().key() {
             return Err(ErrorCode::MintDoesNotMatch.into());
         }
+        let fanout_mint_member_token_account_ref =
+            fanout_mint_member_token_account_info.try_borrow_data()?;
         let mut fanout_mint_member_token_account_data: &[u8] =
-            &fanout_mint_member_token_account_info.try_borrow_data()?;
+            &fanout_mint_member_token_account_ref;
         let fanout_mint_member_token_account_object =
             TokenAccount::try_deserialize(&mut fanout_mint_member_token_account_data)?;
         if &fanout_mint_member_token_account_object.owner != &member.key() {
@@ -186,6 +190,12 @@ msg!("dkjhkfj");
             return Err(ErrorCode::IncorrectOwner.into());
         }
         let current_snapshot = holding_account_ata.amount;
+        msg!("{} - {} - {} - {}", fanout_mint.total_inflow,
+            fanout_for_mint_membership_voucher.last_inflow,
+        current_snapshot,
+            fanout_mint.total_inflow - fanout_for_mint_membership_voucher.last_inflow
+        );
+
         update_inflow_for_mint(fanout, fanout_mint, current_snapshot)?;
         let inflow_diff = calculate_inflow_change(
             fanout_mint.total_inflow,
@@ -195,23 +205,33 @@ msg!("dkjhkfj");
         let dif_dist = calculate_dist_amount(shares, inflow_diff, total_shares)?;
         update_snapshot_for_mint(fanout_mint, fanout_for_mint_membership_voucher, dif_dist)?;
 
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        let accounts = anchor_spl::token::Transfer {
-            from: holding_account.to_account_info(),
-            to: ctx
-                .accounts
-                .fanout_mint_member_token_account
-                .to_account_info(),
-            authority: fanout_info,
-        };
-        let cpi_ctx = CpiContext::new(cpi_program, accounts);
+        let mut fanout_for_mint_membership_voucher_data: &mut [u8] = &mut fanout_for_mint_membership_voucher_unchecked.try_borrow_mut_data()?;
+        msg!("{} - {} - {} - {}", fanout_mint.total_inflow,
+            fanout_for_mint_membership_voucher.last_inflow,
+        current_snapshot,
+            fanout_mint.total_inflow - fanout_for_mint_membership_voucher.last_inflow
+        );
+        fanout_for_mint_membership_voucher.try_serialize(&mut fanout_for_mint_membership_voucher_data)?;
+        fanout_mint.try_serialize(&mut fanout_mint_data)?;
 
-        let seeds = [
-            b"fanout-config".as_ref(),
-            fanout.name.as_bytes(),
-            &[fanout.bump_seed],
-        ];
-        anchor_spl::token::transfer(cpi_ctx.with_signer(&[&seeds]), dif_dist as u64)?;
+        drop(holding_account_ref);
+        drop(fanout_mint_member_token_account_ref);
+        if dif_dist > 0 {
+            let cpi_program = ctx.accounts.token_program.to_account_info();
+            let accounts = anchor_spl::token::Transfer {
+                from: holding_account.to_account_info(),
+                to: fanout_mint_member_token_account_info.clone(),
+                authority: fanout_info,
+            };
+            let cpi_ctx = CpiContext::new(cpi_program, accounts);
+
+            let seeds = [
+                b"fanout-config".as_ref(),
+                fanout.name.as_bytes(),
+                &[fanout.bump_seed],
+            ];
+            anchor_spl::token::transfer(cpi_ctx.with_signer(&[&seeds]), dif_dist as u64)?;
+        }
     } else {
         //TODO make this resuable
         if holding_account_key != fanout.account_key {
@@ -231,17 +251,19 @@ msg!("dkjhkfj");
         let shares = membership_voucher.shares.unwrap() as u64;
         let dif_dist = calculate_dist_amount(shares, inflow_diff, total_shares)?;
         update_snapshot(fanout, membership_voucher, dif_dist)?;
-        **ctx.accounts.holding_account.lamports.borrow_mut() = current_snapshot
-            .checked_sub(dif_dist)
-            .ok_or(ErrorCode::NumericalOverflow)?;
-        **ctx.accounts.member.lamports.borrow_mut() = member
-            .lamports()
-            .checked_add(dif_dist)
-            .ok_or(ErrorCode::NumericalOverflow)?;
-        membership_voucher.total_inflow = membership_voucher
-            .total_inflow
-            .checked_add(dif_dist)
-            .ok_or(ErrorCode::NumericalOverflow)?;
+        if dif_dist > 0 {
+            **ctx.accounts.holding_account.lamports.borrow_mut() = current_snapshot
+                .checked_sub(dif_dist)
+                .ok_or(ErrorCode::NumericalOverflow)?;
+            **ctx.accounts.member.lamports.borrow_mut() = member
+                .lamports()
+                .checked_add(dif_dist)
+                .ok_or(ErrorCode::NumericalOverflow)?;
+            membership_voucher.total_inflow = membership_voucher
+                .total_inflow
+                .checked_add(dif_dist)
+                .ok_or(ErrorCode::NumericalOverflow)?;
+        }
     }
     Ok(())
 }

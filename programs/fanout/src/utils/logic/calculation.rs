@@ -46,7 +46,7 @@ pub fn update_inflow_for_mint(
     current_snapshot: u64,
 ) -> Result<(), ProgramError> {
     let diff = current_snapshot
-        .checked_sub(fanout.last_snapshot_amount)
+        .checked_sub(fanout_for_mint.last_snapshot_amount)
         .or_arith_error()?;
     fanout_for_mint.total_inflow = fanout_for_mint
         .total_inflow
