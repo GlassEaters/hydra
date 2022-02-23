@@ -8,3 +8,4 @@ node_modules
 test-ledger
 .parcel-cache
 .env
+.yarn
