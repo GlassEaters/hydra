@@ -50,28 +50,15 @@ pub mod fanout {
 
     pub fn process_distribute_nft(
         ctx: Context<DistributeNftMember>,
-        fanout_membership_mint_bump_seed: u8,
         distribute_for_mint: bool,
     ) -> ProgramResult {
-        distribute_for_nft(ctx, fanout_membership_mint_bump_seed, distribute_for_mint)
+        distribute_for_nft(ctx, distribute_for_mint)
+    }
+
+    pub fn process_distribute_wallet(
+        ctx: Context<DistributeWalletMember>,
+        distribute_for_mint: bool,
+    ) -> ProgramResult {
+        distribute_for_wallet(ctx, distribute_for_mint)
     }
 }
-
-// pub fn close(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
-
-// pub fn stake_token_member(ctx: Context<StakeTokenMenber>) -> ProgramResult {
-//     Ok(())
-// }
-
-// pub fn unstake_token_member(ctx: Context<AddMemberWithNFT>) -> ProgramResult {
-//     Ok(())
-// }
-
-// pub fn transfer_shares(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {
-
-// }
-// pub fn remove_member(ctx: Context<AddMember>, args: AddMemberArgs) -> ProgramResult {}
-// pub fn distribute_mint(ctx: Context) -> ProgramResult {
-//     //TODO UPSERT membership mint account
-//     Ok(())
-// }

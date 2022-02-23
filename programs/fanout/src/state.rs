@@ -67,5 +67,3 @@ pub struct FanoutMembershipMintVoucher {
     pub bump_seed: u8,
     pub amount_at_stake: Option<u64>,
 }
-
-//(shares / 100) * (last_snapshot_amount - last_inflow)

@@ -14,7 +14,7 @@ import {
 import {createMasterEdition} from "./utils/metaplex";
 import {DataV2} from "@metaplex-foundation/mpl-token-metadata";
 import {airdrop, LOCALHOST} from "@metaplex-foundation/amman";
-import {builtNFTFanout} from "./utils/scenarios";
+import {builtNftFanout, builtWalletFanout} from "./utils/scenarios";
 
 use(ChaiAsPromised);
 
@@ -33,7 +33,7 @@ describe("fanout", async () => {
     });
 
     describe("NFT membership model", () => {
-        xit("Init", async () => {
+        it("Init", async () => {
             const {fanout} = await fanoutSdk.initializeFanout({
                 totalShares: 100,
                 name: `Test${Date.now()}`,
@@ -56,7 +56,7 @@ describe("fanout", async () => {
             expect(fanoutAccount.totalStakedShares).to.equal(null);
         });
 
-        xit("Init For mint", async () => {
+        it("Init For mint", async () => {
             const {fanout} = await fanoutSdk.initializeFanout({
                 totalShares: 100,
                 name: `Test${Date.now()}`,
@@ -92,7 +92,7 @@ describe("fanout", async () => {
             expect(fanoutMintAccount.lastSnapshotAmount.toString()).to.equal("0");
         });
 
-        xit("Adds Members With NFT", async () => {
+        it("Adds Members With NFT", async () => {
             const init = await fanoutSdk.initializeFanout({
                 totalShares: 100,
                 name: `Test${Date.now()}`,
@@ -117,7 +117,7 @@ describe("fanout", async () => {
             const {membershipAccount} = await fanoutSdk.addMemberNft({
                 fanout: init.fanout,
                 fanoutNativeAccount: init.nativeAccount,
-                mint: nft.mint.publicKey,
+                membershipKey: nft.mint.publicKey,
                 shares: 10
             });
             const fanoutAccount = await fanoutSdk.fetch<Fanout>(
@@ -142,8 +142,8 @@ describe("fanout", async () => {
             expect(membershipAccountData?.membershipKey?.toBase58()).to.equal(nft.mint.publicKey.toBase58());
         });
 
-        xit("Distribute a Native Fanout with NFT Members", async () => {
-            let builtFanout = await builtNFTFanout(fanoutSdk, 100, 5);
+        it("Distribute a Native Fanout with NFT Members", async () => {
+            let builtFanout = await builtNftFanout(fanoutSdk, 100, 5);
             expect(builtFanout.fanoutAccountData.totalAvailableShares.toString()).to.equal("0");
             expect(builtFanout.fanoutAccountData.totalMembers.toString()).to.equal("5");
             expect(builtFanout.fanoutAccountData.lastSnapshotAmount.toString()).to.equal("0");
@@ -186,7 +186,7 @@ describe("fanout", async () => {
                 [distBot],
                 distBot.publicKey
             );
-            if(!!tx.RpcResponseAndContext.value.err) {
+            if (!!tx.RpcResponseAndContext.value.err) {
                 const txdetails = await connection.getConfirmedTransaction(tx.TransactionSignature);
                 console.log(txdetails, tx.RpcResponseAndContext.value.err);
             }
@@ -248,7 +248,7 @@ describe("fanout", async () => {
         });
 
         it("Distributes a Fanout under a certain mint for NFT Members", async () => {
-            let builtFanout = await builtNFTFanout(fanoutSdk, 100, 5);
+            let builtFanout = await builtNftFanout(fanoutSdk, 100, 5);
             const mint = await Token.createMint(
                 connection,
                 authorityWallet,
@@ -263,7 +263,6 @@ describe("fanout", async () => {
                     mint: mint.publicKey,
                 });
             const fanoutForMintAccountData = await fanoutSdk.fetch<FanoutMint>(fanoutForMint, FanoutMint);
-
             const distBot = new Keypair();
             await airdrop(connection, distBot.publicKey, 1);
             const sent = 112 * (1000000);
@@ -310,105 +309,153 @@ describe("fanout", async () => {
                 member1.mint,
                 mint.publicKey
             );
-            let tx = await fanoutSdk.sendInstructions(
-                [...distMember1.instructions, ...distMember2.instructions],
+            {
+                const tx = await fanoutSdk.sendInstructions(
+                    [...distMember1.instructions, ...distMember2.instructions],
+                    [distBot],
+                    distBot.publicKey
+                );
+                if (!!tx.RpcResponseAndContext.value.err) {
+                    const txdetails = await connection.getConfirmedTransaction(tx.TransactionSignature);
+                    console.log(txdetails, tx.RpcResponseAndContext.value.err);
+                }
+            }
+            let fanoutForMintAccountDataAfter = await fanoutSdk.fetch<FanoutMint>(fanoutForMint, FanoutMint);
+            let fanoutForMintMember1VoucherAfter = await fanoutSdk.fetch<FanoutMembershipMintVoucher>(fanoutForMintMembershipVoucher, FanoutMembershipMintVoucher);
+            expect((await connection.getTokenAccountBalance(fanoutMintMember1TokenAccount)).value.amount).to.equal(`${sent * 0.2}`);
+            expect((await connection.getTokenAccountBalance(fanoutMintMember2TokenAccount)).value.amount).to.equal(`${sent * 0.2}`);
+            expect((fanoutForMintAccountDataAfter.totalInflow.toString())).to.equal(`${sent}`);
+            expect((fanoutForMintAccountDataAfter.lastSnapshotAmount.toString())).to.equal(`${sent - (sent * 0.2) * 2}`);
+            expect((fanoutForMintMember1VoucherAfter.lastInflow.toString())).to.equal(`${sent}`);
+            let distMember1Again = await fanoutSdk.distributeNftMemberInstructions(
+                {
+                    distributeForMint: true,
+                    member: member1.wallet.publicKey,
+                    membershipKey: member1.mint,
+                    fanout: builtFanout.fanout,
+                    payer: distBot.publicKey,
+                    fanoutMint: mint.publicKey
+                },
+            );
+            await fanoutSdk.sendInstructions(
+                [...distMember1Again.instructions],
                 [distBot],
                 distBot.publicKey
             );
-            console.log(await connection.getConfirmedTransaction(tx.TransactionSignature))
+            await fanoutSdk.sendInstructions(
+                [...distMember1Again.instructions],
+                [distBot],
+                distBot.publicKey
+            );
             expect((await connection.getTokenAccountBalance(fanoutMintMember1TokenAccount)).value.amount).to.equal(`${sent * 0.2}`);
-            expect((await connection.getTokenAccountBalance(fanoutMintMember2TokenAccount)).value.amount).to.equal(`${sent * 0.2}`);
-            // let distMember1Again = await fanoutSdk.distributeNftMemberInstructions(
-            //     {
-            //         distributeForMint: true,
-            //         member: member1.wallet.publicKey,
-            //         membershipKey: member1.mint,
-            //         fanout: builtFanout.fanout,
-            //         payer: distBot.publicKey,
-            //         fanoutMint: mint.publicKey
-            //     },
-            // );
-            // const txAgain = await fanoutSdk.sendInstructions(
-            //     [...distMember1Again.instructions],
-            //     [distBot],
-            //     distBot.publicKey
-            // );
-            // console.log(await connection.getConfirmedTransaction(txAgain.TransactionSignature))
-            // let fanoutForMintAccountDataAfter = await fanoutSdk.fetch<FanoutMint>(fanoutForMint, FanoutMint);
-            // let fanoutForMintMember1VoucherAfter = await fanoutSdk.fetch<FanoutMembershipMintVoucher>(fanoutForMintMembershipVoucher, FanoutMembershipMintVoucher);
-            // console.log(
-            //     fanoutForMintAccountDataAfter.totalInflow.toString(),
-            //     fanoutForMintAccountDataAfter.lastSnapshotAmount.toString(),
-            //     fanoutForMintMember1VoucherAfter.lastInflow.toString()
-            // );
-            // const txAgain2 = await fanoutSdk.sendInstructions(
-            //     [...distMember1Again.instructions],
-            //     [distBot],
-            //     distBot.publicKey
-            // );
-            // console.log(await connection.getConfirmedTransaction(txAgain.TransactionSignature))
-            // fanoutForMintAccountDataAfter = await fanoutSdk.fetch<FanoutMint>(fanoutForMint, FanoutMint);
-            // fanoutForMintMember1VoucherAfter = await fanoutSdk.fetch<FanoutMembershipMintVoucher>(fanoutForMintMembershipVoucher, FanoutMembershipMintVoucher);
-            // console.log(
-            //     fanoutForMintAccountDataAfter.totalInflow.toString(),
-            //     fanoutForMintAccountDataAfter.lastSnapshotAmount.toString(),
-            //     fanoutForMintMember1VoucherAfter.lastInflow.toString()
-            // );
-            // expect((await connection.getTokenAccountBalance(fanoutMintMember1TokenAccount)).value.amount).to.equal(`${sent * 0.2}`);
-            // const sent2 = 113 * (1000000);
-            // await mint.mintTo(fanoutForMintAccountData.tokenAccount, authorityWallet, [], sent2)
-            // let member3 = builtFanout.members[2];
-            // let distMember3 = await fanoutSdk.distributeNftMemberInstructions(
-            //     {
-            //         distributeForMint: false,
-            //         member: member3.wallet.publicKey,
-            //         membershipKey: member3.mint,
-            //         fanout: builtFanout.fanout,
-            //         payer: distBot.publicKey,
-            //         fanoutMint: mint.publicKey
-            //     },
-            // );
-            // let fanoutMintMember3TokenAccount = await Token.getAssociatedTokenAddress(
-            //     ASSOCIATED_TOKEN_PROGRAM_ID,
-            //     TOKEN_PROGRAM_ID,
-            //     mint.publicKey,
-            //     member3.wallet.publicKey
-            // );
-            // let distMember1Final = await fanoutSdk.distributeNftMemberInstructions(
-            //     {
-            //         distributeForMint: true,
-            //         member: member1.wallet.publicKey,
-            //         membershipKey: member1.mint,
-            //         fanout: builtFanout.fanout,
-            //         payer: distBot.publicKey,
-            //         fanoutMint: mint.publicKey
-            //     },
-            // );
-            // let distMember2Final = await fanoutSdk.distributeNftMemberInstructions(
-            //     {
-            //         distributeForMint: true,
-            //         member: member2.wallet.publicKey,
-            //         membershipKey: member2.mint,
-            //         fanout: builtFanout.fanout,
-            //         payer: distBot.publicKey,
-            //         fanoutMint: mint.publicKey
-            //     },
-            // );
-            // fanoutForMintAccountDataAfter = await fanoutSdk.fetch<FanoutMint>(fanoutForMint, FanoutMint);
-            // fanoutForMintMember1VoucherAfter = await fanoutSdk.fetch<FanoutMembershipMintVoucher>(fanoutForMintMembershipVoucher, FanoutMembershipMintVoucher);
-            // console.log(
-            //     fanoutForMintAccountDataAfter.totalInflow.toString(),
-            //     fanoutForMintAccountDataAfter.lastSnapshotAmount.toString(),
-            //     fanoutForMintMember1VoucherAfter.lastInflow.toString()
-            // );
-            // const txFinal = await fanoutSdk.sendInstructions(
-            //     [...distMember1Final.instructions, ...distMember2Final.instructions, ...distMember3.instructions],
-            //     [distBot],
-            //     distBot.publicKey
-            // );
-            // expect((await connection.getTokenAccountBalance(fanoutMintMember1TokenAccount)).value.amount).to.equal(`${ (sent * 0.2) + (sent2 * 0.2)}`);
-            // expect((await connection.getTokenAccountBalance(fanoutMintMember2TokenAccount)).value.amount).to.equal(`${ (sent * 0.2) + (sent2 * 0.2)}`);
-            // expect((await connection.getTokenAccountBalance(fanoutMintMember3TokenAccount)).value.amount).to.equal(`${ (sent * 0.2) + (sent2 * 0.2)}`);
+            const sent2 = 113 * (1000000);
+            await mint.mintTo(fanoutForMintAccountData.tokenAccount, authorityWallet, [], sent2)
+            let member3 = builtFanout.members[2];
+            let distMember3 = await fanoutSdk.distributeNftMemberInstructions(
+                {
+                    distributeForMint: true,
+                    member: member3.wallet.publicKey,
+                    membershipKey: member3.mint,
+                    fanout: builtFanout.fanout,
+                    payer: distBot.publicKey,
+                    fanoutMint: mint.publicKey
+                },
+            );
+
+            let distMember1Final = await fanoutSdk.distributeNftMemberInstructions(
+                {
+                    distributeForMint: true,
+                    member: member1.wallet.publicKey,
+                    membershipKey: member1.mint,
+                    fanout: builtFanout.fanout,
+                    payer: distBot.publicKey,
+                    fanoutMint: mint.publicKey
+                },
+            );
+            let distMember2Final = await fanoutSdk.distributeNftMemberInstructions(
+                {
+                    distributeForMint: true,
+                    member: member2.wallet.publicKey,
+                    membershipKey: member2.mint,
+                    fanout: builtFanout.fanout,
+                    payer: distBot.publicKey,
+                    fanoutMint: mint.publicKey
+                },
+            );
+            await fanoutSdk.sendInstructions(
+                [...distMember1Final.instructions, ...distMember2Final.instructions, ...distMember3.instructions],
+                [distBot],
+                distBot.publicKey
+            );
+            let fanoutMintMember3TokenAccount = await Token.getAssociatedTokenAddress(
+                ASSOCIATED_TOKEN_PROGRAM_ID,
+                TOKEN_PROGRAM_ID,
+                mint.publicKey,
+                member3.wallet.publicKey
+            );
+            expect((await connection.getTokenAccountBalance(fanoutMintMember1TokenAccount)).value.amount).to.equal(`${(sent * 0.2) + (sent2 * 0.2)}`);
+            expect((await connection.getTokenAccountBalance(fanoutMintMember2TokenAccount)).value.amount).to.equal(`${(sent * 0.2) + (sent2 * 0.2)}`);
+            expect((await connection.getTokenAccountBalance(fanoutMintMember3TokenAccount)).value.amount).to.equal(`${(sent * 0.2) + (sent2 * 0.2)}`);
         })
+    });
+
+    it("Distribute a Native Fanout with Wallet Members", async () => {
+        let builtFanout = await builtWalletFanout(fanoutSdk, 100, 5);
+        expect(builtFanout.fanoutAccountData.totalAvailableShares.toString()).to.equal("0");
+        expect(builtFanout.fanoutAccountData.totalMembers.toString()).to.equal("5");
+        expect(builtFanout.fanoutAccountData.lastSnapshotAmount.toString()).to.equal("0");
+        const distBot = new Keypair();
+        const sent = 10;
+        await airdrop(connection, builtFanout.fanoutAccountData.accountKey, sent);
+        await airdrop(connection, distBot.publicKey, 1);
+
+        let member1 = builtFanout.members[0];
+        let member2 = builtFanout.members[1];
+        let distMember1 = await fanoutSdk.distributeWalletMemberInstructions(
+            {
+                distributeForMint: false,
+                member: member1.wallet.publicKey,
+                fanout: builtFanout.fanout,
+                payer: distBot.publicKey,
+            },
+        );
+        let distMember2 = await fanoutSdk.distributeWalletMemberInstructions(
+            {
+                distributeForMint: false,
+                member: member2.wallet.publicKey,
+                fanout: builtFanout.fanout,
+                payer: distBot.publicKey,
+            },
+        );
+        const holdingAccountReserved = await connection.getMinimumBalanceForRentExemption(1);
+        const memberDataBefore1 = await connection.getAccountInfo(member1.wallet.publicKey);
+        const memberDataBefore2 = await connection.getAccountInfo(member2.wallet.publicKey);
+        const holdingAccountBefore = await connection
+            .getAccountInfo(builtFanout.fanoutAccountData.accountKey);
+        expect(memberDataBefore2).to.be.null;
+        expect(memberDataBefore1).to.be.null;
+        const firstSnapshot = sent * LAMPORTS_PER_SOL;
+        expect(holdingAccountBefore?.lamports).to.equal(firstSnapshot + holdingAccountReserved);
+        const tx = await fanoutSdk.sendInstructions(
+            [...distMember1.instructions, ...distMember2.instructions],
+            [distBot],
+            distBot.publicKey
+        );
+        if (!!tx.RpcResponseAndContext.value.err) {
+            const txdetails = await connection.getConfirmedTransaction(tx.TransactionSignature);
+            console.log(txdetails, tx.RpcResponseAndContext.value.err);
+        }
+        const memberDataAfter1 = await connection.getAccountInfo(member1.wallet.publicKey);
+        const memberDataAfter2 = await connection.getAccountInfo(member2.wallet.publicKey);
+        const holdingAccountAfter = await connection
+            .getAccountInfo(builtFanout.fanoutAccountData.accountKey);
+            const membershipAccount1 = await fanoutSdk.fetch<FanoutMembershipVoucher>(member1.voucher, FanoutMembershipVoucher);
+
+        expect(memberDataAfter1?.lamports).to.equal(firstSnapshot * 0.2);
+        expect(memberDataAfter2?.lamports).to.equal(firstSnapshot * 0.2);
+        expect(holdingAccountAfter?.lamports)
+            .to.equal(firstSnapshot - (firstSnapshot * 0.4) + holdingAccountReserved);
+        expect(builtFanout.fanoutAccountData.lastSnapshotAmount.toString()).to.equal("0");
+        expect(membershipAccount1.totalInflow.toString()).to.equal(`${firstSnapshot * 0.2}`);
     });
 });

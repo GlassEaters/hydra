@@ -1,5 +1,5 @@
 use crate::state::{Fanout, FanoutMint};
-use crate::utils::validation::{assert_derivation, assert_fanout_mint_ata};
+use crate::utils::validation::assert_fanout_mint_ata;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, TokenAccount};
 

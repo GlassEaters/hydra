@@ -1,7 +1,6 @@
 use super::arg::AddMemberArgs;
 use crate::error::ErrorCode;
-use crate::state::FANOUT_MEMBERSHIP_VOUCHER_SIZE;
-use crate::state::{Fanout, FanoutMembershipVoucher};
+use crate::state::{Fanout, FanoutMembershipVoucher, FANOUT_MEMBERSHIP_VOUCHER_SIZE};
 use crate::utils::logic::calculation::*;
 use crate::utils::validation::assert_owned_by;
 use anchor_lang::prelude::*;
