@@ -74,6 +74,7 @@ pub fn update_inflow(fanout: &mut Fanout, current_snapshot: u64) -> Result<(), P
         .or_arith_error()?;
     fanout.total_inflow = fanout.total_inflow.checked_add(diff).or_arith_error()?;
     if fanout.total_staked_shares.is_some() && fanout.total_staked_shares.unwrap() > 0 {
+
         let tss = fanout.total_staked_shares.unwrap();
         let shares_diff = (fanout.total_shares as u64)
             .checked_sub(tss)
