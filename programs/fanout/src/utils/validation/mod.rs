@@ -1,6 +1,7 @@
 use crate::error::ErrorCode;
 use crate::state::{Fanout, FanoutMembershipVoucher, MembershipModel};
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::instruction::Instruction;
 use anchor_spl::token::TokenAccount;
 
 pub fn assert_derivation(
@@ -40,48 +41,27 @@ pub fn assert_membership_model(
     Ok(())
 }
 
-pub fn assert_fanout_mint_ata(
-    mint_holding_account: &AccountInfo,
-    fanout: &Pubkey,
+pub fn assert_ata(
+    account: &AccountInfo,
+    target: &Pubkey,
     mint: &Pubkey,
+    err: Option<ProgramError>
 ) -> Result<u8, ProgramError> {
     assert_derivation(
         &anchor_spl::associated_token::ID,
-        &mint_holding_account.to_account_info(),
+        &account.to_account_info(),
         &[
-            fanout.as_ref(),
+            target.as_ref(),
             anchor_spl::token::ID.as_ref(),
             mint.as_ref(),
         ],
-        Some(ErrorCode::HoldingAccountMustBeAnATA.into()),
+        err,
     )
 }
 
 pub fn assert_shares_distributed(fanout: &Account<Fanout>) -> Result<(), ProgramError> {
     if fanout.total_available_shares != 0 {
         return Err(ErrorCode::SharesArentAtMax.into());
-    }
-    Ok(())
-}
-
-pub fn assert_membership_voucher_valid(
-    voucher: &Account<FanoutMembershipVoucher>,
-    model: MembershipModel,
-) -> Result<(), ProgramError> {
-    match model {
-        MembershipModel::Wallet | MembershipModel::NFT => {
-            if voucher.shares.is_none() || voucher.membership_key.is_none() {
-                return Err(ErrorCode::InvalidMembershipVoucher.into());
-            }
-        }
-        MembershipModel::Token => {
-            if voucher.shares.is_some()
-                || voucher.membership_key.is_some()
-                || voucher.amount_at_stake.is_none()
-            {
-                return Err(ErrorCode::InvalidMembershipVoucher.into());
-            }
-        }
     }
     Ok(())
 }
@@ -102,6 +82,26 @@ pub fn assert_holding(
     }
     if token_account.mint != mint_info.key() {
         return Err(ErrorCode::MintDoesNotMatch.into());
+    }
+    Ok(())
+}
+
+pub fn assert_distributed(ix: Instruction,
+                          subject: &Pubkey,
+                          membership_model: MembershipModel) -> Result<(), ProgramError> {
+    if ix.program_id != crate::id() {
+        return Err(ErrorCode::MustDistribute.into());
+    }
+    let instruction_id = match membership_model {
+        MembershipModel::Wallet => 6,
+        MembershipModel::NFT => 5,
+        MembershipModel::Token => 7
+    };
+    if instruction_id != ix.data[0] {
+        return Err(ErrorCode::MustDistribute.into());
+    }
+    if subject != &ix.accounts[1].pubkey {
+        return Err(ErrorCode::MustDistribute.into());
     }
     Ok(())
 }

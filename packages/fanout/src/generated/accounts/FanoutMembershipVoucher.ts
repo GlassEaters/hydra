@@ -5,8 +5,8 @@
  * See: https://github.com/metaplex-foundation/solita
  */
 
-import * as beet from "@metaplex-foundation/beet";
 import * as web3 from "@solana/web3.js";
+import * as beet from "@metaplex-foundation/beet";
 import * as beetSolana from "@metaplex-foundation/beet-solana";
 
 /**
@@ -15,12 +15,12 @@ import * as beetSolana from "@metaplex-foundation/beet-solana";
  * @category generated
  */
 export type FanoutMembershipVoucherArgs = {
+  fanout: web3.PublicKey;
   totalInflow: beet.bignum;
   lastInflow: beet.bignum;
   bumpSeed: number;
-  amountAtStake: beet.COption<beet.bignum>;
-  shares: beet.COption<beet.bignum>;
-  membershipKey: beet.COption<web3.PublicKey>;
+  membershipKey: web3.PublicKey;
+  shares: beet.bignum;
 };
 
 const fanoutMembershipVoucherDiscriminator = [
@@ -35,12 +35,12 @@ const fanoutMembershipVoucherDiscriminator = [
  */
 export class FanoutMembershipVoucher implements FanoutMembershipVoucherArgs {
   private constructor(
+    readonly fanout: web3.PublicKey,
     readonly totalInflow: beet.bignum,
     readonly lastInflow: beet.bignum,
     readonly bumpSeed: number,
-    readonly amountAtStake: beet.COption<beet.bignum>,
-    readonly shares: beet.COption<beet.bignum>,
-    readonly membershipKey: beet.COption<web3.PublicKey>
+    readonly membershipKey: web3.PublicKey,
+    readonly shares: beet.bignum
   ) {}
 
   /**
@@ -48,12 +48,12 @@ export class FanoutMembershipVoucher implements FanoutMembershipVoucherArgs {
    */
   static fromArgs(args: FanoutMembershipVoucherArgs) {
     return new FanoutMembershipVoucher(
+      args.fanout,
       args.totalInflow,
       args.lastInflow,
       args.bumpSeed,
-      args.amountAtStake,
-      args.shares,
-      args.membershipKey
+      args.membershipKey,
+      args.shares
     );
   }
 
@@ -111,36 +111,34 @@ export class FanoutMembershipVoucher implements FanoutMembershipVoucherArgs {
 
   /**
    * Returns the byteSize of a {@link Buffer} holding the serialized data of
-   * {@link FanoutMembershipVoucher} for the provided args.
-   *
-   * @param args need to be provided since the byte size for this account
-   * depends on them
+   * {@link FanoutMembershipVoucher}
    */
-  static byteSize(args: FanoutMembershipVoucherArgs) {
-    const instance = FanoutMembershipVoucher.fromArgs(args);
-    return fanoutMembershipVoucherBeet.toFixedFromValue({
-      accountDiscriminator: fanoutMembershipVoucherDiscriminator,
-      ...instance,
-    }).byteSize;
+  static get byteSize() {
+    return fanoutMembershipVoucherBeet.byteSize;
   }
 
   /**
    * Fetches the minimum balance needed to exempt an account holding
    * {@link FanoutMembershipVoucher} data from rent
    *
-   * @param args need to be provided since the byte size for this account
-   * depends on them
    * @param connection used to retrieve the rent exemption information
    */
   static async getMinimumBalanceForRentExemption(
-    args: FanoutMembershipVoucherArgs,
     connection: web3.Connection,
     commitment?: web3.Commitment
   ): Promise<number> {
     return connection.getMinimumBalanceForRentExemption(
-      FanoutMembershipVoucher.byteSize(args),
+      FanoutMembershipVoucher.byteSize,
       commitment
     );
+  }
+
+  /**
+   * Determines if the provided {@link Buffer} has the correct byte size to
+   * hold {@link FanoutMembershipVoucher} data.
+   */
+  static hasCorrectByteSize(buf: Buffer, offset = 0) {
+    return buf.byteLength - offset === FanoutMembershipVoucher.byteSize;
   }
 
   /**
@@ -149,12 +147,12 @@ export class FanoutMembershipVoucher implements FanoutMembershipVoucherArgs {
    */
   pretty() {
     return {
+      fanout: this.fanout.toBase58(),
       totalInflow: this.totalInflow,
       lastInflow: this.lastInflow,
       bumpSeed: this.bumpSeed,
-      amountAtStake: this.amountAtStake,
+      membershipKey: this.membershipKey.toBase58(),
       shares: this.shares,
-      membershipKey: this.membershipKey,
     };
   }
 }
@@ -163,7 +161,7 @@ export class FanoutMembershipVoucher implements FanoutMembershipVoucherArgs {
  * @category Accounts
  * @category generated
  */
-export const fanoutMembershipVoucherBeet = new beet.FixableBeetStruct<
+export const fanoutMembershipVoucherBeet = new beet.BeetStruct<
   FanoutMembershipVoucher,
   FanoutMembershipVoucherArgs & {
     accountDiscriminator: number[] /* size: 8 */;
@@ -171,12 +169,12 @@ export const fanoutMembershipVoucherBeet = new beet.FixableBeetStruct<
 >(
   [
     ["accountDiscriminator", beet.uniformFixedSizeArray(beet.u8, 8)],
+    ["fanout", beetSolana.publicKey],
     ["totalInflow", beet.u64],
     ["lastInflow", beet.u64],
     ["bumpSeed", beet.u8],
-    ["amountAtStake", beet.coption(beet.u64)],
-    ["shares", beet.coption(beet.u64)],
-    ["membershipKey", beet.coption(beetSolana.publicKey)],
+    ["membershipKey", beetSolana.publicKey],
+    ["shares", beet.u64],
   ],
   FanoutMembershipVoucher.fromArgs,
   "FanoutMembershipVoucher"

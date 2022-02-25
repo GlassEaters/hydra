@@ -2,7 +2,7 @@ use crate::error::ErrorCode;
 use crate::state::Fanout;
 use anchor_lang::prelude::*;
 
-pub fn transfer_mint<'info>(
+pub fn transfer_from_mint_holding<'info>(
     fanout: &Fanout,
     fanout_authority: AccountInfo<'info>,
     token_program: AccountInfo<'info>,

@@ -41,11 +41,11 @@ pub mod fanout {
         add_member_nft(ctx, args)
     }
 
-    pub fn process_add_member_token(
-        ctx: Context<AddMemberWithToken>,
-        args: AddMemberArgs,
+    pub fn process_set_token_member_stake(
+        ctx: Context<SetTokenMemberStake>,
+        shares: u64,
     ) -> ProgramResult {
-        add_member_token(ctx, args)
+        set_token_member_stake(ctx, shares)
     }
 
     pub fn process_distribute_nft(
@@ -60,5 +60,12 @@ pub mod fanout {
         distribute_for_mint: bool,
     ) -> ProgramResult {
         distribute_for_wallet(ctx, distribute_for_mint)
+    }
+
+    pub fn process_distribute_token(
+        ctx: Context<DistributeTokenMember>,
+        distribute_for_mint: bool,
+    ) -> ProgramResult {
+        distribute_for_token(ctx, distribute_for_mint)
     }
 }

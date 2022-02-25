@@ -102,6 +102,7 @@ pub fn parse_mint_membership_voucher<'info>(
     membership_key: &Pubkey,
     fanout_for_mint: &Pubkey,
     fanout_mint: &Pubkey,
+    fanout: &Pubkey
 ) -> Result<FanoutMembershipMintVoucher, ProgramError> {
     let account_info = fanout_for_mint_membership_voucher.to_account_info();
     let mint_membership_voucher_bump = assert_derivation(
@@ -135,10 +136,10 @@ pub fn parse_mint_membership_voucher<'info>(
             ],
         )?;
         FanoutMembershipMintVoucher {
-            fanout_mint: fanout_mint.key(),
+            fanout: *fanout,
+            fanout_mint: *fanout_mint,
             last_inflow: 0,
             bump_seed: mint_membership_voucher_bump,
-            amount_at_stake: None,
         }
     } else {
         let mut membership_data: &[u8] =

@@ -74,7 +74,7 @@ export function createProcessAddMemberWalletInstruction(
   const keys: web3.AccountMeta[] = [
     {
       pubkey: authority,
-      isWritable: false,
+      isWritable: true,
       isSigner: true,
     },
     {

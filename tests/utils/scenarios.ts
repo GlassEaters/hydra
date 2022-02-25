@@ -2,8 +2,9 @@
 import {Fanout, FanoutClient, MembershipModel} from "@hydra/fanout";
 import {createMasterEdition} from "./metaplex";
 import {DataV2} from "@metaplex-foundation/mpl-token-metadata";
-import {Keypair, PublicKey, TransactionInstruction} from "@solana/web3.js";
-import spl, {ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID} from "@solana/spl-token";
+import {Keypair, PublicKey, Signer, TransactionInstruction} from "@solana/web3.js";
+import spl, {ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID} from "@solana/spl-token";
+import {airdrop} from "@metaplex-foundation/amman";
 type BuiltNftFanout = {
     fanout: PublicKey;
     name: string,
@@ -20,12 +21,79 @@ type BuiltWalletFanout = {
     fanout: PublicKey;
     name: string,
     fanoutAccountData: Fanout;
-    members: WaletFanoutMember[]
+    members: WalletFanoutMember[]
 }
-type WaletFanoutMember = {
+type WalletFanoutMember = {
     voucher: PublicKey;
     wallet: Keypair;
 }
+
+type StakedMembers = {
+    voucher: PublicKey;
+    stakeAccount: PublicKey;
+    wallet: Keypair;
+}
+
+type BuiltTokenFanout = {
+    fanout: PublicKey;
+    name: string,
+    membershipMint: Token,
+    fanoutAccountData: Fanout;
+    members: StakedMembers[]
+}
+
+export async function builtTokenFanout(mint: Token, mintAuth: Keypair, fanoutSdk: FanoutClient, shares: number, numberMembers: number): Promise<BuiltTokenFanout> {
+    const name = `Test${Date.now()}`;
+    const {fanout} = await fanoutSdk.initializeFanout({
+        totalShares: 0,
+        name: `Test${Date.now()}`,
+        membershipModel: MembershipModel.Token,
+        mint: mint.publicKey
+    });
+    let mintInfo = await mint.getMintInfo()
+    let totalSupply = shares ** mintInfo.decimals;
+    let memberNumber = totalSupply / numberMembers;
+    let members: StakedMembers[] = []
+    for (let i = 0; i < numberMembers; i++) {
+        const memberWallet = new Keypair()
+        await airdrop(fanoutSdk.connection, memberWallet.publicKey, 1);
+        let ata = await mint.createAssociatedTokenAccount(memberWallet.publicKey)
+        await mint.mintTo(ata, mintAuth, [], memberNumber)
+        const ix = await fanoutSdk.stakeTokenMemberInstructions(
+            {
+                shares: memberNumber,
+                fanout: fanout,
+                membershipMintTokenAccount: ata,
+                membershipMint: mint.publicKey,
+                member: memberWallet.publicKey,
+                payer: memberWallet.publicKey
+            }
+        );console.log()
+        const tx = await fanoutSdk.sendInstructions(ix.instructions, [memberWallet], memberWallet.publicKey);
+        if (!!tx.RpcResponseAndContext.value.err) {
+            const txdetails = await fanoutSdk.connection.getConfirmedTransaction(tx.TransactionSignature);
+            console.log(txdetails, tx.RpcResponseAndContext.value.err);
+        }
+        members.push({
+            voucher: ix.output.membershipVoucher,
+            stakeAccount: ix.output.stakeAccount,
+            wallet: memberWallet
+        })
+    }
+
+    const fanoutAccount = await fanoutSdk.fetch<Fanout>(
+        fanout,
+        Fanout
+    );
+    return {
+        fanout: fanout,
+        name,
+        membershipMint: mint,
+        fanoutAccountData: fanoutAccount,
+        members: members,
+    };
+}
+
 
 export async function builtWalletFanout(fanoutSdk: FanoutClient, shares: number, numberMembers: number): Promise<BuiltWalletFanout> {
     const name = `Test${Date.now()}`;
@@ -36,7 +104,7 @@ export async function builtWalletFanout(fanoutSdk: FanoutClient, shares: number,
     });
     let memberNumber = shares / numberMembers;
     let ixs: TransactionInstruction[] = [];
-    let members: WaletFanoutMember[] = []
+    let members: WalletFanoutMember[] = []
     for (let i = 0; i < numberMembers; i++) {
         const memberWallet = new Keypair();
 
@@ -53,7 +121,10 @@ export async function builtWalletFanout(fanoutSdk: FanoutClient, shares: number,
         ixs.push(...ix.instructions);
     }
     const tx = await fanoutSdk.sendInstructions(ixs, [], fanoutSdk.wallet.publicKey);
-    console.log(await fanoutSdk.connection.getConfirmedTransaction(tx.TransactionSignature));
+    if (!!tx.RpcResponseAndContext.value.err) {
+        const txdetails = await fanoutSdk.connection.getConfirmedTransaction(tx.TransactionSignature);
+        console.log(txdetails, tx.RpcResponseAndContext.value.err);
+    }
     const fanoutAccount = await fanoutSdk.fetch<Fanout>(
         init.fanout,
         Fanout
@@ -122,7 +193,11 @@ export async function builtNftFanout(fanoutSdk: FanoutClient, shares: number, nu
         });
         ixs.push(...ix.instructions);
     }
-    await fanoutSdk.sendInstructions(ixs, [], fanoutSdk.wallet.publicKey);
+    const tx = await fanoutSdk.sendInstructions(ixs, [], fanoutSdk.wallet.publicKey);
+    if (!!tx.RpcResponseAndContext.value.err) {
+        const txdetails = await fanoutSdk.connection.getConfirmedTransaction(tx.TransactionSignature);
+        console.log(txdetails, tx.RpcResponseAndContext.value.err);
+    }
     const fanoutAccount = await fanoutSdk.fetch<Fanout>(
         init.fanout,
         Fanout

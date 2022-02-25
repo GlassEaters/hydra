@@ -72,4 +72,8 @@ pub enum ErrorCode {
     InsufficientBalanceToDistribute,
 
     InvalidFanoutForMint,
+
+    MustDistribute,
+
+    InvalidStakeAta
 }

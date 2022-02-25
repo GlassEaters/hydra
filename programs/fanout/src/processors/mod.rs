@@ -1,10 +1,12 @@
 pub mod add_member;
 pub mod distribute;
 pub mod init;
+pub mod stake;
 
 pub use self::add_member::arg::*;
 pub use self::add_member::nft::*;
-pub use self::add_member::token::*;
+pub use self::stake::set::*;
+pub use self::stake::unstake::*;
 pub use self::add_member::wallet::*;
 pub use self::distribute::nft_member::*;
 pub use self::distribute::token_member::*;

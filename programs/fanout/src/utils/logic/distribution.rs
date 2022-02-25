@@ -1,6 +1,6 @@
 use crate::state::{Fanout, FanoutMembershipVoucher, HOLDING_ACCOUNT_SIZE};
 use crate::utils::logic::calculation::*;
-use crate::utils::logic::transfer::{transfer_mint, transfer_native};
+use crate::utils::logic::transfer::{transfer_from_mint_holding, transfer_native};
 use crate::utils::parse_fanout_mint;
 use crate::utils::validation::*;
 use crate::utils::*;
@@ -18,18 +18,13 @@ pub fn distribute_native<'info>(
     if holding_account.key() != fanout.account_key {
         return Err(ErrorCode::InvalidHoldingAccount.into());
     }
-
     let current_snapshot = holding_account.lamports();
     let current_snapshot_less_min =
         current_lamports(&rent, HOLDING_ACCOUNT_SIZE, current_snapshot)?;
-    let minimum = fanout.total_members as u64;
-    if current_snapshot.le(&minimum) {
-        return Err(ErrorCode::InsufficientBalanceToDistribute.into());
-    }
     update_inflow(fanout, current_snapshot_less_min)?;
     let inflow_diff =
         calculate_inflow_change(fanout.total_inflow, membership_voucher.last_inflow)?;
-    let shares = membership_voucher.shares.unwrap() as u64;
+    let shares = membership_voucher.shares as u64;
     let dif_dist = calculate_dist_amount(shares, inflow_diff, total_shares)?;
     update_snapshot(fanout, membership_voucher, dif_dist)?;
     membership_voucher.total_inflow = membership_voucher
@@ -68,10 +63,11 @@ pub fn distribute_mint<'info>(
     assert_owned_by(&fanout_for_mint, &crate::ID)?;
     assert_owned_by(&fanout_mint_member_token_account_info, &Token::id())?;
     assert_owned_by(holding_account, &anchor_spl::token::Token::id())?;
-    assert_fanout_mint_ata(
+    assert_ata(
         &holding_account.to_account_info(),
         &fanout.key(),
         &fanout_mint.key(),
+        Some(ErrorCode::HoldingAccountMustBeAnATA.into())
     )?;
     let fanout_for_mint_object =
         &mut parse_fanout_mint(fanout_for_mint, &fanout.key(), &mint.key())?;
@@ -89,6 +85,7 @@ pub fn distribute_mint<'info>(
         membership_key,
         &fanout_for_mint.key(),
         &mint.key(),
+        &fanout.key()
     )?;
     let holding_account_ata = parse_token_account(holding_account, &fanout.key())?;
     parse_token_account(&fanout_mint_member_token_account_info, &member.key())?;
@@ -98,7 +95,7 @@ pub fn distribute_mint<'info>(
         fanout_for_mint_object.total_inflow,
         fanout_for_mint_membership_voucher.last_inflow,
     )?;
-    let shares = membership_voucher.shares.unwrap() as u64;
+    let shares = membership_voucher.shares as u64;
     let dif_dist = calculate_dist_amount(shares, inflow_diff, total_shares)?;
     update_snapshot_for_mint(
         fanout_for_mint_object,
@@ -113,7 +110,7 @@ pub fn distribute_mint<'info>(
     fanout_for_mint_membership_voucher
         .try_serialize(&mut fanout_for_mint_membership_voucher_data)?;
     fanout_for_mint_object.try_serialize(&mut fanout_for_mint_data)?;
-    transfer_mint(
+    transfer_from_mint_holding(
         fanout,
         fanout.to_account_info(),
         token_program.to_account_info(),

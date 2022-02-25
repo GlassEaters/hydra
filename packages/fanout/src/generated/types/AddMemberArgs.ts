@@ -7,7 +7,6 @@
 
 import * as beet from "@metaplex-foundation/beet";
 export type AddMemberArgs = {
-  voucherBumpSeed: number;
   shares: beet.bignum;
 };
 
@@ -16,9 +15,6 @@ export type AddMemberArgs = {
  * @category generated
  */
 export const addMemberArgsBeet = new beet.BeetArgsStruct<AddMemberArgs>(
-  [
-    ["voucherBumpSeed", beet.u8],
-    ["shares", beet.u64],
-  ],
+  [["shares", beet.u64]],
   "AddMemberArgs"
 );

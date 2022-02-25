@@ -3,16 +3,18 @@ use crate::state::{Fanout, FanoutMembershipVoucher, FANOUT_MEMBERSHIP_VOUCHER_SI
 use crate::utils::logic::calculation::*;
 use anchor_lang::prelude::*;
 use anchor_spl::token::Token;
-use crate::utils::validation::assert_owned_by;
+use crate::MembershipModel;
+use crate::utils::validation::{assert_membership_model, assert_owned_by};
 
 #[derive(Accounts)]
 #[instruction(args: AddMemberArgs)]
 pub struct AddMemberWallet<'info> {
+    #[account(mut)]
     pub authority: Signer<'info>,
     pub member: UncheckedAccount<'info>,
     #[account(
     mut,
-    seeds = [b"fanout-config", fanout.account_key.as_ref()],
+    seeds = [b"fanout-config", fanout.name.as_bytes()],
     has_one = authority,
     bump = fanout.bump_seed,
     )]
@@ -21,7 +23,7 @@ pub struct AddMemberWallet<'info> {
     init,
     space = FANOUT_MEMBERSHIP_VOUCHER_SIZE,
     seeds = [b"fanout-membership", fanout.key().as_ref(), member.key().as_ref()],
-    bump = args.voucher_bump_seed,
+    bump,
     payer = authority
     )]
     pub membership_account: Account<'info, FanoutMembershipVoucher>,
@@ -35,10 +37,12 @@ pub fn add_member_wallet(ctx: Context<AddMemberWallet>, args: AddMemberArgs) -> 
     let member = &ctx.accounts.member;
     let membership_account = &mut ctx.accounts.membership_account;
     update_fanout_for_add(fanout, args.shares)?;
+    assert_membership_model(fanout, MembershipModel::Wallet)?;
     assert_owned_by(&fanout.to_account_info(), &crate::ID)?;
     assert_owned_by(&member.to_account_info(), &System::id())?;
-    membership_account.membership_key = Some(member.key());
-    membership_account.shares = Some(args.shares);
-    membership_account.bump_seed = args.voucher_bump_seed;
+    membership_account.membership_key = member.key();
+    membership_account.shares = args.shares;
+    membership_account.bump_seed = *ctx.bumps.get("membership_account").unwrap();
+    membership_account.fanout = fanout.key();
     Ok(())
 }

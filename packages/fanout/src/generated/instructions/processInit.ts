@@ -76,7 +76,7 @@ export function createProcessInitInstruction(
   const keys: web3.AccountMeta[] = [
     {
       pubkey: authority,
-      isWritable: false,
+      isWritable: true,
       isSigner: true,
     },
     {
@@ -96,7 +96,7 @@ export function createProcessInitInstruction(
     },
     {
       pubkey: membershipMint,
-      isWritable: false,
+      isWritable: true,
       isSigner: false,
     },
     {

@@ -23,13 +23,14 @@ pub struct DistributeNftMember<'info> {
     mut,
     constraint = membership_mint_token_account.delegate.is_none(),
     constraint = membership_mint_token_account.close_authority.is_none(),
+    constraint = membership_mint_token_account.mint == membership_key.key(),
     )]
     pub membership_mint_token_account: Account<'info, TokenAccount>,
     pub membership_key: Account<'info, Mint>,
     #[account(
     mut,
     seeds = [b"fanout-membership", fanout.key().as_ref(), membership_key.key().as_ref()],
-    constraint = membership_voucher.membership_key == Some(membership_key.key()),
+    constraint = membership_voucher.membership_key == membership_key.key(),
     bump = membership_voucher.bump_seed,
     )]
     pub membership_voucher: Box<Account<'info, FanoutMembershipVoucher>>,
@@ -69,7 +70,6 @@ pub fn distribute_for_nft(
     assert_owned_by(&member.to_account_info(), &System::id())?;
     assert_membership_model(fanout, MembershipModel::NFT)?;
     assert_shares_distributed(fanout)?;
-    assert_membership_voucher_valid(membership_voucher, MembershipModel::NFT)?;
     assert_holding(
         &member.to_account_info(),
         membership_mint_token_account,

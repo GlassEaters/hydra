@@ -16,7 +16,7 @@ pub struct DistributeWalletMember<'info> {
     #[account(
     mut,
     seeds = [b"fanout-membership", fanout.key().as_ref(), member.key().as_ref()],
-    constraint = membership_voucher.membership_key == Some(member.key()),
+    constraint = membership_voucher.membership_key == member.key(),
     bump = membership_voucher.bump_seed,
     )]
     pub membership_voucher: Box<Account<'info, FanoutMembershipVoucher>>,
@@ -26,7 +26,9 @@ pub struct DistributeWalletMember<'info> {
     bump = fanout.bump_seed,
     )]
     pub fanout: Account<'info, Fanout>,
-    #[account(mut)]
+    #[account(
+    mut
+    )]
     pub holding_account: UncheckedAccount<'info>,
     #[account(mut)]
     pub fanout_for_mint: UncheckedAccount<'info>,
@@ -52,10 +54,8 @@ pub fn distribute_for_wallet(
     assert_owned_by(&fanout_info, &crate::ID)?;
     assert_owned_by(&membership_voucher_info, &crate::ID)?;
     assert_owned_by(&member.to_account_info(), &System::id())?;
-    assert_membership_model(fanout, MembershipModel::NFT)?;
+    assert_membership_model(fanout, MembershipModel::Wallet)?;
     assert_shares_distributed(fanout)?;
-    assert_membership_voucher_valid(membership_voucher, MembershipModel::NFT)?;
-
     if distribute_for_mint {
         let membership_key =  &ctx.accounts.member.key().clone();
         let member = ctx.accounts.member.to_owned();

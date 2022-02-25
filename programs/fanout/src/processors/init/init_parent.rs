@@ -14,12 +14,13 @@ pub struct InitializeFanoutArgs {
 #[derive(Accounts)]
 #[instruction(args: InitializeFanoutArgs)]
 pub struct InitializeFanout<'info> {
+    #[account(mut)]
     pub authority: Signer<'info>,
     #[account(
     init,
     space = 300,
     seeds = [b"fanout-config", args.name.as_bytes()],
-    bump = args.bump_seed,
+    bump,
     payer = authority
     )]
     pub fanout: Account<'info, Fanout>,
@@ -27,12 +28,13 @@ pub struct InitializeFanout<'info> {
     init,
     space = 1,
     seeds = [b"fanout-native-account", fanout.key().as_ref()],
-    bump = args.native_account_bump_seed,
+    bump,
     payer = authority
     )
     ]
     pub holding_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
+    #[account(mut)]
     pub membership_mint: Account<'info, Mint>,
     pub rent: Sysvar<'info, Rent>,
     pub token_program: Program<'info, Token>,
@@ -42,6 +44,7 @@ pub fn init(
     args: InitializeFanoutArgs,
     model: MembershipModel,
 ) -> ProgramResult {
+    let membership_mint = &ctx.accounts.membership_mint;
     let fanout = &mut ctx.accounts.fanout;
     fanout.authority = ctx.accounts.authority.to_account_info().key();
     fanout.account_key = ctx.accounts.holding_account.to_account_info().key();
@@ -53,10 +56,10 @@ pub fn init(
     fanout.bump_seed = args.bump_seed;
     fanout.membership_model = model;
     fanout.membership_mint =
-        if ctx.accounts.membership_mint.to_account_info().key() == spl_token::native_mint::id() {
+        if membership_mint.key() == spl_token::native_mint::id() {
             None
         } else {
-            Some(ctx.accounts.membership_mint.to_account_info().key())
+            Some(membership_mint.key())
         };
     match fanout.membership_model {
         MembershipModel::Wallet | MembershipModel::NFT => {
@@ -64,6 +67,8 @@ pub fn init(
             fanout.total_staked_shares = None;
         }
         MembershipModel::Token => {
+            fanout.total_shares = membership_mint.supply;
+            fanout.total_available_shares = 0;
             if fanout.membership_mint.is_none() {
                 return Err(ErrorCode::MintAccountRequired.into());
             }

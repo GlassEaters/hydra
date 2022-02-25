@@ -440,6 +440,52 @@ createErrorFromNameLookup.set(
 );
 
 /**
+ * MustDistribute: ''
+ *
+ * @category Errors
+ * @category generated
+ */
+export class MustDistributeError extends Error {
+  readonly code: number = 0x1782;
+  readonly name: string = "MustDistribute";
+  constructor() {
+    super("");
+    if (typeof Error.captureStackTrace === "function") {
+      Error.captureStackTrace(this, MustDistributeError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x1782, () => new MustDistributeError());
+createErrorFromNameLookup.set(
+  "MustDistribute",
+  () => new MustDistributeError()
+);
+
+/**
+ * InvalidStakeAta: ''
+ *
+ * @category Errors
+ * @category generated
+ */
+export class InvalidStakeAtaError extends Error {
+  readonly code: number = 0x1783;
+  readonly name: string = "InvalidStakeAta";
+  constructor() {
+    super("");
+    if (typeof Error.captureStackTrace === "function") {
+      Error.captureStackTrace(this, InvalidStakeAtaError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x1783, () => new InvalidStakeAtaError());
+createErrorFromNameLookup.set(
+  "InvalidStakeAta",
+  () => new InvalidStakeAtaError()
+);
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

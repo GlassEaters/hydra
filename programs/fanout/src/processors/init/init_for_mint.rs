@@ -1,7 +1,9 @@
+
 use crate::state::{Fanout, FanoutMint};
-use crate::utils::validation::assert_fanout_mint_ata;
+use crate::utils::validation::assert_ata;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, TokenAccount};
+use crate::error::ErrorCode;
 
 #[derive(Accounts)]
 #[instruction(bump_seed: u8)]
@@ -19,7 +21,7 @@ pub struct InitializeFanoutForMint<'info> {
     payer= authority,
     space = 200,
     seeds = [b"fanout-config", fanout.key().as_ref(), mint.key().as_ref()],
-    bump = bump_seed
+    bump
     )]
     pub fanout_for_mint: Account<'info, FanoutMint>,
     #[account(
@@ -28,7 +30,7 @@ pub struct InitializeFanoutForMint<'info> {
     constraint = mint_holding_account.delegate.is_none(),
     constraint = mint_holding_account.close_authority.is_none(),
     constraint = mint_holding_account.is_native() == false,
-    constraint = mint_holding_account.mint.key() == mint.key(),
+    constraint = mint_holding_account.mint == mint.key(),
     )
     ]
     pub mint_holding_account: Account<'info, TokenAccount>,
@@ -46,10 +48,11 @@ pub fn init_for_mint(ctx: Context<InitializeFanoutForMint>, bump_seed: u8) -> Pr
     fanout_mint.last_snapshot_amount = mint_holding_account.amount;
     fanout_mint.bump_seed = bump_seed;
     fanout_mint.mint = ctx.accounts.mint.to_account_info().key();
-    assert_fanout_mint_ata(
+    assert_ata(
         &mint_holding_account.to_account_info(),
         &fanout.key(),
         &ctx.accounts.mint.key(),
+        Some(ErrorCode::HoldingAccountMustBeAnATA.into())
     )?;
     fanout_mint.token_account = mint_holding_account.to_account_info().key();
     Ok(())

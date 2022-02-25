@@ -48,7 +48,7 @@ describe("fanout", async () => {
                 MembershipModel.NFT
             );
             expect(fanoutAccount.lastSnapshotAmount.toString()).to.equal("0");
-            expect(fanoutAccount.totalMembers).to.equal(0);
+            expect(fanoutAccount.totalMembers.toString()).to.equal("0");
             expect(fanoutAccount.totalInflow.toString()).to.equal("0");
             expect(fanoutAccount.totalAvailableShares.toString()).to.equal("100");
             expect(fanoutAccount.totalShares.toString()).to.equal("100");
@@ -132,7 +132,7 @@ describe("fanout", async () => {
                 MembershipModel.NFT
             );
             expect(fanoutAccount.lastSnapshotAmount.toString()).to.equal("0");
-            expect(fanoutAccount.totalMembers).to.equal(1);
+            expect(fanoutAccount.totalMembers.toString()).to.equal("1");
             expect(fanoutAccount.totalInflow.toString()).to.equal("0");
             expect(fanoutAccount.totalAvailableShares.toString()).to.equal("90");
             expect(fanoutAccount.totalShares.toString()).to.equal("100");
@@ -172,13 +172,13 @@ describe("fanout", async () => {
                     payer: distBot.publicKey,
                 },
             );
-            const holdingAccountReserved = await connection.getMinimumBalanceForRentExemption(1);
             const memberDataBefore1 = await connection.getAccountInfo(member1.wallet.publicKey);
             const memberDataBefore2 = await connection.getAccountInfo(member2.wallet.publicKey);
             const holdingAccountBefore = await connection
                 .getAccountInfo(builtFanout.fanoutAccountData.accountKey);
             expect(memberDataBefore2).to.be.null;
             expect(memberDataBefore1).to.be.null;
+            const holdingAccountReserved = await connection.getMinimumBalanceForRentExemption(1);
             const firstSnapshot = sent * LAMPORTS_PER_SOL;
             expect(holdingAccountBefore?.lamports).to.equal(firstSnapshot + holdingAccountReserved);
             const tx = await fanoutSdk.sendInstructions(
@@ -399,63 +399,5 @@ describe("fanout", async () => {
         })
     });
 
-    it("Distribute a Native Fanout with Wallet Members", async () => {
-        let builtFanout = await builtWalletFanout(fanoutSdk, 100, 5);
-        expect(builtFanout.fanoutAccountData.totalAvailableShares.toString()).to.equal("0");
-        expect(builtFanout.fanoutAccountData.totalMembers.toString()).to.equal("5");
-        expect(builtFanout.fanoutAccountData.lastSnapshotAmount.toString()).to.equal("0");
-        const distBot = new Keypair();
-        const sent = 10;
-        await airdrop(connection, builtFanout.fanoutAccountData.accountKey, sent);
-        await airdrop(connection, distBot.publicKey, 1);
 
-        let member1 = builtFanout.members[0];
-        let member2 = builtFanout.members[1];
-        let distMember1 = await fanoutSdk.distributeWalletMemberInstructions(
-            {
-                distributeForMint: false,
-                member: member1.wallet.publicKey,
-                fanout: builtFanout.fanout,
-                payer: distBot.publicKey,
-            },
-        );
-        let distMember2 = await fanoutSdk.distributeWalletMemberInstructions(
-            {
-                distributeForMint: false,
-                member: member2.wallet.publicKey,
-                fanout: builtFanout.fanout,
-                payer: distBot.publicKey,
-            },
-        );
-        const holdingAccountReserved = await connection.getMinimumBalanceForRentExemption(1);
-        const memberDataBefore1 = await connection.getAccountInfo(member1.wallet.publicKey);
-        const memberDataBefore2 = await connection.getAccountInfo(member2.wallet.publicKey);
-        const holdingAccountBefore = await connection
-            .getAccountInfo(builtFanout.fanoutAccountData.accountKey);
-        expect(memberDataBefore2).to.be.null;
-        expect(memberDataBefore1).to.be.null;
-        const firstSnapshot = sent * LAMPORTS_PER_SOL;
-        expect(holdingAccountBefore?.lamports).to.equal(firstSnapshot + holdingAccountReserved);
-        const tx = await fanoutSdk.sendInstructions(
-            [...distMember1.instructions, ...distMember2.instructions],
-            [distBot],
-            distBot.publicKey
-        );
-        if (!!tx.RpcResponseAndContext.value.err) {
-            const txdetails = await connection.getConfirmedTransaction(tx.TransactionSignature);
-            console.log(txdetails, tx.RpcResponseAndContext.value.err);
-        }
-        const memberDataAfter1 = await connection.getAccountInfo(member1.wallet.publicKey);
-        const memberDataAfter2 = await connection.getAccountInfo(member2.wallet.publicKey);
-        const holdingAccountAfter = await connection
-            .getAccountInfo(builtFanout.fanoutAccountData.accountKey);
-            const membershipAccount1 = await fanoutSdk.fetch<FanoutMembershipVoucher>(member1.voucher, FanoutMembershipVoucher);
-
-        expect(memberDataAfter1?.lamports).to.equal(firstSnapshot * 0.2);
-        expect(memberDataAfter2?.lamports).to.equal(firstSnapshot * 0.2);
-        expect(holdingAccountAfter?.lamports)
-            .to.equal(firstSnapshot - (firstSnapshot * 0.4) + holdingAccountReserved);
-        expect(builtFanout.fanoutAccountData.lastSnapshotAmount.toString()).to.equal("0");
-        expect(membershipAccount1.totalInflow.toString()).to.equal(`${firstSnapshot * 0.2}`);
-    });
 });

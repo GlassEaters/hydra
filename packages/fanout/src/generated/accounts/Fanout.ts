@@ -20,7 +20,7 @@ export type FanoutArgs = {
   name: string;
   accountKey: web3.PublicKey;
   totalShares: beet.bignum;
-  totalMembers: number;
+  totalMembers: beet.bignum;
   totalInflow: beet.bignum;
   lastSnapshotAmount: beet.bignum;
   bumpSeed: number;
@@ -45,7 +45,7 @@ export class Fanout implements FanoutArgs {
     readonly name: string,
     readonly accountKey: web3.PublicKey,
     readonly totalShares: beet.bignum,
-    readonly totalMembers: number,
+    readonly totalMembers: beet.bignum,
     readonly totalInflow: beet.bignum,
     readonly lastSnapshotAmount: beet.bignum,
     readonly bumpSeed: number,
@@ -198,7 +198,7 @@ export const fanoutBeet = new beet.FixableBeetStruct<
     ["name", beet.utf8String],
     ["accountKey", beetSolana.publicKey],
     ["totalShares", beet.u64],
-    ["totalMembers", beet.u32],
+    ["totalMembers", beet.u64],
     ["totalInflow", beet.u64],
     ["lastSnapshotAmount", beet.u64],
     ["bumpSeed", beet.u8],
