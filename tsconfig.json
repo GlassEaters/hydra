@@ -6,7 +6,11 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": false,
     "jsx": "react",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
     "module": "commonjs",
     "moduleResolution": "Node",
     "resolveJsonModule": true,
@@ -14,15 +18,17 @@
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist/lib",
-    "rootDir": "./src",
+    "rootDir": "./",
     "sourceMap": true,
     "strict": true,
     "target": "es6",
-    "typeRoots": ["node_modules/@types"],
+    "typeRoots": [
+      "node_modules/@types"
+    ],
     "paths": {
-      "@/*": ["*"]
+      "@/*": [
+        "*"
+      ]
     }
-  },
-  "include": ["src"],
-  "exclude": ["dist", "node_modules"]
+  }
 }

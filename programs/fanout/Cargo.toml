@@ -4,17 +4,20 @@ version = "0.1.0"
 description = "Created with Anchor"
 edition = "2018"
 
+
 [lib]
 crate-type = ["cdylib", "lib"]
 name = "fanout"
 
 [features]
 no-entrypoint = []
+test-bpf = []
 no-idl = []
 cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = "0.18.0"
-anchor-spl = "0.18.0"
-"spl-token" = "3.2.0"
+anchor-lang = "0.21.0"
+anchor-spl = "0.21.0"
+spl-token = {version="3.3.0", features = [ "no-entrypoint" ]}
+mpl-token-metadata = {version="1.2.4", features = [ "no-entrypoint" ]}
