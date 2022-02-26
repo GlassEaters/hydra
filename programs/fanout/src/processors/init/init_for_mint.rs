@@ -1,9 +1,8 @@
-
+use crate::error::ErrorCode;
 use crate::state::{Fanout, FanoutMint};
 use crate::utils::validation::assert_ata;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, TokenAccount};
-use crate::error::ErrorCode;
 
 #[derive(Accounts)]
 #[instruction(bump_seed: u8)]
@@ -52,7 +51,7 @@ pub fn init_for_mint(ctx: Context<InitializeFanoutForMint>, bump_seed: u8) -> Pr
         &mint_holding_account.to_account_info(),
         &fanout.key(),
         &ctx.accounts.mint.key(),
-        Some(ErrorCode::HoldingAccountMustBeAnATA.into())
+        Some(ErrorCode::HoldingAccountMustBeAnATA.into()),
     )?;
     fanout_mint.token_account = mint_holding_account.to_account_info().key();
     Ok(())

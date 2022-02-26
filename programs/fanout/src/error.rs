@@ -69,11 +69,23 @@ pub enum ErrorCode {
 
     NumericalOverflow,
 
+    #[msg("Not enough new balance to distribute")]
     InsufficientBalanceToDistribute,
 
     InvalidFanoutForMint,
 
+    #[msg(
+        "This operation must be the instruction right after a distrobution on the same accounts."
+    )]
     MustDistribute,
 
-    InvalidStakeAta
+    InvalidStakeAta,
+
+    CannotTransferToSelf,
+
+    #[msg("Transfer is not supported on this membership model")]
+    TransferNotSupported,
+
+    #[msg("Remove is not supported on this membership model")]
+    RemoveNotSupported,
 }

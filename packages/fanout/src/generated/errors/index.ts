@@ -391,7 +391,7 @@ createErrorFromNameLookup.set(
 );
 
 /**
- * InsufficientBalanceToDistribute: ''
+ * InsufficientBalanceToDistribute: 'Not enough new balance to distribute'
  *
  * @category Errors
  * @category generated
@@ -400,7 +400,7 @@ export class InsufficientBalanceToDistributeError extends Error {
   readonly code: number = 0x1780;
   readonly name: string = "InsufficientBalanceToDistribute";
   constructor() {
-    super("");
+    super("Not enough new balance to distribute");
     if (typeof Error.captureStackTrace === "function") {
       Error.captureStackTrace(this, InsufficientBalanceToDistributeError);
     }
@@ -440,7 +440,7 @@ createErrorFromNameLookup.set(
 );
 
 /**
- * MustDistribute: ''
+ * MustDistribute: 'This operation must be the instruction right after a distrobution on the same accounts.'
  *
  * @category Errors
  * @category generated
@@ -449,7 +449,9 @@ export class MustDistributeError extends Error {
   readonly code: number = 0x1782;
   readonly name: string = "MustDistribute";
   constructor() {
-    super("");
+    super(
+      "This operation must be the instruction right after a distrobution on the same accounts."
+    );
     if (typeof Error.captureStackTrace === "function") {
       Error.captureStackTrace(this, MustDistributeError);
     }
@@ -483,6 +485,75 @@ createErrorFromCodeLookup.set(0x1783, () => new InvalidStakeAtaError());
 createErrorFromNameLookup.set(
   "InvalidStakeAta",
   () => new InvalidStakeAtaError()
+);
+
+/**
+ * CannotTransferToSelf: ''
+ *
+ * @category Errors
+ * @category generated
+ */
+export class CannotTransferToSelfError extends Error {
+  readonly code: number = 0x1784;
+  readonly name: string = "CannotTransferToSelf";
+  constructor() {
+    super("");
+    if (typeof Error.captureStackTrace === "function") {
+      Error.captureStackTrace(this, CannotTransferToSelfError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x1784, () => new CannotTransferToSelfError());
+createErrorFromNameLookup.set(
+  "CannotTransferToSelf",
+  () => new CannotTransferToSelfError()
+);
+
+/**
+ * TransferNotSupported: 'Transfer is not supported on this membership model'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class TransferNotSupportedError extends Error {
+  readonly code: number = 0x1785;
+  readonly name: string = "TransferNotSupported";
+  constructor() {
+    super("Transfer is not supported on this membership model");
+    if (typeof Error.captureStackTrace === "function") {
+      Error.captureStackTrace(this, TransferNotSupportedError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x1785, () => new TransferNotSupportedError());
+createErrorFromNameLookup.set(
+  "TransferNotSupported",
+  () => new TransferNotSupportedError()
+);
+
+/**
+ * RemoveNotSupported: 'Remove is not supported on this membership model'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class RemoveNotSupportedError extends Error {
+  readonly code: number = 0x1786;
+  readonly name: string = "RemoveNotSupported";
+  constructor() {
+    super("Remove is not supported on this membership model");
+    if (typeof Error.captureStackTrace === "function") {
+      Error.captureStackTrace(this, RemoveNotSupportedError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x1786, () => new RemoveNotSupportedError());
+createErrorFromNameLookup.set(
+  "RemoveNotSupported",
+  () => new RemoveNotSupportedError()
 );
 
 /**

@@ -4,8 +4,8 @@ use anchor_lang::prelude::*;
 use crate::state::{Fanout, FanoutMembershipVoucher};
 use crate::utils::validation::*;
 
-use anchor_spl::token::{Mint, Token};
 use crate::utils::logic::distribution::{distribute_mint, distribute_native};
+use anchor_spl::token::{Mint, Token};
 
 #[derive(Accounts)]
 #[instruction(distribute_for_mint: bool)]
@@ -26,9 +26,7 @@ pub struct DistributeWalletMember<'info> {
     bump = fanout.bump_seed,
     )]
     pub fanout: Account<'info, Fanout>,
-    #[account(
-    mut
-    )]
+    #[account(mut)]
     pub holding_account: UncheckedAccount<'info>,
     #[account(mut)]
     pub fanout_for_mint: UncheckedAccount<'info>,
@@ -57,7 +55,7 @@ pub fn distribute_for_wallet(
     assert_membership_model(fanout, MembershipModel::Wallet)?;
     assert_shares_distributed(fanout)?;
     if distribute_for_mint {
-        let membership_key =  &ctx.accounts.member.key().clone();
+        let membership_key = &ctx.accounts.member.key().clone();
         let member = ctx.accounts.member.to_owned();
         distribute_mint(
             ctx.accounts.fanout_mint.to_owned(),

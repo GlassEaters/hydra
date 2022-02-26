@@ -3,9 +3,9 @@ use crate::error::ErrorCode;
 use crate::state::{Fanout, FanoutMembershipVoucher, FANOUT_MEMBERSHIP_VOUCHER_SIZE};
 use crate::utils::logic::calculation::*;
 use crate::utils::validation::{assert_membership_model, assert_owned_by};
+use crate::MembershipModel;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token};
-use crate::MembershipModel;
 
 #[derive(Accounts)]
 #[instruction(args: AddMemberArgs)]

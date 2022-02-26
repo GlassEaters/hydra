@@ -55,7 +55,7 @@ pub struct FanoutMembershipVoucher {
     pub last_inflow: u64,
     pub bump_seed: u8,
     pub membership_key: Pubkey,
-    pub shares: u64
+    pub shares: u64,
 }
 
 pub const FANOUT_MINT_MEMBERSHIP_VOUCHER_SIZE: usize = 32 + 32 + 8 + 1 + 32;

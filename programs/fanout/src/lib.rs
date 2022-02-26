@@ -68,4 +68,16 @@ pub mod fanout {
     ) -> ProgramResult {
         distribute_for_token(ctx, distribute_for_mint)
     }
+
+    pub fn process_sign_metadata(ctx: Context<SignMetadata>) -> ProgramResult {
+        sign_metadata(ctx)
+    }
+
+    pub fn process_transfer_shares(ctx: Context<TransferShares>, shares: u64) -> ProgramResult {
+        transfer_shares(ctx, shares)
+    }
+
+    pub fn process_unstake(ctx: Context<UnStakeTokenMember>) -> ProgramResult {
+        unstake(ctx)
+    }
 }

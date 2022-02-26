@@ -1,12 +1,7 @@
-use crate::error::ErrorCode;
+use crate::state::{Fanout, FanoutMembershipVoucher, MembershipModel};
 
-use crate::state::{
-    Fanout, FanoutMembershipVoucher, MembershipModel,
-    HOLDING_ACCOUNT_SIZE,
-};
-use crate::utils::logic::calculation::*;
 use crate::utils::logic::distribution::{distribute_mint, distribute_native};
-use crate::utils::logic::transfer::{transfer_native};
+
 use crate::utils::validation::*;
 
 use anchor_lang::prelude::*;

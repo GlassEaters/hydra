@@ -1,5 +1,5 @@
 use crate::error::ErrorCode;
-use crate::state::{Fanout, FanoutMembershipVoucher, MembershipModel};
+use crate::state::{Fanout, MembershipModel};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::Instruction;
 use anchor_spl::token::TokenAccount;
@@ -45,7 +45,7 @@ pub fn assert_ata(
     account: &AccountInfo,
     target: &Pubkey,
     mint: &Pubkey,
-    err: Option<ProgramError>
+    err: Option<ProgramError>,
 ) -> Result<u8, ProgramError> {
     assert_derivation(
         &anchor_spl::associated_token::ID,
@@ -86,18 +86,20 @@ pub fn assert_holding(
     Ok(())
 }
 
-pub fn assert_distributed(ix: Instruction,
-                          subject: &Pubkey,
-                          membership_model: MembershipModel) -> Result<(), ProgramError> {
+pub fn assert_distributed(
+    ix: Instruction,
+    subject: &Pubkey,
+    membership_model: MembershipModel,
+) -> Result<(), ProgramError> {
     if ix.program_id != crate::id() {
         return Err(ErrorCode::MustDistribute.into());
     }
     let instruction_id = match membership_model {
-        MembershipModel::Wallet => 6,
-        MembershipModel::NFT => 5,
-        MembershipModel::Token => 7
+        MembershipModel::Wallet => [252, 168, 167, 66, 40, 201, 182, 163],
+        MembershipModel::NFT => [108, 240, 68, 81, 144, 83, 58, 153],
+        MembershipModel::Token => [126, 105, 46, 135, 28, 36, 117, 212],
     };
-    if instruction_id != ix.data[0] {
+    if instruction_id != ix.data[0..8] {
         return Err(ErrorCode::MustDistribute.into());
     }
     if subject != &ix.accounts[1].pubkey {

@@ -1,12 +1,9 @@
 use crate::error::ErrorCode;
 
-use crate::state::{
-    Fanout, FanoutMembershipVoucher, MembershipModel,
-    HOLDING_ACCOUNT_SIZE,
-};
-use crate::utils::logic::calculation::*;
+use crate::state::{Fanout, FanoutMembershipVoucher, MembershipModel};
+
 use crate::utils::logic::distribution::{distribute_mint, distribute_native};
-use crate::utils::logic::transfer::{transfer_native};
+
 use crate::utils::validation::*;
 
 use anchor_lang::prelude::*;
@@ -61,6 +58,7 @@ pub struct DistributeTokenMember<'info> {
     mut,
     constraint = member_stake_account.owner == membership_voucher.key(),
     constraint = member_stake_account.mint == membership_mint.key(),
+    constraint = member_stake_account.amount > 0
     )]
     pub member_stake_account: Account<'info, TokenAccount>,
 }
@@ -80,7 +78,7 @@ pub fn distribute_for_token(
         &ctx.accounts.member_stake_account.to_account_info(),
         &membership_voucher.key(),
         &membership_mint.key(),
-        Some(ErrorCode::InvalidStakeAta.into())
+        Some(ErrorCode::InvalidStakeAta.into()),
     )?;
     assert_owned_by(&fanout_info, &crate::ID)?;
     assert_owned_by(&membership_voucher_info, &crate::ID)?;

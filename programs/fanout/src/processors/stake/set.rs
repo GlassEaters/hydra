@@ -1,10 +1,10 @@
+use crate::error::{ErrorCode, OrArithError};
+use crate::state::{Fanout, FanoutMembershipVoucher, FANOUT_MEMBERSHIP_VOUCHER_SIZE};
+
+use crate::utils::validation::*;
+use crate::MembershipModel;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
-use crate::error::{ErrorCode, OrArithError};
-use crate::MembershipModel;
-use crate::state::{Fanout, FanoutMembershipVoucher, FANOUT_MEMBERSHIP_VOUCHER_SIZE};
-use crate::utils::logic::calculation::update_fanout_for_add;
-use crate::utils::validation::*;
 #[derive(Accounts)]
 #[instruction(shares: u64)]
 pub struct SetTokenMemberStake<'info> {
@@ -48,10 +48,7 @@ pub struct SetTokenMemberStake<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-pub  fn set_token_member_stake(
-    ctx: Context<SetTokenMemberStake>,
-    shares: u64,
-) -> ProgramResult {
+pub fn set_token_member_stake(ctx: Context<SetTokenMemberStake>, shares: u64) -> ProgramResult {
     let fanout = &mut ctx.accounts.fanout;
     let member = &ctx.accounts.member;
     let membership_voucher = &mut ctx.accounts.membership_voucher;
@@ -63,11 +60,12 @@ pub  fn set_token_member_stake(
         &ctx.accounts.member_stake_account.to_account_info(),
         &membership_voucher.key(),
         &membership_mint.key(),
-        Some(ErrorCode::InvalidStakeAta.into())
+        Some(ErrorCode::InvalidStakeAta.into()),
     )?;
     membership_voucher.fanout = fanout.key();
     membership_voucher.membership_key = member.key();
-    fanout.total_staked_shares = fanout.total_staked_shares
+    fanout.total_staked_shares = fanout
+        .total_staked_shares
         .and_then(|ss| ss.checked_add(shares));
     fanout.total_shares = membership_mint.supply;
     fanout.total_members = fanout.total_members.checked_add(1).or_arith_error()?;
@@ -83,4 +81,3 @@ pub  fn set_token_member_stake(
     anchor_spl::token::transfer(cpi_ctx, shares)?;
     Ok(())
 }
-

@@ -1,20 +1,12 @@
 import {Account, Connection, Keypair, LAMPORTS_PER_SOL} from "@solana/web3.js";
 import {NodeWallet} from "@project-serum/common"; //TODO remove this
-import {ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID} from "@solana/spl-token";
+import {Token, TOKEN_PROGRAM_ID} from "@solana/spl-token";
 import {expect, use} from "chai";
 import ChaiAsPromised from "chai-as-promised";
-import {
-    Fanout,
-    FanoutClient,
-    FanoutMembershipMintVoucher,
-    FanoutMembershipVoucher,
-    FanoutMint,
-    MembershipModel
-} from "@hydra/fanout";
-import {createMasterEdition} from "./utils/metaplex";
-import {DataV2} from "@metaplex-foundation/mpl-token-metadata";
+import {Fanout, FanoutClient, FanoutMembershipVoucher, FanoutMint, MembershipModel} from "@hydra/fanout";
 import {airdrop, LOCALHOST} from "@metaplex-foundation/amman";
-import {builtNftFanout, builtTokenFanout, builtWalletFanout} from "./utils/scenarios";
+import {builtTokenFanout} from "./utils/scenarios";
+import BN from "bn.js";
 
 use(ChaiAsPromised);
 
@@ -132,7 +124,7 @@ describe("fanout", async () => {
             const tokenAcct = await membershipMint.createAccount(authorityWallet.publicKey)
             const tokenAcctMember = await membershipMint.createAssociatedTokenAccount(member.publicKey)
             await membershipMint.mintTo(tokenAcct, authorityWallet.publicKey, [], supply);
-            await membershipMint.transfer(tokenAcct, tokenAcctMember, authorityWallet.publicKey, [], supply * .1 );
+            await membershipMint.transfer(tokenAcct, tokenAcctMember, authorityWallet.publicKey, [], supply * .1);
 
             const {fanout} = await fanoutSdk.initializeFanout({
                 totalShares: 0,
@@ -164,6 +156,8 @@ describe("fanout", async () => {
             expect(voucher.shares?.toString()).to.equal(`${supply * .1}`);
             expect(voucher.membershipKey?.toBase58()).to.equal(member.publicKey.toBase58());
             expect(voucher.fanout?.toBase58()).to.equal(fanout.toBase58());
+            const stake = await membershipMint.getAccountInfo(ixs.output.stakeAccount);
+            expect(stake.amount.toString()).to.equal(`${supply * .1}`);
             const fanoutAccountData = await fanoutSdk.fetch<Fanout>(
                 fanout,
                 Fanout
@@ -216,14 +210,58 @@ describe("fanout", async () => {
                 console.log(txdetails, tx.RpcResponseAndContext.value.err);
             }
             const voucher = await fanoutSdk.fetch<FanoutMembershipVoucher>(ix.output.membershipVoucher, FanoutMembershipVoucher);
-            const fanout = await fanoutSdk.fetch<Fanout>(builtFanout.fanout, Fanout);
             const memberAfter = await fanoutSdk.connection.getAccountInfo(member1.wallet.publicKey);
             expect(voucher.lastInflow.toString()).to.equal(`${firstSnapshot}`)
-            expect(voucher.shares.toString()).to.equal(`${(100 ** 6)/5}`)
+            expect(voucher.shares.toString()).to.equal(`${(100 ** 6) / 5}`)
             // @ts-ignore
             expect(memberAfter?.lamports - memberBefore?.lamports).to.equal(firstMemberAmount)
 
         });
+
+        it("Unstake a Native Fanout with Token Members", async () => {
+            const membershipMint = await Token.createMint(
+                connection,
+                authorityWallet,
+                authorityWallet.publicKey,
+                null,
+                6,
+                TOKEN_PROGRAM_ID
+            );
+            const distBot = new Keypair();
+            await airdrop(connection, distBot.publicKey, 1);
+            let builtFanout = await builtTokenFanout(membershipMint, authorityWallet, fanoutSdk, 100, 5);
+            const sent = 10;
+            const beforeUnstake = await fanoutSdk.fetch<Fanout>(builtFanout.fanout,Fanout);
+            await airdrop(connection, builtFanout.fanoutAccountData.accountKey, sent);
+            const firstSnapshot = sent * LAMPORTS_PER_SOL;
+            const firstMemberAmount = firstSnapshot * 0.2
+            let member1 = builtFanout.members[0];
+
+            const memberFanoutSdk = new FanoutClient(
+                connection,
+                new NodeWallet(new Account(member1.wallet.secretKey))
+            );
+            let ix = await memberFanoutSdk.distributeTokenMemberInstructions(
+                {
+                    distributeForMint: false,
+                    membershipMint: membershipMint.publicKey,
+                    fanout: builtFanout.fanout,
+                    member: member1.wallet.publicKey,
+                    payer: member1.wallet.publicKey
+                }
+            );
+            const voucherBefore = await memberFanoutSdk.fetch<FanoutMembershipVoucher>(ix.output.membershipVoucher, FanoutMembershipVoucher);
+            await memberFanoutSdk.unstakeTokenMember({
+                    fanout: builtFanout.fanout,
+                    member: member1.wallet.publicKey,
+                    payer: member1.wallet.publicKey
+                }
+            );
+            const afterUnstake  = await memberFanoutSdk.fetch<Fanout>(builtFanout.fanout,Fanout);
+            const memberAfter = await memberFanoutSdk.connection.getAccountInfo(member1.wallet.publicKey);
+            expect(afterUnstake.totalStakedShares?.toString()).to.equal(`${(beforeUnstake?.totalStakedShares as BN).sub(voucherBefore.shares as BN)}`)
+        });
+
 
     });
 });

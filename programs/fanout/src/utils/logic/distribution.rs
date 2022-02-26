@@ -22,8 +22,7 @@ pub fn distribute_native<'info>(
     let current_snapshot_less_min =
         current_lamports(&rent, HOLDING_ACCOUNT_SIZE, current_snapshot)?;
     update_inflow(fanout, current_snapshot_less_min)?;
-    let inflow_diff =
-        calculate_inflow_change(fanout.total_inflow, membership_voucher.last_inflow)?;
+    let inflow_diff = calculate_inflow_change(fanout.total_inflow, membership_voucher.last_inflow)?;
     let shares = membership_voucher.shares as u64;
     let dif_dist = calculate_dist_amount(shares, inflow_diff, total_shares)?;
     update_snapshot(fanout, membership_voucher, dif_dist)?;
@@ -67,7 +66,7 @@ pub fn distribute_mint<'info>(
         &holding_account.to_account_info(),
         &fanout.key(),
         &fanout_mint.key(),
-        Some(ErrorCode::HoldingAccountMustBeAnATA.into())
+        Some(ErrorCode::HoldingAccountMustBeAnATA.into()),
     )?;
     let fanout_for_mint_object =
         &mut parse_fanout_mint(fanout_for_mint, &fanout.key(), &mint.key())?;
@@ -85,7 +84,7 @@ pub fn distribute_mint<'info>(
         membership_key,
         &fanout_for_mint.key(),
         &mint.key(),
-        &fanout.key()
+        &fanout.key(),
     )?;
     let holding_account_ata = parse_token_account(holding_account, &fanout.key())?;
     parse_token_account(&fanout_mint_member_token_account_info, &member.key())?;

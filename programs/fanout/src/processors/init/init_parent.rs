@@ -55,12 +55,11 @@ pub fn init(
     fanout.last_snapshot_amount = fanout.total_inflow;
     fanout.bump_seed = args.bump_seed;
     fanout.membership_model = model;
-    fanout.membership_mint =
-        if membership_mint.key() == spl_token::native_mint::id() {
-            None
-        } else {
-            Some(membership_mint.key())
-        };
+    fanout.membership_mint = if membership_mint.key() == spl_token::native_mint::id() {
+        None
+    } else {
+        Some(membership_mint.key())
+    };
     match fanout.membership_model {
         MembershipModel::Wallet | MembershipModel::NFT => {
             fanout.membership_mint = None;

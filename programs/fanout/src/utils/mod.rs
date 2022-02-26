@@ -102,7 +102,7 @@ pub fn parse_mint_membership_voucher<'info>(
     membership_key: &Pubkey,
     fanout_for_mint: &Pubkey,
     fanout_mint: &Pubkey,
-    fanout: &Pubkey
+    fanout: &Pubkey,
 ) -> Result<FanoutMembershipMintVoucher, ProgramError> {
     let account_info = fanout_for_mint_membership_voucher.to_account_info();
     let mint_membership_voucher_bump = assert_derivation(
