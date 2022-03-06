@@ -1,7 +1,7 @@
 {
-    "name": "@hydra/fanout",
+    "name": "@glasseaters/hydra-sdk",
     "version": "0.4.1",
-    "description": "Interface to the spl-fanout smart contract",
+    "description": "Interface to the fanout smart contract",
     "repository": {
         "type": "git",
         "url": "https://github.com/GlassChewers/hydra"

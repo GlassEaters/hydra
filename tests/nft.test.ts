@@ -10,7 +10,7 @@ import {
     FanoutMembershipVoucher,
     FanoutMint,
     MembershipModel
-} from "@hydra/fanout";
+} from "@glasseaters/hydra-sdk";
 import {createMasterEdition} from "./utils/metaplex";
 import {DataV2} from "@metaplex-foundation/mpl-token-metadata";
 import {airdrop, LOCALHOST} from "@metaplex-foundation/amman";
