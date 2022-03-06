@@ -51,10 +51,17 @@ yarn run watch
 ```
 This will watch your `packages/sdk` folder for any changes, which means it will build the SDK for use in apps or tests when the auto generated code from the api generator is saved in the folder.
 
-### Testing
+#### Testing
 Now that you have the ability to build the program, generated sdk and the rest of the sdk, running tests is a breeze.
 With the local validator up and running you can simply run.
 ```shell
 yarn test
 ```
 Using ts-node/register you can even setup breakpoints and debuggers on your IDE to debug your tests.
+
+
+### Docs Development
+```shell
+cd packages/docs
+yarn start
+```
