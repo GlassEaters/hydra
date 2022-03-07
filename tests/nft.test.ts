@@ -216,7 +216,7 @@ describe("fanout", async () => {
                 [distBot],
                 distBot.publicKey
             );
-            await connection.getConfirmedTransaction(distAgainMember1Tx.TransactionSignature);
+            await connection.getTransaction(distAgainMember1Tx.TransactionSignature);
             const memberDataAfterAgain1 = await connection.getAccountInfo(member1.wallet.publicKey);
             expect(memberDataAfterAgain1?.lamports).to.equal(firstSnapshot * 0.2);
             const membershipAccountAgain1 = await fanoutSdk.fetch<FanoutMembershipVoucher>(member1.voucher, FanoutMembershipVoucher);

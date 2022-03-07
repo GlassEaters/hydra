@@ -19,7 +19,7 @@ const programs = {
 
 const validator = {
   verifyFees: false,
-  commitment: 'singleGossip',
+  commitment: 'confirmed',
   programs: [programs.metadata, programs.fanout]
 };
 
