@@ -58,6 +58,11 @@ With the local validator up and running you can simply run.
 yarn test
 ```
 Using ts-node/register you can even setup breakpoints and debuggers on your IDE to debug your tests.
+If you dont have the local validator running do:
+```shell
+yarn run amman:start 
+yarn test
+```
 
 
 ### Docs Development
