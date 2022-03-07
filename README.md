@@ -3,7 +3,7 @@ Collective account pooling, fan out wallet, dao treasury, all of the things you 
 
 ![](/packages/docs/static/img/logo.jpeg)
 
-#NOTE!!!!!!!!!!!!!!!!! READ THIS
+# NOTE!!!!!!!!!!!!!!!!! READ THIS
 Due to Armani's(Anchor Invetor) misguided desires to keep the solana ecosystem safe this code is not YET compatible with Anchor 0.22.X so stick with 0.21.X for now of face certain and irrevocable issues.
 
 ## Setup && Development 
