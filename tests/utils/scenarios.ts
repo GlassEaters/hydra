@@ -1,5 +1,5 @@
 
-import {Fanout, FanoutClient, MembershipModel} from "@hydra/fanout";
+import {Fanout, FanoutClient, MembershipModel} from "@glasseaters/hydra-sdk";
 import {createMasterEdition} from "./metaplex";
 import {DataV2} from "@metaplex-foundation/mpl-token-metadata";
 import {Keypair, PublicKey, Signer, TransactionInstruction} from "@solana/web3.js";
