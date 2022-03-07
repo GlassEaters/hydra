@@ -63,7 +63,7 @@ If you dont have the local validator running do:
 yarn run amman:start 
 yarn test
 ```
-Or if you are like Noah or Will and extremely lazy and can't be bothered to run more than one command run `yarn run mega-test`
+Or if you are like Noah or Will and are extremely lazy and can't be bothered to run more than one command run `yarn run mega-test`
 
 ### Docs Development
 ```shell
