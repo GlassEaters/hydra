@@ -6,7 +6,7 @@ const remoteDeployDir = path.join(__dirname, "../metaplex-program-library", 'tar
 
 const programIds = {
   metadata: 'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
-  fanout: 'Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS'
+  fanout: 'hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg'
 };
 
 function localDeployPath(dir, programName) {

@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 use processors::*;
 use state::MembershipModel;
 
-declare_id!("CfNK9VnJUPc1atYtrV8YqEfdRvitJtJ5WkeTJbo2Uc4c");
+declare_id!("hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg");
 #[program]
 pub mod fanout {
     use super::*;
