@@ -30,6 +30,7 @@
     "api:gen": "node scripts/api-gen-ts.cjs && prettier --write ./packages/**/*.ts",
     "watch": "npx lerna run --parallel watch",
     "build": "npx lerna run build",
+    "mega-test": "yarn run api:gen && yarn run build && yarn run amman:start && yarn test",
     "test": "ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""
   },
   "private": true,

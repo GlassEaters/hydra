@@ -1,13 +1,13 @@
 [package]
-name = "fanout"
+name = "hydra"
 version = "0.1.0"
-description = "Created with Anchor"
+description = "Collective account pooling, fan out wallet, dao treasury, all of the things you need to FAN OUT"
 edition = "2018"
 
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "fanout"
+name = "hydra"
 
 [features]
 no-entrypoint = []

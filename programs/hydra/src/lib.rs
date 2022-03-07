@@ -9,7 +9,7 @@ use state::MembershipModel;
 
 declare_id!("hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg");
 #[program]
-pub mod fanout {
+pub mod hydra {
     use super::*;
 
     pub fn process_init(

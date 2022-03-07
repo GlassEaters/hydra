@@ -39,7 +39,7 @@ Now your top level MPL target folder will have the token metadata `so` file that
 After accomplishing this your workflow to build new code will be:
 
 ```shell
-anchor build
+anchor build //Optional as the next commant runs anchor build for you
 yarn run api:gen
 yarn run amman:start
 ```
@@ -63,7 +63,7 @@ If you dont have the local validator running do:
 yarn run amman:start 
 yarn test
 ```
-
+Or if you are like Noah or Will and extremely lazy and can't be bothered to run more than one command run `yarn run mega-test`
 
 ### Docs Development
 ```shell

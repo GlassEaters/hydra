@@ -128,7 +128,7 @@ export class FanoutClient {
   connection: Connection;
   wallet: Wallet;
 
-  static ID = new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+  static ID = new PublicKey("hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg");
 
   static async init(
     connection: Connection,

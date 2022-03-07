@@ -2,11 +2,11 @@
 "use strict";
 
 // NOTE: ideally we'd rename the anchor program to gumdrop
-const PROGRAM_NAME = "fanout";
-const PROGRAM_ID = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS";
+const PROGRAM_NAME = "hydra";
+const PROGRAM_ID = "hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg";
 
 const path = require("path");
-const programDir = path.join(__dirname,  "..", "programs/fanout");
+const programDir = path.join(__dirname,  "..", "programs/hydra");
 const generatedIdlDir = path.join(__dirname, "..", "target", "idl");
 const generatedSDKDir = path.join(__dirname, "..","packages/sdk", "src", "generated");
 const { spawn } = require("child_process");
@@ -14,6 +14,7 @@ const { Solita } = require("@metaplex-foundation/solita");
 const { writeFile } = require("fs/promises");
 
 const anchor = spawn("anchor", ["build", "--idl", generatedIdlDir], {
+  shell: true,
   cwd: programDir,
 })
   .on("error", (err) => {
