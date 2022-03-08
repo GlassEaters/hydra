@@ -4,18 +4,18 @@ sidebar_position: 1
 
 # What is Hydra
 
-Hydra is a wallet of wallets. A fanout wallet if you will. It allows the creation of extremely large membership sets that can take part in fund distribution from a central wallet. It works with SOL and any SPL token.
+Hydra is a wallet of wallets, a fanout wallet if you will. It enables extremely large membership sets that can take part in fund distribution from a central wallet. It works with SOL and any SPL token.
 ![](/img/fanout.jpg)
 
-## Basic flow
+## Basic Flow
 
-There are three steps in the lifecycle of a Hydra Wallet:
+A Hydra Wallet's lifecycle has 3 phases:
 
 1. Creation - Create the Wallet
-2. Addition - Add Members
+2. Member Addition - Add Members and specify their share
 3. Distribution - Distribute funds to the Members according to their share
 
-The Distribution step is an on-chain operation that's called on a per-Member basis. We'll get into all the details of this later, but Hydra will track all distribtuions and ensure that Members only get their share of the funds. As new funds flow into the Hydra Wallet, members (or other automated processes) will call the Distribution operation to disburse the appropriate share of funds to the given Member. 
+The Distribution phase is an on-chain operation that's called on a per-Member basis. We'll get into all the details of this later, but Hydra will track all distribtuions and ensure that Members always get their fair share of the funds. As new funds flow into the Hydra Wallet, members (or other automated processes) will call the Distribution operation to disburse the appropriate share of funds to the given Member. 
 
 Let's get into a bit more detail on these steps.
 
@@ -41,7 +41,7 @@ const init = await fanoutSdk.initializeFanout({
             });
 ```
 
-### Creating a Wallet that can also accept SPL Tokens
+### Also accept SPL Tokens
 
 If you want to also accept other specific SPL Tokens, you can update your Hydra Wallet to accept those by specifying the given token's public key after initializing the wallet. 
 
@@ -143,6 +143,111 @@ const stake = await membershipMint.getAccountInfo(ixs.output.stakeAccount);
 
 ## Distributing Funds
 
-Now the fun part, claiming your share! 
+The Distribute method is expected to be called many times over the lifetime of a Hydra Wallet. In order to keep the processing and memory costs under Solana limits while enabling arbitrarily large membership sets, we require that you specify the Member (and if applicable the Member's NFT or SPL mint) that you want to distribute funds to.
 
-TODO: Add a detailed description of the distribution process.
+:::caution
+Distribution will fail if the sum of member shares does not equal the totalShares specified in the `initializeFanout` call.
+:::
+
+Hydra will track distribution so you can call this multiple times and funds will only be distributed to the Member once. The Distribute method is slightly different depending on the Membership Model:
+
+### Wallet
+```ts
+const member1.publicKey = "Member1.publicKey";
+const distributionBot = new Keypair(); 
+// This is the caller of the Distribute method, it can be a bot or a user, 
+// they just need enough funds to pay for the transaction fee. If you're using 
+// this code, airdrop a sol to distributionBot.
+
+let distributeToMember1 = await fanoutSdk.distributeWalletMemberInstructions(
+    {
+        distributeForMint: false,
+        member: member1.publicKey,
+        fanout: fanout, // From initialization
+        payer: distributionBot.publicKey,
+    },
+);
+
+const tx = await fanoutSdk.sendInstructions(
+    [...distMember1.instructions],
+    [distributionBot],
+    distributionBot.publicKey
+);
+if (!!tx.RpcResponseAndContext.value.err) {
+    const txdetails = await connection.getConfirmedTransaction(tx.TransactionSignature);
+    console.log(txdetails, tx.RpcResponseAndContext.value.err);
+}
+```
+
+### NFT
+Same as above, but replace distributeToMember1 with this:
+```ts
+const member1.mint = "NFT Mint for Member 1";
+
+let distributeToMember1 = await fanoutSdk.distributeNftMemberInstructions(
+    {
+        distributeForMint: false,
+        member: member1.publicKey,
+        membershipKey: member1.mint,
+        fanout: fanout,
+        payer: distributionBot.publicKey,
+    },
+);
+```
+
+### Token
+
+Same as Wallet, but replace distributeToMember1 with this:
+```ts
+const membershiptMint.publicKey = "SPL-Token-PublicKey";
+
+let distributeToMember1 = await fanoutSdk.distributeTokenMemberInstructions(
+    {
+        distributeForMint: false,
+        membershipMint: membershipMint.publicKey,
+        fanout: fanout,
+        member: member1.publicKey,
+        payer: distributionBot.publicKey,
+    }
+);
+```
+
+### Distribute SPL Tokens
+
+The process is basically the same, you'll additionally specify the Mint of the Token you want to distribute and set distributeForMint to true.
+
+Example for the Wallet member model:
+```ts
+const mint.publicKey = "SPL-Token-To-Distribute-PublicKey";
+
+let distributeToMember1 = await fanoutSdk.distributeWalletMemberInstructions(
+    {
+        distributeForMint: true,
+        member: member1.publicKey,
+        fanout: builtFanout.fanout,
+        payer: distributionBot.publicKey,
+        fanoutMint: mint.publicKey
+    },
+);
+
+```
+
+## Additional Capabilities
+
+One key use case for Hydra is specifying the Hydra Wallet as a creator with some royalty share for an NFT. We've enabled the Authority of the Hydra Wallet to sign NFTs as the Hydra Wallet so the wallet is a verified creator in the NFT metadata. 
+
+NEED CODE EXAMPLE
+
+
+## Future Plans
+
+We're very excited about the use cases the Hydra Wallet unlocks and we're looking forward to seeing it out on mainnet. We have a few additional membership models that we're considering implementing, so let us know if you're interested or if you have a use case that you think we should be addressing.
+
+Additional Models:
+1. NFT Collection - This is similar to the NFT model, but it would be easier to initialize (just use the collection address) and you could automatically weigh the wallet share by NFT properties instead of specifying on a per-NFT basis.
+2. Merkle or DSA Accumulator - ???
+
+
+## Questions
+1. Can I query membership in an existing fanout using the fanout address?
+2. For the Wallet and NFT models, can I update the membership share for a given address?
