@@ -1,13 +1,23 @@
 [programs.localnet]
-fanout = "hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg"
+hydra = "hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg"
+
+[programs.devnet]
+hydra = "hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg"
+
+[programs.mainnet]
+hydra = "hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg"
 
 
 [registry]
 url = "https://anchor.projectserum.com"
 
-[provider]
+[provider.localnet]
 cluster = "localnet"
 wallet = "~/.config/solana/id.json"
+
+[provider.mainnet]
+cluster = "localnet"
+wallet = "~/Desktop/"
 
 [scripts]
 test = "ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

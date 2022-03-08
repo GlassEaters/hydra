@@ -21,3 +21,15 @@
   align-items: center;
   justify-content: center;
 }
+
+.bodyHead {
+  font-size: 4rem;
+  text-align: center;
+  width: 100%;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+}
+
