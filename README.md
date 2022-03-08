@@ -3,6 +3,9 @@ Collective account pooling, fan out wallet, dao treasury, all of the things you 
 
 ![](/packages/docs/static/img/logo.jpeg)
 
+# NOTE!!!!!!!!!!!!!!!!! READ THIS
+Due to Armani's(Anchor Inventor) misguided desires to keep the solana ecosystem safe this code is not YET compatible with Anchor 0.22.X so stick with 0.21.X for now of face certain and irrevocable issues.
+
 ## Setup && Development 
 To get started the basic steps are to install all the JS dependencies, cargo dependencies will be installed automatically when you run `anchor build`.
 This package uses the latest yarn, which is yarn 3 and I will accept no hate for using the latest yarn :)
