@@ -3,7 +3,7 @@ import {NodeWallet} from "@project-serum/common"; //TODO remove this
 import {Token, TOKEN_PROGRAM_ID} from "@solana/spl-token";
 import {expect, use} from "chai";
 import ChaiAsPromised from "chai-as-promised";
-import {Fanout, FanoutClient, FanoutMembershipVoucher, FanoutMint, MembershipModel} from "@glasseaters/hydra-sdk";
+import {Fanout, FanoutClient, FanoutMembershipVoucher, FanoutMint, MembershipModel} from "../packages/sdk/src";
 import {airdrop, LOCALHOST} from "@metaplex-foundation/amman";
 import {builtTokenFanout} from "./utils/scenarios";
 import BN from "bn.js";

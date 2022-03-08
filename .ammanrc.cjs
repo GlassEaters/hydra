@@ -14,7 +14,7 @@ function localDeployPath(dir, programName) {
 }
 const programs = {
   metadata: { programId: programIds.metadata, deployPath: localDeployPath(remoteDeployDir, 'mpl_token_metadata') },
-  fanout: { programId: programIds.fanout, deployPath: localDeployPath(path.join(__dirname,'target', 'deploy') , 'fanout') }
+  fanout: { programId: programIds.fanout, deployPath: localDeployPath(path.join(__dirname,'target', 'deploy') , 'hydra') }
 };
 
 const validator = {
