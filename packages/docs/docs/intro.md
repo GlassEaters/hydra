@@ -15,7 +15,7 @@ A Hydra Wallet's lifecycle has 3 phases:
 2. Member Addition - Add Members and specify their share
 3. Distribution - Distribute funds to the Members according to their share
 
-The Distribution phase is an on-chain operation that's called on a per-Member basis. We'll get into all the details of this later, but Hydra will track all distribtuions and ensure that Members always get their fair share of the funds. As new funds flow into the Hydra Wallet, members (or other automated processes) will call the Distribution operation to disburse the appropriate share of funds to the given Member. 
+The Distribution phase is an on-chain operation that's called on a per-Member basis. We'll get into all the details of this later, but Hydra will track all distributions and ensure that Members always get their fair share of the funds. As new funds flow into the Hydra Wallet, members (or other automated processes) will call the Distribution operation to disburse the appropriate share of funds to the given Member. 
 
 Let's get into a bit more detail on these steps.
 
@@ -102,7 +102,7 @@ const {membershipAccount} = await fanoutSdk.addMemberNft({
 
 3. **Token** - This is the most flexible membership model, but is a bit more complicated. In this model, Membership is associated with staked ownership of the specified Token. When creating a Hydra Wallet with the Token model, you specify the mint of an SPL Token and distribute those tokens to your members (in whatever proportion you want). Then those members need to stake their tokens with the Hydra Wallet to be able to claim their share of the distribution. 
 
-    For example, if you mint a supply of 1000 tokens and distrubte all 1000, but only 40 of them are staked, then distributions will be calculated off of the 40 that are staked, not the 1000 total supply. Members who do not stake get 0% and those that do get `staked / 40` of the distribution. 
+    For example, if you mint a supply of 1000 tokens and distribute all 1000, but only 40 of them are staked, then distributions will be calculated off of the 40 that are staked, not the 1000 total supply. Members who do not stake get 0% and those that do get `staked / 40` of the distribution. 
 
     We are aware of some initialization issues with this model, so for now we recommend you don't fund the Hydra Wallet until you've given your members enough time to stake their tokens.
 
@@ -236,6 +236,7 @@ let distributeToMember1 = await fanoutSdk.distributeWalletMemberInstructions(
 
 One key use case for Hydra is specifying the Hydra Wallet as a creator with some royalty share for an NFT. We've enabled the Authority of the Hydra Wallet to sign NFTs as the Hydra Wallet so the wallet is a verified creator in the NFT metadata. 
 
+```ts
 import {
   CreateMasterEditionV3,
   CreateMetadataV2,
@@ -266,80 +267,80 @@ const init = await fanoutSdk.initializeFanout({
             
 
 
-  const mint = Keypair.generate();
-  const metadataAccount = await Metadata.getPDA(mint.publicKey);
-  const editionAccount = await MasterEdition.getPDA(mint.publicKey);
-  const userTokenAccoutAddress = await Token.getAssociatedTokenAddress(
+const mint = Keypair.generate();
+const metadataAccount = await Metadata.getPDA(mint.publicKey);
+const editionAccount = await MasterEdition.getPDA(mint.publicKey);
+const userTokenAccountAddress = await Token.getAssociatedTokenAddress(
+  SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  mint.publicKey,
+  walletKey,
+  true,
+);
+const instructions: TransactionInstruction[] = [];
+instructions.push(
+  SystemProgram.createAccount({
+    fromPubkey: walletKey,
+    newAccountPubkey: mint.publicKey,
+    lamports: cost,
+    space: MintLayout.span,
+    programId: TOKEN_PROGRAM_ID,
+  }),
+  Token.createInitMintInstruction(
+    TOKEN_PROGRAM_ID,
+    mint.publicKey,
+    0,
+    walletKey,
+    walletKey,
+  ),
+  SystemProgram.transfer({
+    fromPubkey: walletKey,
+    toPubkey: donationAddress,
+    lamports: DONATION,
+  }),
+  Token.createAssociatedTokenAccountInstruction(
     SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
     TOKEN_PROGRAM_ID,
     mint.publicKey,
+    userTokenAccountAddress,
     walletKey,
-    true,
-  );
-  const instructions: TransactionInstruction[] = [];
-  instructions.push(
-    SystemProgram.createAccount({
-      fromPubkey: walletKey,
-      newAccountPubkey: mint.publicKey,
-      lamports: cost,
-      space: MintLayout.span,
-      programId: TOKEN_PROGRAM_ID,
-    }),
-    Token.createInitMintInstruction(
-      TOKEN_PROGRAM_ID,
-      mint.publicKey,
-      0,
-      walletKey,
-      walletKey,
-    ),
-    SystemProgram.transfer({
-      fromPubkey: walletKey,
-      toPubkey: donationAddress,
-      lamports: DONATION,
-    }),
-    Token.createAssociatedTokenAccountInstruction(
-      SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      mint.publicKey,
-      userTokenAccoutAddress,
-      walletKey,
-      walletKey,
-    ),
-    ...new CreateMetadataV2(
-      {
-        feePayer: walletKey,
-      },
-      {
-        metadata: metadataAccount,
-        metadataData,
-        updateAuthority: walletKey,
-        mint: mint.publicKey,
-        mintAuthority: walletKey,
-      },
-    ).instructions,
-    Token.createMintToInstruction(
-      TOKEN_PROGRAM_ID,
-      mint.publicKey,
-      userTokenAccoutAddress,
-      walletKey,
-      [],
-      1,
-    ),
-    ...new CreateMasterEditionV3(
-      {
-        feePayer: walletKey,
-      },
-      {
-        edition: editionAccount,
-        metadata: metadataAccount,
-        updateAuthority: walletKey,
-        mint: mint.publicKey,
-        mintAuthority: walletKey,
-        maxSupply,
-      },
-    ).instructions,
-  );
-
+    walletKey,
+  ),
+  ...new CreateMetadataV2(
+    {
+      feePayer: walletKey,
+    },
+    {
+      metadata: metadataAccount,
+      metadataData,
+      updateAuthority: walletKey,
+      mint: mint.publicKey,
+      mintAuthority: walletKey,
+    },
+  ).instructions,
+  Token.createMintToInstruction(
+    TOKEN_PROGRAM_ID,
+    mint.publicKey,
+    userTokenAccountAddress,
+    walletKey,
+    [],
+    1,
+  ),
+  ...new CreateMasterEditionV3(
+    {
+      feePayer: walletKey,
+    },
+    {
+      edition: editionAccount,
+      metadata: metadataAccount,
+      updateAuthority: walletKey,
+      mint: mint.publicKey,
+      mintAuthority: walletKey,
+      maxSupply,
+    },
+  ).instructions,
+);
+```
 
 ## Future Plans
 
