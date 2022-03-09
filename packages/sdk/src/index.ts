@@ -32,7 +32,7 @@ import {
   createProcessDistributeWalletInstruction,
   createProcessSetTokenMemberStakeInstruction,
   createProcessDistributeTokenInstruction,
-  createProcessUnstakeInstruction,
+  createProcessUnstakeInstruction, createProcessSignMetadataInstruction,
 } from "./generated/instructions";
 import { MembershipModel } from "./generated/types";
 import { Fanout } from "./generated/accounts";
@@ -75,6 +75,13 @@ interface StakeMemberArgs {
   fanoutNativeAccount?: PublicKey;
   member: PublicKey;
   payer: PublicKey;
+}
+
+interface SignMetadataArgs {
+  fanout: PublicKey;
+  authority?: PublicKey;
+  holdingAccount?: PublicKey;
+  metadata: PublicKey;
 }
 
 interface UnstakeMemberArgs {
@@ -579,6 +586,34 @@ export class FanoutClient {
     };
   }
 
+  async signMetadataInstructions(
+      opts: SignMetadataArgs
+  ):  Promise<
+      InstructionResult<{}>
+      >{
+    let authority = opts.authority, holdingAccount = opts.holdingAccount;
+    if(!authority || !holdingAccount) {
+     const fanoutObj = await this.fetch<Fanout>(opts.fanout, Fanout);
+     authority = fanoutObj.authority as PublicKey;
+     holdingAccount = fanoutObj.accountKey as PublicKey;
+    }
+    const instructions: TransactionInstruction[] = [];
+    const signers: Signer[] = [];
+    instructions.push(
+        createProcessSignMetadataInstruction({
+        fanout: opts.fanout,
+        authority: authority,
+        holdingAccount: holdingAccount,
+        metadata: opts.metadata,
+      })
+    );
+    return {
+      output: {},
+      instructions,
+      signers,
+    };
+  }
+
   async distributeTokenMemberInstructions(
     opts: DistributeTokenMemberArgs
   ): Promise<
@@ -929,6 +964,13 @@ export class FanoutClient {
   async stakeTokenMember(opts: StakeMemberArgs) {
     const { instructions, signers, output } =
       await this.stakeTokenMemberInstructions(opts);
+    await this.throwingSend(instructions, signers, this.wallet.publicKey);
+    return output;
+  }
+
+  async signMetadata(opts: SignMetadataArgs) {
+    const { instructions, signers, output } =
+        await this.signMetadataInstructions(opts);
     await this.throwingSend(instructions, signers, this.wallet.publicKey);
     return output;
   }

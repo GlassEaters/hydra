@@ -256,8 +256,11 @@ import {
    DataV2,
    MasterEdition,
    MAX_NAME_LENGTH,
-   Metadata, SignMetadata,
+   Metadata,
 } from "@metaplex-foundation/mpl-token-metadata";
+import {
+    /// Whatever you need
+} from "@glasseaters/hydra-sdk";
 
 // ...
 
@@ -279,7 +282,7 @@ const init = await fanoutSdk.initializeFanout({
 
 // Set Royalties
 const allCreators = [{creator: authorityWallet.publicKey, share: 0}, {
-   creator: init.output.fanout,
+   creator: init.fanout,
    publicKey,
    share: 100
 }];
@@ -372,17 +375,13 @@ instructions.push(
                    maxSupply,
                 },
         ).instructions,
-        ...new SignMetadata(
-                {
-                   feePayer: walletKey,
-                },
-                // SIGN THE METADATA
-                {
-                   creator: init.output.fanout,
-                   metadata: metadataAccount
-                },
-        ).instructions,
         
+        /// Sign the nft
+        ...fanoutSdk.signMetadataInstructions({
+           metadata: metadataAccount,
+           holdingAccount: init.nativeAccount,
+           fanout: init.fanout,
+        }).instructions,
 );
 
 ///....send instructions to solana
