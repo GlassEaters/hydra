@@ -234,20 +234,20 @@ let distributeToMember1 = await fanoutSdk.distributeWalletMemberInstructions(
 
 ## Additional Capabilities
 
-One key use case for Hydra is specifying the Hydra Wallet as a creator with some royalty share for an NFT. We've enabled the Authority of the Hydra Wallet to sign NFTs as the Hydra Wallet so the wallet is a verified creator in the NFT metadata. 
+One key use case for Hydra is specifying the Hydra Wallet as a creator with some royalty share for an NFT. We've enabled the Authority of the Hydra Wallet to sign NFTs as the Hydra Wallet so the wallet is a verified creator in the NFT metadata.
 
 ```ts
 import {
-  CreateMasterEditionV3,
-  CreateMetadataV2,
-  Creator,
-  DataV2,
-  MasterEdition,
-  MAX_NAME_LENGTH,
-  Metadata,
+   CreateMasterEditionV3,
+   CreateMetadataV2,
+   Creator,
+   DataV2,
+   MasterEdition,
+   MAX_NAME_LENGTH,
+   Metadata, SignMetadata,
 } from "@metaplex-foundation/mpl-token-metadata";
 
-....
+// ...
 
 const connection = new Connection("devnet", "confirmed");
 let fanoutSdk: FanoutClient;
@@ -255,90 +255,122 @@ let fanoutSdk: FanoutClient;
 authorityWallet = Keypair.generate();
 
 fanoutSdk = new FanoutClient(
-            connection,
-            new NodeWallet(new Account(authorityWallet.secretKey))
-        );
+        connection,
+        new NodeWallet(new Account(authorityWallet.secretKey))
+);
 
 const init = await fanoutSdk.initializeFanout({
-                totalShares: 100,
-                name: `Test${Date.now()}`,
-                membershipModel: MembershipModel.Wallet,
-            });
-            
+   totalShares: 100,
+   name: `Test${Date.now()}`,
+   membershipModel: MembershipModel.Wallet,
+});
 
+// Set Royalties
+const allCreators = [{creator: authorityWallet.publicKey, share: 0}, {
+   creator: init.output.fanout,
+   publicKey,
+   share: 100
+}];
 
+// CREATE NFT  (quick and dirty) better jssdk coming soon(TM)
+const data = new DataV2({
+   collection: undefined,
+   uses: undefined,
+   name: name,
+   symbol: "",
+   uri: `https://arweave.net/${metadataLink}`,
+   sellerFeeBasisPoints,
+   creators: allCreators.map((c) => {
+      return new Creator({
+         address: c.creator,
+         verified: c.creator === wallet.publicKey.toBase58(),
+         share: Number(c.share),
+      });
+   }),
+});
 const mint = Keypair.generate();
 const metadataAccount = await Metadata.getPDA(mint.publicKey);
 const editionAccount = await MasterEdition.getPDA(mint.publicKey);
 const userTokenAccountAddress = await Token.getAssociatedTokenAddress(
-  SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-  mint.publicKey,
-  walletKey,
-  true,
+        SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        mint.publicKey,
+        walletKey,
+        true,
 );
 const instructions: TransactionInstruction[] = [];
 instructions.push(
-  SystemProgram.createAccount({
-    fromPubkey: walletKey,
-    newAccountPubkey: mint.publicKey,
-    lamports: cost,
-    space: MintLayout.span,
-    programId: TOKEN_PROGRAM_ID,
-  }),
-  Token.createInitMintInstruction(
-    TOKEN_PROGRAM_ID,
-    mint.publicKey,
-    0,
-    walletKey,
-    walletKey,
-  ),
-  SystemProgram.transfer({
-    fromPubkey: walletKey,
-    toPubkey: donationAddress,
-    lamports: DONATION,
-  }),
-  Token.createAssociatedTokenAccountInstruction(
-    SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    mint.publicKey,
-    userTokenAccountAddress,
-    walletKey,
-    walletKey,
-  ),
-  ...new CreateMetadataV2(
-    {
-      feePayer: walletKey,
-    },
-    {
-      metadata: metadataAccount,
-      metadataData,
-      updateAuthority: walletKey,
-      mint: mint.publicKey,
-      mintAuthority: walletKey,
-    },
-  ).instructions,
-  Token.createMintToInstruction(
-    TOKEN_PROGRAM_ID,
-    mint.publicKey,
-    userTokenAccountAddress,
-    walletKey,
-    [],
-    1,
-  ),
-  ...new CreateMasterEditionV3(
-    {
-      feePayer: walletKey,
-    },
-    {
-      edition: editionAccount,
-      metadata: metadataAccount,
-      updateAuthority: walletKey,
-      mint: mint.publicKey,
-      mintAuthority: walletKey,
-      maxSupply,
-    },
-  ).instructions,
+        SystemProgram.createAccount({
+           fromPubkey: walletKey,
+           newAccountPubkey: mint.publicKey,
+           lamports: cost,
+           space: MintLayout.span,
+           programId: TOKEN_PROGRAM_ID,
+        }),
+        Token.createInitMintInstruction(
+                TOKEN_PROGRAM_ID,
+                mint.publicKey,
+                0,
+                walletKey,
+                walletKey,
+        ),
+        SystemProgram.transfer({
+           fromPubkey: walletKey,
+           toPubkey: donationAddress,
+           lamports: DONATION,
+        }),
+        Token.createAssociatedTokenAccountInstruction(
+                SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
+                TOKEN_PROGRAM_ID,
+                mint.publicKey,
+                userTokenAccountAddress,
+                walletKey,
+                walletKey,
+        ),
+        ...new CreateMetadataV2(
+                {
+                   feePayer: walletKey,
+                },
+                {
+                   metadata: metadataAccount,
+                   metadataData,
+                   updateAuthority: walletKey,
+                   mint: mint.publicKey,
+                   mintAuthority: walletKey,
+                },
+        ).instructions,
+        Token.createMintToInstruction(
+                TOKEN_PROGRAM_ID,
+                mint.publicKey,
+                userTokenAccountAddress,
+                walletKey,
+                [],
+                1,
+        ),
+        ...new CreateMasterEditionV3(
+                {
+                   feePayer: walletKey,
+                },
+                {
+                   edition: editionAccount,
+                   metadata: metadataAccount,
+                   updateAuthority: walletKey,
+                   mint: mint.publicKey,
+                   mintAuthority: walletKey,
+                   maxSupply,
+                },
+        ).instructions,
+        ...new SignMetadata(
+                {
+                   feePayer: walletKey,
+                },
+                // SIGN THE METADATA
+                {
+                   creator: init.output.fanout,
+                   metadata: metadataAccount
+                },
+        ).instructions,
+        
 );
 ```
 
@@ -348,9 +380,9 @@ We're very excited about the use cases the Hydra Wallet unlocks and we're lookin
 
 Additional Models:
 1. NFT Collection - This is similar to the NFT model, but it would be easier to initialize (just use the collection address) and you could automatically weigh the wallet share by NFT properties instead of specifying on a per-NFT basis.
-2. Merkle or DSA Accumulator - ???
+2. Merkle or RSA Accumulator, some poi shizzle - ???
 
 
-## Questions
+## DOC TODO
 1. Can I query membership in an existing fanout using the fanout address?
 2. For the Wallet and NFT models, can I update the membership share for a given address?
