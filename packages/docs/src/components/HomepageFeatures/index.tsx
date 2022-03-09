@@ -33,6 +33,14 @@ const FeatureList: FeatureItem[] = [
       </>
     ),
   },
+  {
+    title: 'Tokenized Royalties',
+    description: (
+      <>
+        Easily transfer or sell portions of Royalty streams tied to a Hydra Wallet Address
+      </>
+    ),
+  },
 ];
 
 function Feature({title, description}: FeatureItem) {
