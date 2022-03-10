@@ -50,11 +50,14 @@ const fanoutSdk = new FanoutClient(
 );
 
 // Initialize the Hydra Wallet
-const {fanout} = await fanoutSdk.initializeFanout({
+const {fanout, nativeAccount} = await fanoutSdk.initializeFanout({
     totalShares: 100,
     name: `Your Globally Unique Wallet Name`,
     membershipModel: MembershipModel.Wallet,
 });
+
+// fanout is your fanout config address
+// nativeAccount is your account address
 
 // Retrieve the On-chain Hydra Wallet
 const fanoutAccount = await fanoutSdk.fetch<Fanout>(
@@ -62,8 +65,11 @@ const fanoutAccount = await fanoutSdk.fetch<Fanout>(
     Fanout
 );
 
+console.log(fanoutAccount); // Shows you all the parameters in your Hydra
+
 // This is your Hydra Wallet Address
-let HydraAccountKey = fanoutAccount.accountKey
+let HydraAccountKey = fanoutAccount.accountKey // this is the same thing as nativeAccount above
+
 
 // If you only know the Hydra name, this is how you can retrieve the account key
 let name = `Your Globally Unique Wallet Name`
