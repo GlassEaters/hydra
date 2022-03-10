@@ -63,7 +63,13 @@ const fanoutAccount = await fanoutSdk.fetch<Fanout>(
 );
 
 // This is your Hydra Wallet Address
-const HydraAccountKey = fanoutAccount.accountKey
+let HydraAccountKey = fanoutAccount.accountKey
+
+// If you only know the Hydra name, this is how you can retrieve the account key
+let name = `Your Globally Unique Wallet Name`
+let [key, bump] = await fanoutSdk.fanoutKey(name)
+let [holdingAccount, bump] = await fanoutSdk.nativeAccount(key)
+
 
 // Add members
 
