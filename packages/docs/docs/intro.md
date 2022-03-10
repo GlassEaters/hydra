@@ -5,6 +5,7 @@ sidebar_position: 1
 # What is Hydra
 
 Hydra is a wallet of wallets, a fanout wallet if you will. It enables extremely large membership sets that can take part in fund distribution from a central wallet. It works with SOL and any SPL token.
+
 ![](/img/fanout.jpg)
 
 :::warning
@@ -246,39 +247,12 @@ let distributeToMember1 = await fanoutSdk.distributeWalletMemberInstructions(
 
 ## Additional Capabilities
 
-One key use case for Hydra is specifying the Hydra Wallet as a creator with some royalty share for an NFT. We've enabled the Authority of the Hydra Wallet to sign NFTs as the Hydra Wallet so the wallet is a verified creator in the NFT metadata.
+
+### Signing Metadata as Creator
+One key use case for Hydra is specifying the Hydra Wallet as a creator with some royalty share for an NFT. We've enabled the Authority of the Hydra Wallet to sign NFTs as the Hydra Wallet so the wallet is a verified creator in the NFT metadata. We've left out the details of creating the NFT, but assuming you've set the Hydra wallet a creator via `init.fanout`, you can sign with the insruction below.
 
 ```ts
-import {
-   CreateMasterEditionV3,
-   CreateMetadataV2,
-   Creator,
-   DataV2,
-   MasterEdition,
-   MAX_NAME_LENGTH,
-   Metadata,
-} from "@metaplex-foundation/mpl-token-metadata";
-import {
-    /// Whatever you need
-} from "@glasseaters/hydra-sdk";
-
-// ...
-
-const connection = new Connection("devnet", "confirmed");
-let fanoutSdk: FanoutClient;
-
-authorityWallet = Keypair.generate();
-
-fanoutSdk = new FanoutClient(
-        connection,
-        new NodeWallet(new Account(authorityWallet.secretKey))
-);
-
-const init = await fanoutSdk.initializeFanout({
-   totalShares: 100,
-   name: `Test${Date.now()}`,
-   membershipModel: MembershipModel.Wallet,
-});
+// Create Hydra as above.
 
 // Set Royalties
 const allCreators = [{creator: authorityWallet.publicKey, share: 0}, {
@@ -287,101 +261,17 @@ const allCreators = [{creator: authorityWallet.publicKey, share: 0}, {
    share: 100
 }];
 
-// CREATE NFT  (quick and dirty) better jssdk coming soon(TM)
-const data = new DataV2({
-   collection: undefined,
-   uses: undefined,
-   name: name,
-   symbol: "",
-   uri: `https://arweave.net/${metadataLink}`,
-   sellerFeeBasisPoints,
-   creators: allCreators.map((c) => {
-      return new Creator({
-         address: c.creator,
-         verified: c.creator === wallet.publicKey.toBase58(),
-         share: Number(c.share),
-      });
-   }),
-});
-const mint = Keypair.generate();
-const metadataAccount = await Metadata.getPDA(mint.publicKey);
-const editionAccount = await MasterEdition.getPDA(mint.publicKey);
-const userTokenAccountAddress = await Token.getAssociatedTokenAddress(
-        SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
-        TOKEN_PROGRAM_ID,
-        mint.publicKey,
-        walletKey,
-        true,
-);
+// CREATE NFT Code Adding allCreators as Creator for the NFT
+
 const instructions: TransactionInstruction[] = [];
 instructions.push(
-        SystemProgram.createAccount({
-           fromPubkey: walletKey,
-           newAccountPubkey: mint.publicKey,
-           lamports: cost,
-           space: MintLayout.span,
-           programId: TOKEN_PROGRAM_ID,
-        }),
-        Token.createInitMintInstruction(
-                TOKEN_PROGRAM_ID,
-                mint.publicKey,
-                0,
-                walletKey,
-                walletKey,
-        ),
-        SystemProgram.transfer({
-           fromPubkey: walletKey,
-           toPubkey: donationAddress,
-           lamports: DONATION,
-        }),
-        Token.createAssociatedTokenAccountInstruction(
-                SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
-                TOKEN_PROGRAM_ID,
-                mint.publicKey,
-                userTokenAccountAddress,
-                walletKey,
-                walletKey,
-        ),
-        ...new CreateMetadataV2(
-                {
-                   feePayer: walletKey,
-                },
-                {
-                   metadata: metadataAccount,
-                   metadataData,
-                   updateAuthority: walletKey,
-                   mint: mint.publicKey,
-                   mintAuthority: walletKey,
-                },
-        ).instructions,
-        Token.createMintToInstruction(
-                TOKEN_PROGRAM_ID,
-                mint.publicKey,
-                userTokenAccountAddress,
-                walletKey,
-                [],
-                1,
-        ),
-        ...new CreateMasterEditionV3(
-                {
-                   feePayer: walletKey,
-                },
-                {
-                   edition: editionAccount,
-                   metadata: metadataAccount,
-                   updateAuthority: walletKey,
-                   mint: mint.publicKey,
-                   mintAuthority: walletKey,
-                   maxSupply,
-                },
-        ).instructions,
-        
-        /// Sign the nft
-        ...fanoutSdk.signMetadataInstructions({
-           metadata: metadataAccount,
-           holdingAccount: init.nativeAccount,
-           fanout: init.fanout,
-        }).instructions,
+    /// Create NFT Instructions 
+    /// Sign the nft
+    ...fanoutSdk.signMetadataInstructions({
+       metadata: metadataAccount,
+       holdingAccount: init.nativeAccount,
+       fanout: init.fanout,
+    }).instructions,
 );
 
 ///....send instructions to solana
