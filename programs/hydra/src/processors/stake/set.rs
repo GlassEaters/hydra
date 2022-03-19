@@ -35,7 +35,7 @@ pub struct SetTokenMemberStake<'info> {
     constraint = membership_mint_token_account.delegate.is_none(),
     constraint = membership_mint_token_account.close_authority.is_none(),
     constraint = membership_mint_token_account.amount >= shares,
-    constraint = membership_mint_token_account.owner == member.key()
+    constraint = membership_mint_token_account.owner == member.key() || membership_mint_token_account.owner == fanout.authority
     )]
     pub membership_mint_token_account: Account<'info, TokenAccount>,
     #[account(
