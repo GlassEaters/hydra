@@ -396,6 +396,8 @@ describe("fanout", async () => {
             expect((await connection.getTokenAccountBalance(fanoutMintMember1TokenAccount)).value.amount).to.equal(`${(sent * 0.2) + (sent2 * 0.2)}`);
             expect((await connection.getTokenAccountBalance(fanoutMintMember2TokenAccount)).value.amount).to.equal(`${(sent * 0.2) + (sent2 * 0.2)}`);
             expect((await connection.getTokenAccountBalance(fanoutMintMember3TokenAccount)).value.amount).to.equal(`${(sent * 0.2) + (sent2 * 0.2)}`);
+
+
         })
     });
 
