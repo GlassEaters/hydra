@@ -78,7 +78,7 @@ export function createProcessSignMetadataInstruction(
 
   const ix = new web3.TransactionInstruction({
     programId: new web3.PublicKey(
-      "hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg"
+      "AwAY5hd99UhrrPEBapahSEW2tXBQTFVvHpd3sVmaDWfA"
     ),
     keys,
     data,

@@ -18,7 +18,7 @@ const createErrorFromNameLookup: Map<string, () => ErrorWithCode> = new Map();
  * @category generated
  */
 export class BadArtithmeticError extends Error {
-  readonly code: number = 0x1770;
+  readonly code: number = 0x12c;
   readonly name: string = "BadArtithmetic";
   constructor() {
     super("Encountered an arithmetic error");
@@ -28,7 +28,7 @@ export class BadArtithmeticError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1770, () => new BadArtithmeticError());
+createErrorFromCodeLookup.set(0x12c, () => new BadArtithmeticError());
 createErrorFromNameLookup.set(
   "BadArtithmetic",
   () => new BadArtithmeticError()
@@ -41,7 +41,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class InvalidAuthorityError extends Error {
-  readonly code: number = 0x1771;
+  readonly code: number = 0x12d;
   readonly name: string = "InvalidAuthority";
   constructor() {
     super("Invalid authority");
@@ -51,7 +51,7 @@ export class InvalidAuthorityError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1771, () => new InvalidAuthorityError());
+createErrorFromCodeLookup.set(0x12d, () => new InvalidAuthorityError());
 createErrorFromNameLookup.set(
   "InvalidAuthority",
   () => new InvalidAuthorityError()
@@ -64,7 +64,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class InsufficientSharesError extends Error {
-  readonly code: number = 0x1772;
+  readonly code: number = 0x12e;
   readonly name: string = "InsufficientShares";
   constructor() {
     super("Not Enough Available Shares");
@@ -74,7 +74,7 @@ export class InsufficientSharesError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1772, () => new InsufficientSharesError());
+createErrorFromCodeLookup.set(0x12e, () => new InsufficientSharesError());
 createErrorFromNameLookup.set(
   "InsufficientShares",
   () => new InsufficientSharesError()
@@ -87,7 +87,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class SharesArentAtMaxError extends Error {
-  readonly code: number = 0x1773;
+  readonly code: number = 0x12f;
   readonly name: string = "SharesArentAtMax";
   constructor() {
     super("All available shares must be assigned to a member");
@@ -97,7 +97,7 @@ export class SharesArentAtMaxError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1773, () => new SharesArentAtMaxError());
+createErrorFromCodeLookup.set(0x12f, () => new SharesArentAtMaxError());
 createErrorFromNameLookup.set(
   "SharesArentAtMax",
   () => new SharesArentAtMaxError()
@@ -110,7 +110,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class NewMintAccountRequiredError extends Error {
-  readonly code: number = 0x1774;
+  readonly code: number = 0x130;
   readonly name: string = "NewMintAccountRequired";
   constructor() {
     super("A New mint account must be provided");
@@ -120,7 +120,7 @@ export class NewMintAccountRequiredError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1774, () => new NewMintAccountRequiredError());
+createErrorFromCodeLookup.set(0x130, () => new NewMintAccountRequiredError());
 createErrorFromNameLookup.set(
   "NewMintAccountRequired",
   () => new NewMintAccountRequiredError()
@@ -133,7 +133,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class MintAccountRequiredError extends Error {
-  readonly code: number = 0x1775;
+  readonly code: number = 0x131;
   readonly name: string = "MintAccountRequired";
   constructor() {
     super("A Token type Fanout requires a Membership Mint");
@@ -143,7 +143,7 @@ export class MintAccountRequiredError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1775, () => new MintAccountRequiredError());
+createErrorFromCodeLookup.set(0x131, () => new MintAccountRequiredError());
 createErrorFromNameLookup.set(
   "MintAccountRequired",
   () => new MintAccountRequiredError()
@@ -156,7 +156,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class InvalidMembershipModelError extends Error {
-  readonly code: number = 0x1776;
+  readonly code: number = 0x132;
   readonly name: string = "InvalidMembershipModel";
   constructor() {
     super("Invalid Membership Model");
@@ -166,7 +166,7 @@ export class InvalidMembershipModelError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1776, () => new InvalidMembershipModelError());
+createErrorFromCodeLookup.set(0x132, () => new InvalidMembershipModelError());
 createErrorFromNameLookup.set(
   "InvalidMembershipModel",
   () => new InvalidMembershipModelError()
@@ -179,7 +179,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class InvalidMembershipVoucherError extends Error {
-  readonly code: number = 0x1777;
+  readonly code: number = 0x133;
   readonly name: string = "InvalidMembershipVoucher";
   constructor() {
     super("Invalid Membership Voucher");
@@ -189,10 +189,7 @@ export class InvalidMembershipVoucherError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(
-  0x1777,
-  () => new InvalidMembershipVoucherError()
-);
+createErrorFromCodeLookup.set(0x133, () => new InvalidMembershipVoucherError());
 createErrorFromNameLookup.set(
   "InvalidMembershipVoucher",
   () => new InvalidMembershipVoucherError()
@@ -205,7 +202,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class MintDoesNotMatchError extends Error {
-  readonly code: number = 0x1778;
+  readonly code: number = 0x134;
   readonly name: string = "MintDoesNotMatch";
   constructor() {
     super("Invalid Mint for the config");
@@ -215,7 +212,7 @@ export class MintDoesNotMatchError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1778, () => new MintDoesNotMatchError());
+createErrorFromCodeLookup.set(0x134, () => new MintDoesNotMatchError());
 createErrorFromNameLookup.set(
   "MintDoesNotMatch",
   () => new MintDoesNotMatchError()
@@ -228,7 +225,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class InvalidHoldingAccountError extends Error {
-  readonly code: number = 0x1779;
+  readonly code: number = 0x135;
   readonly name: string = "InvalidHoldingAccount";
   constructor() {
     super("Holding account does not match the config");
@@ -238,7 +235,7 @@ export class InvalidHoldingAccountError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1779, () => new InvalidHoldingAccountError());
+createErrorFromCodeLookup.set(0x135, () => new InvalidHoldingAccountError());
 createErrorFromNameLookup.set(
   "InvalidHoldingAccount",
   () => new InvalidHoldingAccountError()
@@ -251,7 +248,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class HoldingAccountMustBeAnATAError extends Error {
-  readonly code: number = 0x177a;
+  readonly code: number = 0x136;
   readonly name: string = "HoldingAccountMustBeAnATA";
   constructor() {
     super(
@@ -264,7 +261,7 @@ export class HoldingAccountMustBeAnATAError extends Error {
 }
 
 createErrorFromCodeLookup.set(
-  0x177a,
+  0x136,
   () => new HoldingAccountMustBeAnATAError()
 );
 createErrorFromNameLookup.set(
@@ -279,7 +276,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class DerivedKeyInvalidError extends Error {
-  readonly code: number = 0x177b;
+  readonly code: number = 0x137;
   readonly name: string = "DerivedKeyInvalid";
   constructor() {
     super("");
@@ -289,7 +286,7 @@ export class DerivedKeyInvalidError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x177b, () => new DerivedKeyInvalidError());
+createErrorFromCodeLookup.set(0x137, () => new DerivedKeyInvalidError());
 createErrorFromNameLookup.set(
   "DerivedKeyInvalid",
   () => new DerivedKeyInvalidError()
@@ -302,7 +299,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class IncorrectOwnerError extends Error {
-  readonly code: number = 0x177c;
+  readonly code: number = 0x138;
   readonly name: string = "IncorrectOwner";
   constructor() {
     super("");
@@ -312,7 +309,7 @@ export class IncorrectOwnerError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x177c, () => new IncorrectOwnerError());
+createErrorFromCodeLookup.set(0x138, () => new IncorrectOwnerError());
 createErrorFromNameLookup.set(
   "IncorrectOwner",
   () => new IncorrectOwnerError()
@@ -325,7 +322,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class WalletDoesNotOwnMembershipTokenError extends Error {
-  readonly code: number = 0x177d;
+  readonly code: number = 0x139;
   readonly name: string = "WalletDoesNotOwnMembershipToken";
   constructor() {
     super("Wallet Does not Own Membership Token");
@@ -336,7 +333,7 @@ export class WalletDoesNotOwnMembershipTokenError extends Error {
 }
 
 createErrorFromCodeLookup.set(
-  0x177d,
+  0x139,
   () => new WalletDoesNotOwnMembershipTokenError()
 );
 createErrorFromNameLookup.set(
@@ -351,7 +348,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class InvalidMetadataError extends Error {
-  readonly code: number = 0x177e;
+  readonly code: number = 0x13a;
   readonly name: string = "InvalidMetadata";
   constructor() {
     super("The Metadata specified is not valid Token Metadata");
@@ -361,7 +358,7 @@ export class InvalidMetadataError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x177e, () => new InvalidMetadataError());
+createErrorFromCodeLookup.set(0x13a, () => new InvalidMetadataError());
 createErrorFromNameLookup.set(
   "InvalidMetadata",
   () => new InvalidMetadataError()
@@ -374,7 +371,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class NumericalOverflowError extends Error {
-  readonly code: number = 0x177f;
+  readonly code: number = 0x13b;
   readonly name: string = "NumericalOverflow";
   constructor() {
     super("");
@@ -384,7 +381,7 @@ export class NumericalOverflowError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x177f, () => new NumericalOverflowError());
+createErrorFromCodeLookup.set(0x13b, () => new NumericalOverflowError());
 createErrorFromNameLookup.set(
   "NumericalOverflow",
   () => new NumericalOverflowError()
@@ -397,7 +394,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class InsufficientBalanceToDistributeError extends Error {
-  readonly code: number = 0x1780;
+  readonly code: number = 0x13c;
   readonly name: string = "InsufficientBalanceToDistribute";
   constructor() {
     super("Not enough new balance to distribute");
@@ -408,7 +405,7 @@ export class InsufficientBalanceToDistributeError extends Error {
 }
 
 createErrorFromCodeLookup.set(
-  0x1780,
+  0x13c,
   () => new InsufficientBalanceToDistributeError()
 );
 createErrorFromNameLookup.set(
@@ -423,7 +420,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class InvalidFanoutForMintError extends Error {
-  readonly code: number = 0x1781;
+  readonly code: number = 0x13d;
   readonly name: string = "InvalidFanoutForMint";
   constructor() {
     super("");
@@ -433,7 +430,7 @@ export class InvalidFanoutForMintError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1781, () => new InvalidFanoutForMintError());
+createErrorFromCodeLookup.set(0x13d, () => new InvalidFanoutForMintError());
 createErrorFromNameLookup.set(
   "InvalidFanoutForMint",
   () => new InvalidFanoutForMintError()
@@ -446,7 +443,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class MustDistributeError extends Error {
-  readonly code: number = 0x1782;
+  readonly code: number = 0x13e;
   readonly name: string = "MustDistribute";
   constructor() {
     super(
@@ -458,7 +455,7 @@ export class MustDistributeError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1782, () => new MustDistributeError());
+createErrorFromCodeLookup.set(0x13e, () => new MustDistributeError());
 createErrorFromNameLookup.set(
   "MustDistribute",
   () => new MustDistributeError()
@@ -471,7 +468,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class InvalidStakeAtaError extends Error {
-  readonly code: number = 0x1783;
+  readonly code: number = 0x13f;
   readonly name: string = "InvalidStakeAta";
   constructor() {
     super("");
@@ -481,7 +478,7 @@ export class InvalidStakeAtaError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1783, () => new InvalidStakeAtaError());
+createErrorFromCodeLookup.set(0x13f, () => new InvalidStakeAtaError());
 createErrorFromNameLookup.set(
   "InvalidStakeAta",
   () => new InvalidStakeAtaError()
@@ -494,7 +491,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class CannotTransferToSelfError extends Error {
-  readonly code: number = 0x1784;
+  readonly code: number = 0x140;
   readonly name: string = "CannotTransferToSelf";
   constructor() {
     super("");
@@ -504,7 +501,7 @@ export class CannotTransferToSelfError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1784, () => new CannotTransferToSelfError());
+createErrorFromCodeLookup.set(0x140, () => new CannotTransferToSelfError());
 createErrorFromNameLookup.set(
   "CannotTransferToSelf",
   () => new CannotTransferToSelfError()
@@ -517,7 +514,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class TransferNotSupportedError extends Error {
-  readonly code: number = 0x1785;
+  readonly code: number = 0x141;
   readonly name: string = "TransferNotSupported";
   constructor() {
     super("Transfer is not supported on this membership model");
@@ -527,7 +524,7 @@ export class TransferNotSupportedError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1785, () => new TransferNotSupportedError());
+createErrorFromCodeLookup.set(0x141, () => new TransferNotSupportedError());
 createErrorFromNameLookup.set(
   "TransferNotSupported",
   () => new TransferNotSupportedError()
@@ -540,7 +537,7 @@ createErrorFromNameLookup.set(
  * @category generated
  */
 export class RemoveNotSupportedError extends Error {
-  readonly code: number = 0x1786;
+  readonly code: number = 0x142;
   readonly name: string = "RemoveNotSupported";
   constructor() {
     super("Remove is not supported on this membership model");
@@ -550,7 +547,7 @@ export class RemoveNotSupportedError extends Error {
   }
 }
 
-createErrorFromCodeLookup.set(0x1786, () => new RemoveNotSupportedError());
+createErrorFromCodeLookup.set(0x142, () => new RemoveNotSupportedError());
 createErrorFromNameLookup.set(
   "RemoveNotSupported",
   () => new RemoveNotSupportedError()

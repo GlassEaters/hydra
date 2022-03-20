@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 use processors::*;
 use state::MembershipModel;
 
-declare_id!("hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg");
+declare_id!("AwAY5hd99UhrrPEBapahSEW2tXBQTFVvHpd3sVmaDWfA");
 #[program]
 pub mod hydra {
     use super::*;
@@ -39,6 +39,13 @@ pub mod hydra {
         args: AddMemberArgs,
     ) -> ProgramResult {
         add_member_nft(ctx, args)
+    }
+
+    pub fn process_set_token_member_stake_by_authority(
+        ctx: Context<SetTokenMemberStakeByAuthority>,
+        shares: u64,
+    ) -> ProgramResult {
+        set_token_member_stake_by_authority(ctx, shares)
     }
 
     pub fn process_set_token_member_stake(

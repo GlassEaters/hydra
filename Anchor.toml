@@ -1,11 +1,11 @@
 [programs.localnet]
-hydra = "hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg"
+hydra = "AwAY5hd99UhrrPEBapahSEW2tXBQTFVvHpd3sVmaDWfA"
 
 [programs.devnet]
-hydra = "hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg"
+hydra = "AwAY5hd99UhrrPEBapahSEW2tXBQTFVvHpd3sVmaDWfA"
 
 [programs.mainnet]
-hydra = "hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg"
+hydra = "AwAY5hd99UhrrPEBapahSEW2tXBQTFVvHpd3sVmaDWfA"
 
 
 [registry]
@@ -14,5 +14,6 @@ url = "https://anchor.projectserum.com"
 [scripts]
 test = "ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 
-
-
+[provider]
+cluster = "devnet"
+wallet = "/home/jare/.config/solana/id.json"

@@ -1,0 +1,372 @@
+import {Account, Connection, Keypair, PublicKey, LAMPORTS_PER_SOL} from "@solana/web3.js";
+import {NodeWallet} from "@project-serum/common"; //TODO remove this
+import {Token, TOKEN_PROGRAM_ID} from "@solana/spl-token";
+import {expect, use} from "chai";
+import { getOrCreateAssociatedTokenAccount } from "../spl-token";
+import { createMint } from "../spl-token";
+import { mintTo } from "../spl-token";
+import ChaiAsPromised from "chai-as-promised";
+import {Fanout, FanoutClient, FanoutMembershipVoucher, FanoutMint, MembershipModel} from "../packages/sdk/src";
+import {airdrop, LOCALHOST} from "@metaplex-foundation/amman";
+import {builtTokenFanout} from "./utils/scenarios";
+import BN from "bn.js";
+const mintPublicKey = new PublicKey("GiUbZT1TUjXqJQvfQgGYSpz9tFeT21AMxpNTHDDqajJZ");
+
+/*
+{
+  "curve": "HwHRKSyTWuNLceopkT2Hc2SBK2VDYZeDT719ENdhsfnN",
+  "ownerTokenRef": "H3WBig4t6biYMwYouWFdSzb7x3nwLNzRXd3zW3BX2ak5",
+  "tokenBonding": "4fartwD6hyLRjDGbXFCoURHBXb4ksCZoWosgCpBFPnEY"
+}
+*/
+const mints = [
+    "FYdgex4Y39dWqVXagkdd4VRmiaWoVmEsXarM2L7cF1SL",
+    "CzCqva81PxXx64FGtPiyTxuBc8F9TJtE9Skyt9agUWbH",
+    "49jyBcdZR8g7K5dNWqLD4e1ts7c1Pjs6daGomrB4khjR",
+    "3eqBdquAdL2qnAMUFPC98tVHnWQ4u55ZEXCXfahbA9VR",
+    "7HzhDh3LZj9sYUnbENVnK52vRP5iWL66kNkQKeaYbLTB",
+    "5L4JhbdxzAHJUPVLpRFF2oyZWgBSerTrWKnQKbcbNMeg",
+    "8TxNgCqHVJZ5idYVUDPCAVNVZ4xtttxHQND4o7Z4gca1",
+    "2q8Y9WvhPvZbNAheDSeoVSo459pvjm6fBqqkYrPMb5bk",
+    "E5ntM3GQotaWybsEFDa6Pk6yc8wVjuT3a67KGy1qHxTj",
+    "14tY1EjLwFw2ZvPsnRtX66crcDyVLEUtPbxeHd2983SG",
+    "EmS471cZQV7BGrKUtgZfdwjcw5KZnGkKV2MCc26QVBot",
+    "4hBwTxBu66QvhohK6QM1mntouNBcTXnPoS8AcehQwcgc",
+    "8ExniqgRNyMmSCE3V5hcDiP5ghmQfzNkTAiMxXNHokMo",
+    "3Zrt8dRnsRvjtnKPWxPQJuX1jA1QhYEohWMZ2zkvbcoz",
+    "BrvpfktXreaXosKuDkersJh3VFkSMdeddbMjy9Scj5fp",
+    "DhWr8zqSAhXEJc9CrXEi7ApDhYrbKS3Te7fh1HxiThir",
+    "4BtW2odeh755MfFr7AVpZChaSnp2Km67VV11y7DG4bNz",
+    "2N9rAHctp8V7kGA3HSqrtkBQxC9ZyoSVcK3rHEiU4xiq",
+    "Hbzgdoe1h8WdQ4bLbkSMhUixi6bsLqX681Qrd2ZXu9KR",
+    "4kdLRLnrvL223frHev8cH7mLYUjkhAHwraJVMqSNsX1p",
+    "9yaRaEabxRWLtnXRYQtvD5R5fxzQJJoPBakevoXtyHx1",
+    "59Wio4V42hkPAQtdqrUob61QmVdemiAZF5Kv5fEYz5Z5",
+    "H2kGnvwn2ZzGdY7g4VvnimzN3KPxpxHMRY2CmNCPz6Yh",
+    "87hwXL9YXDFqbDjLJNHLaGSHS5KSmR3o44fLWRj2yBno",
+    "3MZgSTohyBVM3S5qwFbCS2WzA5CxRbxnkMVYapsXqjKX",
+    "BxgXEEGrmAsdNJxLL8y2P2AisSmZhUHxFemRoHtUJ9y8",
+    "GgZTXih8Dk4pobZ7b5zzKDKbPtvN2kX8SWEkmDt8BJMR",
+    "14ijtLFBcTBEpstguG6MCKtpypZXAaudwQvWRZwjRhMi",
+    "6pKzmDPvehAvcPYXFJRUipcDrcuwDj4dWUYSczz4eyqH",
+    "CPCmZjuLjYwJ3udZTTFNf43GkjKiJd2c5CSJdKCXr6kn",
+    "C38WEfXxs5u2m8dCJMN2iMF1yDvh56YW1CE7sNZhjJXt",
+    "3s9hL71WyDnkNhJEiboKqrevDvfaCdkC6nvAEZCuFUYb",
+    "7S7AMJcC94siUCyFycg1etcHC5AyCdBXnfD8sDTS4z14",
+    "BsU23yq9KJPNa7JnTjTLcXeHbbNF8dqEKfWhz3cPdEnD",
+    "9VoWYNHAwhrRnsNnNrGRP6yJtSx41gBKno8nQcHchBho",
+    "2gPbfeCURdfz1FiinZkPctGHhrqVXLsK4sr1AUyvVsQA",
+    "3yp98Qq7UgzgqjvouNxQuCTYEHmVp9fq2tyEvR3Yby3W",
+    "91BQ1Zh977wePxpv5CVGJwDdftbgijsaFN6k2aEoLXPE",
+    "GS2TRXx79kD9m8NWLh45GE1YNyMa3JDS6TPUNQv9gFmK",
+    "8or813yscSba3ByiZRDr2ruEMmXFJPc3Z6pqWJNdQHLE",
+    "G8wiRiygMe6dwUzVevMZfWPBWU6RYAtJ93MiFz8CnkhZ",
+    "A824pSYDKp1wNWtuz8WXns52Saqd9xssaWwyEd3cbzMc",
+    "EHLnL34EUpXFEAGhx4TuDPkiDvnyxsPQJvpELRLr26Vg",
+    "6gXhinEfqrTVsRVNRPuX43Kbg8qS3PtNjUdgZLTvmeYo",
+    "DR9tzGpgjYZcyLPA2k2dGrefGpMbgTyy9hTSNy6ojtNb",
+    "43zVKFZsWjjkyLyG6B8AWUCZS37TWEj986TsgjW63gxn",
+    "DuorwLAKiFdGw3EvqSHva66wzGFcJbx79KqGHsV3K3MT",
+    "C4TGDsoePLBaMhxTp1SVP7uJHYnz2KK6ugbm1DZtH55F",
+    "CyXDo3TKiF4a6puCJwwFaiL2PXWpGdUN9dTuupbjzfhF",
+    "2W2Biusnpx6RAN7ExRcAukgoGBBTfNxdS2GkhVZbknbn",
+    "EFSsVmigD6L6ZAqLovPToCNEpMmHTJVim99rWS65Y7Sk",
+    "C1RD9zihwToheTtEv9bAMarQyufsTsmcUhbLvkfAn9xY",
+    "659owWYiXTzquEpaEwsvxGtyuSLs1Y6MVUNYmxPMu1Zm",
+    "A4dxTZ1Zs5jWC9FNXKyEbiooFWtzfpTwYH3VenMaRjNv",
+    "BR4VHUU97wtsAUWiz1HoTmQAFfQ34cK4TuJVgZQTkNE2",
+    "GzVfBDRX6eYsSx4FM1BQADuTNVg8RuyZSbQhkerFjWBk",
+    "DWViRMBfTJGG9ksvq86nUxrq16TBKcFTKpDmk3ZtvPU6",
+    "6wA8px6rJsHrKjNs8Cf4SWX9sefZXHGSmueUfp3SPsz7",
+    "4oQPzfRnqXdmut3y9bkR8hn1rh1ZUvZv3MQwaHwBZ3YR",
+    "F3ukUosSQRYwbckqjbfHxckF9oWwewi2Lvbb67ENy5DF",
+    "HcGtzHbyFN4ys9BjxfoAPQyCWPFG3X8RbS1Npq21eqYN",
+    "3zUu35Vd6BT8tczMYCJNpKhxDpn2VGrioGwasDvMivCS",
+    "GMUgNMS19qNmyPXLbVx4hTEfYxreJqW9D3h4U6q6RoKZ",
+    "BEEvqiaQ1vjEsgrcrSu3N5rc26naPCDcBNBDHRkxJpXA",
+    "FYNQnVK1B5iknm9dTGzyuDdtzMYSBjDX3M145G745JS7",
+    "4PH7yqnE2YgnPEy5kcGPjhiphZtwVFBuF3UtdQjnB5zH",
+    "7RdSKPGuRnmzJcTYsRkwtdskawNASBWLc6y9HneCUWnY",
+    "Epaat5xbGhq2kRM7gALyEcX7wfiFrcVYoNf3tQdDmS91",
+    "4XY8bbDnyN3sRoDrva56acNXsgKUS3E5C4C6RoaCNWDp",
+    "7sHD2bX6aBtwwuxM9AsXZWyS4Rw27JEriMfJRN5U3xhD",
+    "HZEwJZGw4nJ3cHK5upFHYuXkY7NsSk7G7ieLzYdwrvfJ",
+    "Fgh5xtS7hiGkYQMp48V4JQU5KT29Grv425JTGqLBH4yB",
+    "4muBowQit5oxqpJrW9czF5Gf8LHFDRF9XMvbuUMmecHy",
+    "ApTSYWRxuhpcyd3bpwLgxM6thkNyWweo2EwNsCQw1KFK",
+    "FnbYryAZxwkUuPJiDbiCxhejqVXBmMLCthXF9bChadRG",
+    "6RJ3MbUovSiYxcryRt3SnZtGW6FTeXW7FoFgS3rsr7BZ",
+    "7CwXRp6KGMss481XwXoGoV4iYABzYdiDuBz1zwiF5WTN",
+    "2G1d1JCf1VvLW2DWgcd5L28u4zujVrc7GD77i9ZL91bF",
+    "3Nj6y862PjgpsM4tmNipccoBocxxZCDCghgj7A1q3R6A",
+    "4vfPfdhZXEjYGPA33uF1nVvNbyYLjY9n3Lv5Frki76WB",
+    "HUXjwGooDSa957c5v5VJLyBNhW25PEVabEa5qvJfwVSB",
+    "HnsQZRaFP81WMopLPNASi8NEvWev1KvMxqRoWjgBBe76",
+    "HwCAiRS1x88YwCVRVNsiscFA8Spbgv3CTJq38tTvMKro",
+    "HLmF8p6W8Z6qy9g6r1eBkZi28iyzpfMKUgypV2DwUwat",
+    "HSF5j3LYeT5jKkdEMa56vpWJ52Ao5EYmD4TYr5dWL5mJ",
+    "H6gm2GgJDabMudPiPBMAAx3WVNQXWj4zbmTy2ZfH11zz",
+    "FuboK2NYoZ759PhdE2Koe1jFyPqZijG26tn9VGy25Gph",
+    "ExXdoMYP7ALn99Afm5xkQcQTpkPFtVcGTQdH9E732Skk",
+    "JAeMN9kPQEdxjaRJ7zY9hwsZA4prUpoE5C8cWkPqUj4s",
+    "8WVg22eGLic9CUvWsT9Yke8UvLMd1AqYNbKuvnZQUJAz",
+    "3rBn9RdGgrtmmnc17rMYj4wPAK5GQTDi5ZkCuELrVP43",
+    "QPwfaSCruGoo1iu3hbwm3hauCnWT1iYnZCjyCBtLXLC",
+    "C8Q2g8FQgxyRNmRViZueQUYGdXugAzNrRhf1mns9c8Q9",
+    "53u1YrVMdbGxfA7DJ6tMfUcBe36iPfXk1UQ4UHrWcPrv",
+    "BtkbzzUk4mmPBr9UhVgqL8XNk1wqpUSFcidL1ecBkPn4",
+    "6gwSEXwvwfnKoPNGmQbcUcGDBQSp5V5xqyjWAJMyVTFy",
+    "4kgcTi4y2EeWqTV5Bqw1mmveu8wCDYhdBVozMTVR2o1K",
+    "A4avWBtQpAKv2XAcJCW72LM7K1BWYmBHYyaxMp6jyJ44",
+    "Bx83rTBWCXXfiWkNNkHGCykTQsorjVdyyW7AKs52919f",
+    "8yMAv84aJFnKJ1VCUCLCUc7jdV95rgjxDTjuKqut9k4",
+    "8v8a5ynRDcysVYQZ8nfzujB85iEZWoL666hvhENR8u2n",
+    "14La1BqaCFs5V7XBtRTfVgwrhaoav9WBGNgiqfZHKh8b",
+    "EaR3nJnCEsub9sUsw9fpYtXJvn7fPgNMrVRbUvJEnev7",
+    "H6qUip7FLNjni8Fg2FB7KqReNXTizHKzRXEfg1p9nRqC",
+    "88th1jzAYJpy8XxGDPgq5pFFyPzn5vs9tT9vvbXQjGno",
+    "4T1UbsZzYsMx3Qmy18pG45Enx33AEBqcQumhWD7Jvq9C",
+    "FC7NsyqANoxRfjdHg47brqRQCjVDmbNBNjxUL56hDU44",
+    "3g11pmgPRFuk69LBLEMHHoeLQPyzvvrrGVdGUryMCs7i",
+    "EQEdi6tqK4EzE6hXsAYRM9zasGvk849yJpSqq8GnL9rP",
+    "xiGatdJ4RJ9SAmzdxhGGSwmJbihxFg6ivCVdmQXBREU",
+    "B9KN2Ac8ECHpCML1fmLf37q6NvxP1jqZFKM7XyTAEeHv",
+    "5mmC7P1dZuFGSbimcSXDQwvGcr1dRi6yFg5SZtB1T1o7",
+    "7KVKbWbeCV8Qdf5vBpfTub457pTWfHM4i7mWWGWTjjvs",
+    "9KFh9fPBkdxLYWXPRFBkzMdCy8Unmt4vGpqBMSPQFLg2",
+    "H8zJUekJyicFXvyrwyr8DfNEURRGoRKQ8fEcXBfnGqHP",
+    "Bc4wcdhcryrpCzi7q6AF95QNYEjdifXSkEigfwG9qDYy",
+    "4fFrqhRPQb7Ggs6o7BauVVmDEBXja9WGH98WcxJ4v3kR",
+    "DoaSLGFY4gZ8xRMXmjEEkZuCZR3dszJW6wYzVibd4dKr",
+    "9BAt4Ntnx3vBxbsV7x21qeHMEYTiKP7f6duuFD6qnKtR",
+    "EnGL4cPDhMDLPBk4Cuzd97eP5DYvPsjB5Q5yJ2wsTtVS",
+    "6LNFYf1M8SzmBxTKdqsjNXcKXZdcjKajunaEaH2co4hw",
+    "2F51b9uoVMkzin1v64wbzzzNVBV3SbUrPiQYZGf2Ahbj",
+    "HAJHFnTAJaJJeNyZucF9hvUKYiYjdd73K1GTUjUsTZ38",
+    "EpdPxKDUYpZnjjoPpxhD1nNLj34nXUDbMYzU3SbikFXk",
+    "9s13tRASTEpPhzTNvPnCqVrDRrMZn58NXBAAB12E9XNX",
+    "FgntJ6Vxeq3pjfHE6UZbtc7YFQ2xPbWv8jzBZwapqMn5",
+    "7hf4bQqwjMASEsSFC8jwzANy6mycy2gPVk4J1vSoEAcZ",
+    "HbLXVr2E3WCZj3ia7MZreFTqhyBKSFu2vxpgovKQREKu",
+    "GTs51rHLYX3XdR3GDsZJ3PoboPZ3wmDo8ro1zHtUFCm7"]
+use(ChaiAsPromised);
+setTimeout(async function(){
+    
+   const connection = new Connection('https://solana--devnet.datahub.figment.io/apikey/995d9d62662252c679a6e673fb31b392', "confirmed");
+    // const connection = new Connection(LOCALHOST, "confirmed");//c
+    
+    let authorityWallet: Keypair;
+    let fanoutSdk: FanoutClient;
+    authorityWallet = Keypair.fromSecretKey(new Uint8Array([76,161,155,17,237,163,70,26,232,117,127,145,98,222,183,152,159,55,185,86,130,249,219,15,234,152,161,25,54,35,91,211,81,253,6,204,217,64,134,80,114,55,80,171,184,22,29,126,212,85,225,82,179,16,253,197,103,157,145,198,86,110,57,196]))
+    //await airdrop(connection, authorityWallet.publicKey, LAMPORTS_PER_SOL * 10);
+    fanoutSdk = new FanoutClient(
+        connection,
+        new NodeWallet(new Account(authorityWallet.secretKey))
+    );
+    //await airdrop(connection, authorityWallet.publicKey);
+//token, tokenref, bondingref 
+      
+const membershipMint = new PublicKey("GiUbZT1TUjXqJQvfQgGYSpz9tFeT21AMxpNTHDDqajJZ")
+const supply = 138000 * (10 ** 9);
+
+          
+           // let builtFanout = await builtTokenFanout(token, authorityWallet, fanoutSdk, supply, 26);
+          //  const token = new Token(connection, mintPublicKey, TOKEN_PROGRAM_ID, authorityWallet)
+            const tokenAcct = new PublicKey("5QSHwaMLTE2mZnGcx3xnRrF4nNHy1xzXkLqsUQ1DYpr2");
+            console.log(0)
+//            const fanout = new PublicKey("FE3Q27FaiYNcFrU3cHyFFoZiZgzFgPtM1zLox6kZmBdW")
+const {fanout} = await fanoutSdk.initializeFanout({
+    totalShares: 138000 * 10 ** 9,
+    name: `Test${Date.now()}`,
+    membershipModel: MembershipModel.Token,
+    mint: membershipMint
+});  
+console.log(fanout.toBase58())
+
+const toTokenAccount = await getOrCreateAssociatedTokenAccount(
+
+    connection,
+    authorityWallet,
+    membershipMint,
+    new PublicKey("4TSs6vzXucFNvtXcQTZN3RXMceKEtgRsZzManBZyC2Qb"),true
+    )
+
+
+
+
+const ixs = await fanoutSdk.stakeTokenMemberInstructionsByAuthority(
+    {
+        authority: authorityWallet.publicKey,
+        
+        shares: 1 * 10 ** 9,
+        fanout: fanout,
+        membershipMintTokenAccount: toTokenAccount.address,
+        membershipMint: membershipMint,
+       // @ts-ignore
+        member: new PublicKey("4TSs6vzXucFNvtXcQTZN3RXMceKEtgRsZzManBZyC2Qb"),
+        // @ts-ignore
+        payer: authorityWallet.publicKey
+    }
+);
+console.log(ixs)
+console.log(1)
+const tx = await fanoutSdk.sendInstructions(
+  ixs.instructions,
+  [authorityWallet],
+  // @ts-ignore
+  authorityWallet.publicKey
+);
+
+console.log(fanout.toBase58())
+
+/*
+const fanoutAccount = await fanoutSdk.fetch<Fanout>(
+                fanout,
+                Fanout
+            );
+            console.log(parseFloat(fanoutAccount.totalShares.toString()))
+            console.log(parseFloat(fanoutAccount.totalMembers.toString()))
+  
+          for (var m in mints){
+         if (parseInt(m) >=60){
+try{
+            const {membershipAccount} = await fanoutSdk.addMemberNft({
+                fanout: fanout,
+                fanoutNativeAccount: fanoutAccount.accountKey,
+                membershipKey: new PublicKey("DqXtfAKuRWXVwxqS2tkYhhW5119x3GEU4iR6wyPi5zHq"),
+                shares: 22
+            });
+                console.log(m)
+                console.log(fanout.toBase58())
+        }
+        catch(err){
+          //  console.log(err)
+        }
+    }
+            }
+ 
+            await fanoutSdk.initializeFanoutForMint({
+                fanout,
+                mint: new PublicKey("C4kq9QRFLAqwYHK7p4Ez54KMZLZNw2yLsiT3KN4FSmdH"),
+            });
+*/
+/* 
+           let {fanoutForMint, tokenAccount} =
+                await fanoutSdk.initializeFanoutForMint({
+                    fanout,
+                    mint: new PublicKey("8HGyAAB1yoM1ttS7pXjHMa3dukTFGQggnFFH3hJZgzQh"),
+                });
+                    await fanoutSdk.initializeFanoutForMint({
+                        fanout,
+                        mint: new PublicKey("GiUbZT1TUjXqJQvfQgGYSpz9tFeT21AMxpNTHDDqajJZ"),
+                    })
+                    /*
+                /*
+            */
+            // await membershipMint.mintTo(tokenAcct, authorityWallet.publicKey, [], supply);
+           
+           /*
+           let publicKey = authorityWallet.publicKey
+  const fanout = new PublicKey("2DdevS3SFCsuUBAjnhi4krz1GSvDenZfMETaHqWFWUn9")
+  let ix = await fanoutSdk.distributeTokenMemberInstructions(
+    {
+        distributeForMint: false,
+        membershipMint: membershipMint,
+        fanout: fanout,
+        member: authorityWallet.publicKey,
+        payer: authorityWallet.publicKey
+
+    }
+);
+
+const tx2 = await fanoutSdk.sendInstructions(
+    ix.instructions,
+    [authorityWallet],
+    authorityWallet.publicKey
+);
+console.log(tx2)
+  const fanoutAccount = await fanoutSdk.fetch<Fanout>(
+    fanout,
+    Fanout
+);  
+/*
+  const ixs = await fanoutSdk.stakeTokenMemberInstructions(
+        {
+            
+            shares: 2783 * 10 ** 9,
+            fanout: fanout,
+            membershipMintTokenAccount: new PublicKey("7XboZ1ahVsQENZpRRvdTGvqEHWupW6s269d56THH4V24"),
+            membershipMint: new PublicKey("GiUbZT1TUjXqJQvfQgGYSpz9tFeT21AMxpNTHDDqajJZ"),
+           // @ts-ignore
+            member: publicKey,
+            // @ts-ignore
+            payer: publicKey
+        }
+    );
+    console.log(ixs)
+    console.log(1)
+    const tx = await fanoutSdk.sendInstructions(
+      ixs.instructions,
+      [authorityWallet],
+      // @ts-ignore
+      authorityWallet.publicKey
+  );
+  */
+            //  await airdrop(connection, member, 1);
+            //const tokenAcct = await membershipMint.createAccount(authorityWallet.publicKey)
+           // const tokenAcctMember = await membershipMint.createAssociatedTokenAccount(member)
+          //  await membershipMint.mintTo(tokenAcct, authorityWallet.publicKey, [], supply);
+          //  await membershipMint.transfer(tokenAcct, tokenAcctMember, authorityWallet.publicKey, [], supply * .1);
+/*
+            const ixs = await fanoutSdk.stakeTokenMemberInstructions(
+                {
+                    shares: 100,
+                    fanout: fanout,
+                    membershipMintTokenAccount: tokenAcct,
+                    membershipMint: membershipMint,
+                    member: member,
+                    payer: authorityWallet.publicKey
+                }
+            );
+            console.log(1)
+            const tx = await fanoutSdk.sendInstructions(
+                ixs.instructions,
+                [authorityWallet],
+                member
+            );
+            if (!!tx.RpcResponseAndContext.value.err) {
+                const txdetails = await connection.getConfirmedTransaction(tx.TransactionSignature);
+                console.log(txdetails, tx.RpcResponseAndContext.value.err);
+            }
+            const voucher = await fanoutSdk.fetch<FanoutMembershipVoucher>(ixs.output.membershipVoucher, FanoutMembershipVoucher);
+
+            const sent = 44
+            const firstSnapshot = sent * 10 ** 6;
+            const firstMemberAmount = firstSnapshot * 0.2
+            let member1 = member
+            console.log(2)
+            let ix = await fanoutSdk.distributeTokenMemberInstructions(
+                {
+                    distributeForMint: false,
+                    membershipMint: membershipMint,
+                    fanout: fanout,
+                    member: member1,
+                    payer: authorityWallet.publicKey
+
+                }
+            );
+
+            const tx2 = await fanoutSdk.sendInstructions(
+                ix.instructions,
+                [authorityWallet],
+                authorityWallet.publicKey
+            );
+
+            if (!!tx2.RpcResponseAndContext.value.err) {
+                const txdetails = await connection.getConfirmedTransaction(tx2.TransactionSignature);
+                console.log(txdetails, tx2.RpcResponseAndContext.value.err);
+            }
+            const voucher2 = await fanoutSdk.fetch<FanoutMembershipVoucher>(ix.output.membershipVoucher, FanoutMembershipVoucher);
+            const memberAfter = await fanoutSdk.connection.getAccountInfo(member1);
+*/
+        },1)
