@@ -8,67 +8,78 @@
 import * as splToken from "@solana/spl-token";
 import * as beet from "@metaplex-foundation/beet";
 import * as web3 from "@solana/web3.js";
-import { AddMemberArgs, addMemberArgsBeet } from "../types/AddMemberArgs";
 
 /**
  * @category Instructions
- * @category ProcessAddMemberWallet
+ * @category ProcessSetForTokenMemberStake
  * @category generated
  */
-export type ProcessAddMemberWalletInstructionArgs = {
-  args: AddMemberArgs;
+export type ProcessSetForTokenMemberStakeInstructionArgs = {
+  shares: beet.bignum;
 };
 /**
  * @category Instructions
- * @category ProcessAddMemberWallet
+ * @category ProcessSetForTokenMemberStake
  * @category generated
  */
-const processAddMemberWalletStruct = new beet.BeetArgsStruct<
-  ProcessAddMemberWalletInstructionArgs & {
+const processSetForTokenMemberStakeStruct = new beet.BeetArgsStruct<
+  ProcessSetForTokenMemberStakeInstructionArgs & {
     instructionDiscriminator: number[] /* size: 8 */;
   }
 >(
   [
     ["instructionDiscriminator", beet.uniformFixedSizeArray(beet.u8, 8)],
-    ["args", addMemberArgsBeet],
+    ["shares", beet.u64],
   ],
-  "ProcessAddMemberWalletInstructionArgs"
+  "ProcessSetForTokenMemberStakeInstructionArgs"
 );
 /**
- * Accounts required by the _processAddMemberWallet_ instruction
+ * Accounts required by the _processSetForTokenMemberStake_ instruction
  * @category Instructions
- * @category ProcessAddMemberWallet
+ * @category ProcessSetForTokenMemberStake
  * @category generated
  */
-export type ProcessAddMemberWalletInstructionAccounts = {
+export type ProcessSetForTokenMemberStakeInstructionAccounts = {
   authority: web3.PublicKey;
   member: web3.PublicKey;
   fanout: web3.PublicKey;
-  membershipAccount: web3.PublicKey;
+  membershipVoucher: web3.PublicKey;
+  membershipMint: web3.PublicKey;
+  membershipMintTokenAccount: web3.PublicKey;
+  memberStakeAccount: web3.PublicKey;
 };
 
-const processAddMemberWalletInstructionDiscriminator = [
-  201, 9, 59, 128, 69, 117, 220, 235,
+const processSetForTokenMemberStakeInstructionDiscriminator = [
+  210, 40, 6, 254, 2, 80, 154, 109,
 ];
 
 /**
- * Creates a _ProcessAddMemberWallet_ instruction.
+ * Creates a _ProcessSetForTokenMemberStake_ instruction.
  *
  * @param accounts that will be accessed while the instruction is processed
  * @param args to provide as instruction data to the program
  *
  * @category Instructions
- * @category ProcessAddMemberWallet
+ * @category ProcessSetForTokenMemberStake
  * @category generated
  */
-export function createProcessAddMemberWalletInstruction(
-  accounts: ProcessAddMemberWalletInstructionAccounts,
-  args: ProcessAddMemberWalletInstructionArgs
+export function createProcessSetForTokenMemberStakeInstruction(
+  accounts: ProcessSetForTokenMemberStakeInstructionAccounts,
+  args: ProcessSetForTokenMemberStakeInstructionArgs
 ) {
-  const { authority, member, fanout, membershipAccount } = accounts;
+  const {
+    authority,
+    member,
+    fanout,
+    membershipVoucher,
+    membershipMint,
+    membershipMintTokenAccount,
+    memberStakeAccount,
+  } = accounts;
 
-  const [data] = processAddMemberWalletStruct.serialize({
-    instructionDiscriminator: processAddMemberWalletInstructionDiscriminator,
+  const [data] = processSetForTokenMemberStakeStruct.serialize({
+    instructionDiscriminator:
+      processSetForTokenMemberStakeInstructionDiscriminator,
     ...args,
   });
   const keys: web3.AccountMeta[] = [
@@ -88,17 +99,27 @@ export function createProcessAddMemberWalletInstruction(
       isSigner: false,
     },
     {
-      pubkey: membershipAccount,
+      pubkey: membershipVoucher,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: membershipMint,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: membershipMintTokenAccount,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: memberStakeAccount,
       isWritable: true,
       isSigner: false,
     },
     {
       pubkey: web3.SystemProgram.programId,
-      isWritable: false,
-      isSigner: false,
-    },
-    {
-      pubkey: web3.SYSVAR_RENT_PUBKEY,
       isWritable: false,
       isSigner: false,
     },

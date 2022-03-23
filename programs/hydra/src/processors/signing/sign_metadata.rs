@@ -20,7 +20,9 @@ pub struct SignMetadata<'info> {
     seeds = [b"fanout-native-account", fanout.key().as_ref()],
     bump
     )]
+    /// CHECK: Checked in Program
     pub holding_account: UncheckedAccount<'info>,
+    /// CHECK: Checked in Program
     pub metadata: UncheckedAccount<'info>,
 }
 

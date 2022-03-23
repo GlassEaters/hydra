@@ -32,6 +32,7 @@ pub struct InitializeFanout<'info> {
     payer = authority
     )
     ]
+    /// CHECK: Native Account
     pub holding_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
     #[account(mut)]

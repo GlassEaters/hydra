@@ -14,6 +14,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 pub struct DistributeTokenMember<'info> {
     pub payer: Signer<'info>,
     #[account(mut)]
+    /// CHECK: Optional Account
     pub member: UncheckedAccount<'info>,
     #[
     account(
@@ -38,13 +39,17 @@ pub struct DistributeTokenMember<'info> {
     )]
     pub fanout: Box<Account<'info, Fanout>>,
     #[account(mut)]
+    /// CHECK: Could be native or Token Account
     pub holding_account: UncheckedAccount<'info>,
     #[account(mut)]
+    /// CHECK: Optional Account
     pub fanout_for_mint: UncheckedAccount<'info>,
     #[account(mut)]
+    /// CHECK: Optional Account
     pub fanout_for_mint_membership_voucher: UncheckedAccount<'info>,
     pub fanout_mint: Account<'info, Mint>,
     #[account(mut)]
+    /// CHECK: Optional Account
     pub fanout_mint_member_token_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,

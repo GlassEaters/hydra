@@ -5,6 +5,7 @@ export * from "./processDistributeToken";
 export * from "./processDistributeWallet";
 export * from "./processInit";
 export * from "./processInitForMint";
+export * from "./processSetForTokenMemberStake";
 export * from "./processSetTokenMemberStake";
 export * from "./processSignMetadata";
 export * from "./processTransferShares";

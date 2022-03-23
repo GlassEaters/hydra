@@ -11,6 +11,7 @@ use anchor_spl::token::Token;
 pub struct AddMemberWallet<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
+    /// CHECK: Checked in program
     pub member: UncheckedAccount<'info>,
     #[account(
     mut,

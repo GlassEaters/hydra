@@ -7,6 +7,7 @@ use anchor_spl::token::{Mint, TokenAccount};
 #[derive(Accounts)]
 #[instruction(bump_seed: u8)]
 pub struct InitializeFanoutForMint<'info> {
+    #[account(mut)]
     pub authority: Signer<'info>,
     #[account(
     mut,

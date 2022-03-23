@@ -48,6 +48,13 @@ pub mod hydra {
         set_token_member_stake(ctx, shares)
     }
 
+    pub fn process_set_for_token_member_stake(
+        ctx: Context<SetForTokenMemberStake>,
+        shares: u64,
+    ) -> ProgramResult {
+        set_for_token_member_stake(ctx, shares)
+    }
+
     pub fn process_distribute_nft(
         ctx: Context<DistributeNftMember>,
         distribute_for_mint: bool,

@@ -141,6 +141,7 @@ const ixs = await fanoutSdk.stakeTokenMemberInstructions(
         payer: member.publicKey
     }
 );
+
 const tx = await fanoutSdk.sendInstructions(
     ixs.instructions,
     [member],
@@ -153,6 +154,39 @@ if (!!tx.RpcResponseAndContext.value.err) {
 
 const stake = await membershipMint.getAccountInfo(ixs.output.stakeAccount);
 ```
+
+:::info
+NOTE: Some Hydra use cases are Airdropping the membership token to the members. In this case, you may want to stake then tokens on the members behalf. The most effective way to do this is to use the `stakeForTokenMemberInstructions` method.
+In the example below note that the `membershipMintTokenAccount` is the ATA of the Authority not the member. In this way you are simply sending the membership tokens to the member's stake account not their personal ATA for the membership mint
+```ts
+// Example of setting up a Hydra with a in Memory keypair.
+let authorityWallet = Keypair.generate();
+let fanoutSdk = new FanoutClient(
+        connection,
+        new NodeWallet(new Account(authorityWallet.secretKey))
+);
+// Setup a Hydra -> Since you configured the SDK with the authority Wallet as the wallet you dont need to pass the signer into the init.
+const {fanout} = await fanoutSdk.initializeFanout({
+   totalShares: 0,
+   name: `Test${Date.now()}`,
+   membershipModel: MembershipModel.Token,
+   mint: membershipMint.publicKey
+});
+
+...
+const ixs = await fanoutSdk.stakeForTokenMemberInstructions(
+                {
+                    shares: supply * .1,
+                    fanout: fanout,
+                    membershipMintTokenAccount: tokenAcct,
+                    membershipMint: membershipMint.publicKey,
+                    fanoutAuthority: authorityWallet.publicKey,
+                    member: member.publicKey,
+                    payer: authorityWallet.publicKey
+                }
+            );
+```
+:::
 
 ## Distributing Funds
 

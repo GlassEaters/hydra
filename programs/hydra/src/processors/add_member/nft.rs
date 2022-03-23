@@ -10,6 +10,7 @@ use anchor_spl::token::{Mint, Token};
 #[derive(Accounts)]
 #[instruction(args: AddMemberArgs)]
 pub struct AddMemberWithNFT<'info> {
+    #[account(mut)]
     pub authority: Signer<'info>,
     #[account(
     mut,
@@ -27,6 +28,7 @@ pub struct AddMemberWithNFT<'info> {
     )]
     pub membership_account: Account<'info, FanoutMembershipVoucher>,
     pub mint: Account<'info, Mint>,
+    /// CHECK: Checked in program
     pub metadata: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,

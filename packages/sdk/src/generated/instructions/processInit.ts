@@ -6,9 +6,13 @@
  */
 
 import * as splToken from "@solana/spl-token";
-import * as definedTypes from "../types";
 import * as beet from "@metaplex-foundation/beet";
 import * as web3 from "@solana/web3.js";
+import {
+  InitializeFanoutArgs,
+  initializeFanoutArgsBeet,
+} from "../types/InitializeFanoutArgs";
+import { MembershipModel, membershipModelBeet } from "../types/MembershipModel";
 
 /**
  * @category Instructions
@@ -16,8 +20,8 @@ import * as web3 from "@solana/web3.js";
  * @category generated
  */
 export type ProcessInitInstructionArgs = {
-  args: definedTypes.InitializeFanoutArgs;
-  model: definedTypes.MembershipModel;
+  args: InitializeFanoutArgs;
+  model: MembershipModel;
 };
 /**
  * @category Instructions
@@ -31,8 +35,8 @@ const processInitStruct = new beet.FixableBeetArgsStruct<
 >(
   [
     ["instructionDiscriminator", beet.uniformFixedSizeArray(beet.u8, 8)],
-    ["args", definedTypes.initializeFanoutArgsBeet],
-    ["model", definedTypes.membershipModelBeet],
+    ["args", initializeFanoutArgsBeet],
+    ["model", membershipModelBeet],
   ],
   "ProcessInitInstructionArgs"
 );

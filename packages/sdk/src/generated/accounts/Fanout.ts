@@ -7,8 +7,8 @@
 
 import * as web3 from "@solana/web3.js";
 import * as beet from "@metaplex-foundation/beet";
-import * as definedTypes from "../types";
 import * as beetSolana from "@metaplex-foundation/beet-solana";
+import { MembershipModel, membershipModelBeet } from "../types/MembershipModel";
 
 /**
  * Arguments used to create {@link Fanout}
@@ -26,7 +26,7 @@ export type FanoutArgs = {
   bumpSeed: number;
   accountOwnerBumpSeed: number;
   totalAvailableShares: beet.bignum;
-  membershipModel: definedTypes.MembershipModel;
+  membershipModel: MembershipModel;
   membershipMint: beet.COption<web3.PublicKey>;
   totalStakedShares: beet.COption<beet.bignum>;
 };
@@ -51,7 +51,7 @@ export class Fanout implements FanoutArgs {
     readonly bumpSeed: number,
     readonly accountOwnerBumpSeed: number,
     readonly totalAvailableShares: beet.bignum,
-    readonly membershipModel: definedTypes.MembershipModel,
+    readonly membershipModel: MembershipModel,
     readonly membershipMint: beet.COption<web3.PublicKey>,
     readonly totalStakedShares: beet.COption<beet.bignum>
   ) {}
@@ -175,7 +175,7 @@ export class Fanout implements FanoutArgs {
       accountOwnerBumpSeed: this.accountOwnerBumpSeed,
       totalAvailableShares: this.totalAvailableShares,
       membershipModel:
-        "MembershipModel." + definedTypes.MembershipModel[this.membershipModel],
+        "MembershipModel." + MembershipModel[this.membershipModel],
       membershipMint: this.membershipMint,
       totalStakedShares: this.totalStakedShares,
     };
@@ -204,7 +204,7 @@ export const fanoutBeet = new beet.FixableBeetStruct<
     ["bumpSeed", beet.u8],
     ["accountOwnerBumpSeed", beet.u8],
     ["totalAvailableShares", beet.u64],
-    ["membershipModel", definedTypes.membershipModelBeet],
+    ["membershipModel", membershipModelBeet],
     ["membershipMint", beet.coption(beetSolana.publicKey)],
     ["totalStakedShares", beet.coption(beet.u64)],
   ],
