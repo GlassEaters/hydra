@@ -14,6 +14,7 @@ https://www.npmjs.com/package/@glasseaters/hydra-sdk
 
 :::warning
 Everything is brand new so expect frequent changes.
+We dont support the use of the Anchor TS library, we only support the Hydra SDK. This is because we can add accounts and arguments without breaking backward compatibility.
 :::
 
 ## Quick Start - JS
