@@ -33,113 +33,183 @@ describe("fanout", async () => {
     });
 
     describe("NFT membership model", () => {
-        it("Init", async () => {
-            const {fanout} = await fanoutSdk.initializeFanout({
-                totalShares: 100,
-                name: `Test${Date.now()}`,
-                membershipModel: MembershipModel.NFT,
-            });
-
-            const fanoutAccount = await fanoutSdk.fetch<Fanout>(
-                fanout,
-                Fanout
-            );
-            expect(fanoutAccount.membershipModel).to.equal(
-                MembershipModel.NFT
-            );
-            expect(fanoutAccount.lastSnapshotAmount.toString()).to.equal("0");
-            expect(fanoutAccount.totalMembers.toString()).to.equal("0");
-            expect(fanoutAccount.totalInflow.toString()).to.equal("0");
-            expect(fanoutAccount.totalAvailableShares.toString()).to.equal("100");
-            expect(fanoutAccount.totalShares.toString()).to.equal("100");
-            expect(fanoutAccount.membershipMint).to.equal(null);
-            expect(fanoutAccount.totalStakedShares).to.equal(null);
-        });
-
-        it("Init For mint", async () => {
-            const {fanout} = await fanoutSdk.initializeFanout({
-                totalShares: 100,
-                name: `Test${Date.now()}`,
-                membershipModel: MembershipModel.NFT,
-            });
-            const mint = await Token.createMint(
-                connection,
-                authorityWallet,
-                authorityWallet.publicKey,
-                null,
-                6,
-                TOKEN_PROGRAM_ID
-            );
-            const {fanoutForMint, tokenAccount} =
-                await fanoutSdk.initializeFanoutForMint({
-                    fanout,
-                    mint: mint.publicKey,
+        describe("Creation", () => {
+            it("Init", async () => {
+                const {fanout} = await fanoutSdk.initializeFanout({
+                    totalShares: 100,
+                    name: `Test${Date.now()}`,
+                    membershipModel: MembershipModel.NFT,
                 });
 
-            const fanoutMintAccount = await fanoutSdk.fetch<FanoutMint>(
-                fanoutForMint,
-                FanoutMint
-            );
+                const fanoutAccount = await fanoutSdk.fetch<Fanout>(
+                    fanout,
+                    Fanout
+                );
+                expect(fanoutAccount.membershipModel).to.equal(
+                    MembershipModel.NFT
+                );
+                expect(fanoutAccount.lastSnapshotAmount.toString()).to.equal("0");
+                expect(fanoutAccount.totalMembers.toString()).to.equal("0");
+                expect(fanoutAccount.totalInflow.toString()).to.equal("0");
+                expect(fanoutAccount.totalAvailableShares.toString()).to.equal("100");
+                expect(fanoutAccount.totalShares.toString()).to.equal("100");
+                expect(fanoutAccount.membershipMint).to.equal(null);
+                expect(fanoutAccount.totalStakedShares).to.equal(null);
+            });
 
-            expect(fanoutMintAccount.mint.toBase58()).to.equal(
-                mint.publicKey.toBase58()
-            );
-            expect(fanoutMintAccount.fanout.toBase58()).to.equal(fanout.toBase58());
-            expect(fanoutMintAccount.tokenAccount.toBase58()).to.equal(
-                tokenAccount.toBase58()
-            );
-            expect(fanoutMintAccount.totalInflow.toString()).to.equal("0");
-            expect(fanoutMintAccount.lastSnapshotAmount.toString()).to.equal("0");
+            it("Init For mint", async () => {
+                const {fanout} = await fanoutSdk.initializeFanout({
+                    totalShares: 100,
+                    name: `Test${Date.now()}`,
+                    membershipModel: MembershipModel.NFT,
+                });
+                const mint = await Token.createMint(
+                    connection,
+                    authorityWallet,
+                    authorityWallet.publicKey,
+                    null,
+                    6,
+                    TOKEN_PROGRAM_ID
+                );
+                const {fanoutForMint, tokenAccount} =
+                    await fanoutSdk.initializeFanoutForMint({
+                        fanout,
+                        mint: mint.publicKey,
+                    });
+
+                const fanoutMintAccount = await fanoutSdk.fetch<FanoutMint>(
+                    fanoutForMint,
+                    FanoutMint
+                );
+
+                expect(fanoutMintAccount.mint.toBase58()).to.equal(
+                    mint.publicKey.toBase58()
+                );
+                expect(fanoutMintAccount.fanout.toBase58()).to.equal(fanout.toBase58());
+                expect(fanoutMintAccount.tokenAccount.toBase58()).to.equal(
+                    tokenAccount.toBase58()
+                );
+                expect(fanoutMintAccount.totalInflow.toString()).to.equal("0");
+                expect(fanoutMintAccount.lastSnapshotAmount.toString()).to.equal("0");
+            });
         });
+        describe("Adding Members", () => {
+            it("Adds Members With NFT", async () => {
+                const init = await fanoutSdk.initializeFanout({
+                    totalShares: 100,
+                    name: `Test${Date.now()}`,
+                    membershipModel: MembershipModel.NFT,
+                });
+                const initMetadataData = new DataV2({
+                    uri: "URI",
+                    name: "NAME",
+                    symbol: "SYMBOL",
+                    sellerFeeBasisPoints: 1000,
+                    creators: null,
+                    collection: null,
+                    uses: null,
+                });
+                const nft = await createMasterEdition(
+                    connection,
+                    authorityWallet,
+                    //@ts-ignore
+                    initMetadataData,
+                    0
+                );
+                const {membershipAccount} = await fanoutSdk.addMemberNft({
+                    fanout: init.fanout,
+                    fanoutNativeAccount: init.nativeAccount,
+                    membershipKey: nft.mint.publicKey,
+                    shares: 10
+                });
+                const fanoutAccount = await fanoutSdk.fetch<Fanout>(
+                    init.fanout,
+                    Fanout
+                );
+                const membershipAccountData = await fanoutSdk.fetch<FanoutMembershipVoucher>(
+                    membershipAccount,
+                    FanoutMembershipVoucher
+                );
+                expect(fanoutAccount.membershipModel).to.equal(
+                    MembershipModel.NFT
+                );
+                expect(fanoutAccount.lastSnapshotAmount.toString()).to.equal("0");
+                expect(fanoutAccount.totalMembers.toString()).to.equal("1");
+                expect(fanoutAccount.totalInflow.toString()).to.equal("0");
+                expect(fanoutAccount.totalAvailableShares.toString()).to.equal("90");
+                expect(fanoutAccount.totalShares.toString()).to.equal("100");
+                expect(fanoutAccount.membershipMint).to.equal(null);
+                expect(fanoutAccount.totalStakedShares).to.equal(null);
+                expect(membershipAccountData?.shares?.toString()).to.equal("10");
+                expect(membershipAccountData?.membershipKey?.toBase58()).to.equal(nft.mint.publicKey.toBase58());
+            });
 
-        it("Adds Members With NFT", async () => {
-            const init = await fanoutSdk.initializeFanout({
-                totalShares: 100,
-                name: `Test${Date.now()}`,
-                membershipModel: MembershipModel.NFT,
+            it("Cannot Add mismatched Metadata", async () => {
+                const init = await fanoutSdk.initializeFanout({
+                    totalShares: 100,
+                    name: `Test${Date.now()}`,
+                    membershipModel: MembershipModel.NFT,
+                });
+                const initMetadataData = new DataV2({
+                    uri: "URI",
+                    name: "NAME",
+                    symbol: "SYMBOL",
+                    sellerFeeBasisPoints: 1000,
+                    creators: null,
+                    collection: null,
+                    uses: null,
+                });
+                const nft = await createMasterEdition(
+                    connection,
+                    authorityWallet,
+                    //@ts-ignore
+                    initMetadataData,
+                    0
+                );
+
+                const initMetadataData1 = new DataV2({
+                    uri: "URI1",
+                    name: "NAME1",
+                    symbol: "SYMBOL1",
+                    sellerFeeBasisPoints: 1000,
+                    creators: null,
+                    collection: null,
+                    uses: null,
+                });
+                const nft1 = await createMasterEdition(
+                    connection,
+                    authorityWallet,
+                    //@ts-ignore
+                    initMetadataData1,
+                    0
+                );
+                const {membershipAccount} = await fanoutSdk.addMemberNft({
+                    fanout: init.fanout,
+                    fanoutNativeAccount: init.nativeAccount,
+                    membershipKey: nft.mint.publicKey,
+                    shares: 10
+                });
+                const fanoutAccount = await fanoutSdk.fetch<Fanout>(
+                    init.fanout,
+                    Fanout
+                );
+                const membershipAccountData = await fanoutSdk.fetch<FanoutMembershipVoucher>(
+                    membershipAccount,
+                    FanoutMembershipVoucher
+                );
+                expect(fanoutAccount.membershipModel).to.equal(
+                    MembershipModel.NFT
+                );
+                expect(fanoutAccount.lastSnapshotAmount.toString()).to.equal("0");
+                expect(fanoutAccount.totalMembers.toString()).to.equal("1");
+                expect(fanoutAccount.totalInflow.toString()).to.equal("0");
+                expect(fanoutAccount.totalAvailableShares.toString()).to.equal("90");
+                expect(fanoutAccount.totalShares.toString()).to.equal("100");
+                expect(fanoutAccount.membershipMint).to.equal(null);
+                expect(fanoutAccount.totalStakedShares).to.equal(null);
+                expect(membershipAccountData?.shares?.toString()).to.equal("10");
+                expect(membershipAccountData?.membershipKey?.toBase58()).to.equal(nft.mint.publicKey.toBase58());
             });
-            const initMetadataData = new DataV2({
-                uri: "URI",
-                name: "NAME",
-                symbol: "SYMBOL",
-                sellerFeeBasisPoints: 1000,
-                creators: null,
-                collection: null,
-                uses: null,
-            });
-            const nft = await createMasterEdition(
-                connection,
-                authorityWallet,
-                //@ts-ignore
-                initMetadataData,
-                0
-            );
-            const {membershipAccount} = await fanoutSdk.addMemberNft({
-                fanout: init.fanout,
-                fanoutNativeAccount: init.nativeAccount,
-                membershipKey: nft.mint.publicKey,
-                shares: 10
-            });
-            const fanoutAccount = await fanoutSdk.fetch<Fanout>(
-                init.fanout,
-                Fanout
-            );
-            const membershipAccountData = await fanoutSdk.fetch<FanoutMembershipVoucher>(
-                membershipAccount,
-                FanoutMembershipVoucher
-            );
-            expect(fanoutAccount.membershipModel).to.equal(
-                MembershipModel.NFT
-            );
-            expect(fanoutAccount.lastSnapshotAmount.toString()).to.equal("0");
-            expect(fanoutAccount.totalMembers.toString()).to.equal("1");
-            expect(fanoutAccount.totalInflow.toString()).to.equal("0");
-            expect(fanoutAccount.totalAvailableShares.toString()).to.equal("90");
-            expect(fanoutAccount.totalShares.toString()).to.equal("100");
-            expect(fanoutAccount.membershipMint).to.equal(null);
-            expect(fanoutAccount.totalStakedShares).to.equal(null);
-            expect(membershipAccountData?.shares?.toString()).to.equal("10");
-            expect(membershipAccountData?.membershipKey?.toBase58()).to.equal(nft.mint.publicKey.toBase58());
         });
 
         it("Distribute a Native Fanout with NFT Members", async () => {

@@ -2,7 +2,7 @@ use super::arg::AddMemberArgs;
 use crate::error::ErrorCode;
 use crate::state::{Fanout, FanoutMembershipVoucher, FANOUT_MEMBERSHIP_VOUCHER_SIZE};
 use crate::utils::logic::calculation::*;
-use crate::utils::validation::{assert_membership_model, assert_owned_by};
+use crate::utils::validation::{assert_membership_model, assert_owned_by, assert_valid_metadata};
 use crate::MembershipModel;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token};
@@ -37,13 +37,11 @@ pub struct AddMemberWithNFT<'info> {
 pub fn add_member_nft(ctx: Context<AddMemberWithNFT>, args: AddMemberArgs) -> ProgramResult {
     let fanout = &mut ctx.accounts.fanout;
     let membership_account = &mut ctx.accounts.membership_account;
-    let metadata = &mut ctx.accounts.metadata;
+    let metadata = &ctx.accounts.metadata;
+    let mint = &ctx.accounts.mint;
     assert_owned_by(metadata, &mpl_token_metadata::id())?;
     assert_membership_model(fanout, MembershipModel::NFT)?;
-    let meta_data = &metadata.try_borrow_data()?;
-    if meta_data[0] != mpl_token_metadata::state::Key::MetadataV1 as u8 {
-        return Err(ErrorCode::InvalidMetadata.into());
-    }
+    assert_valid_metadata(metadata, &mint.to_account_info())?;
     update_fanout_for_add(fanout, args.shares)?;
     membership_account.membership_key = ctx.accounts.mint.to_account_info().key();
     membership_account.shares = args.shares;

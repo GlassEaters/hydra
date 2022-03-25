@@ -3,6 +3,7 @@ use crate::state::{Fanout, MembershipModel};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::Instruction;
 use anchor_spl::token::TokenAccount;
+use mpl_token_metadata::state::Metadata;
 
 pub fn assert_derivation(
     program_id: &Pubkey,
@@ -106,4 +107,15 @@ pub fn assert_distributed(
         return Err(ErrorCode::MustDistribute.into());
     }
     Ok(())
+}
+
+pub fn assert_valid_metadata(
+    metadata_account: &AccountInfo,
+    mint: &AccountInfo,
+) -> Result<Metadata, ProgramError> {
+    let meta = Metadata::from_account_info(metadata_account)?;
+    if meta.mint != *mint.key {
+        return Err(ErrorCode::InvalidMetadata.into());
+    }
+    Ok(meta)
 }
