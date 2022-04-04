@@ -7,6 +7,7 @@ import {Fanout, FanoutClient, FanoutMembershipVoucher, FanoutMint, MembershipMod
 import {airdrop, LOCALHOST} from "@metaplex-foundation/amman";
 import {builtTokenFanout} from "./utils/scenarios";
 import BN from "bn.js";
+import { publicKey } from "@project-serum/anchor/dist/cjs/utils";
 
 use(ChaiAsPromised);
 
@@ -25,6 +26,291 @@ describe("fanout", async () => {
     });
 
     describe("Token membership model", () => {
+
+        // This presently works - feel free to remove this test once the next test also works :)
+
+        it("Creates fanout w/ token, 2 members stake, has 5 even revenue events, and distributes", async () => {
+
+            const membershipMint = await Token.createMint(
+                connection,
+                authorityWallet,
+                authorityWallet.publicKey,
+                null,
+                6,
+                TOKEN_PROGRAM_ID
+            );
+            const distBot = new Keypair();
+            await airdrop(connection, distBot.publicKey, 1);
+            const supply = 1000000 * (10 ** 6);
+            const tokenAcct = await membershipMint.createAccount(authorityWallet.publicKey)
+            const {fanout} = await fanoutSdk.initializeFanout({
+                totalShares: 0,
+                name: `Test${Date.now()}`,
+                membershipModel: MembershipModel.Token,
+                mint: membershipMint.publicKey
+            });
+            const fanoutTokenAcct = await membershipMint.createAccount(fanout)
+            const mint = await Token.createMint(
+                connection,
+                authorityWallet,
+                authorityWallet.publicKey,
+                null,
+                6,
+                TOKEN_PROGRAM_ID
+            );
+
+            let mintAcctAuthority = await mint.createAssociatedTokenAccount(authorityWallet.publicKey)
+
+            const {fanoutForMint, tokenAccount} =
+                await fanoutSdk.initializeFanoutForMint({
+                    fanout,
+                    mint: mint.publicKey,
+                });
+
+            const fanoutMintAccount = await fanoutSdk.fetch<FanoutMint>(
+                fanoutForMint,
+                FanoutMint
+            );
+
+            expect(fanoutMintAccount.mint.toBase58()).to.equal(
+                mint.publicKey.toBase58()
+            );
+            expect(fanoutMintAccount.fanout.toBase58()).to.equal(fanout.toBase58());
+            expect(fanoutMintAccount.tokenAccount.toBase58()).to.equal(
+                tokenAccount.toBase58()
+            );
+            expect(fanoutMintAccount.totalInflow.toString()).to.equal("0");
+            expect(fanoutMintAccount.lastSnapshotAmount.toString()).to.equal("0");
+            var member;
+
+            let mintAcctMember;
+            var pseudoRng;
+            for (var index = 0; index <= 0; index++){ /// the problem is differnt than my original suspicion, it turns out if you have more than 1 member in this loop it fails
+                member = new Keypair();  
+                pseudoRng = supply * 0.1;
+
+                await airdrop(connection, member.publicKey, 1);
+                
+                mintAcctMember = await mint.createAssociatedTokenAccount(member.publicKey);
+                const tokenAcctMember = await membershipMint.createAssociatedTokenAccount(member.publicKey)
+                await membershipMint.mintTo(tokenAcct, authorityWallet.publicKey, [], supply / 2);
+                await membershipMint.transfer(tokenAcct, tokenAcctMember, authorityWallet.publicKey, [], pseudoRng);
+
+                
+
+                const ixs = await fanoutSdk.stakeTokenMemberInstructions(
+                    {
+                        shares: pseudoRng,
+                        fanout: fanout,
+                        membershipMintTokenAccount: tokenAcctMember,
+                        membershipMint: membershipMint.publicKey,
+                        member: member.publicKey,
+                        payer: member.publicKey
+                    }
+                );
+                const tx = await fanoutSdk.sendInstructions(
+                    ixs.instructions,
+                    [member],
+                    member.publicKey
+                );
+                if (!!tx.RpcResponseAndContext.value.err) {
+                    const txdetails = await connection.getConfirmedTransaction(tx.TransactionSignature);
+                    console.log(txdetails, tx.RpcResponseAndContext.value.err);
+                }
+                const voucher = await fanoutSdk.fetch<FanoutMembershipVoucher>(ixs.output.membershipVoucher, FanoutMembershipVoucher);
+
+                expect(voucher.shares?.toString()).to.equal(`${pseudoRng}`);
+                expect(voucher.membershipKey?.toBase58()).to.equal(member.publicKey.toBase58());
+                expect(voucher.fanout?.toBase58()).to.equal(fanout.toBase58());
+                const stake = await membershipMint.getAccountInfo(ixs.output.stakeAccount);
+                expect(stake.amount.toString()).to.equal(`${pseudoRng}`);
+                const fanoutAccountData = await fanoutSdk.fetch<Fanout>(
+                    fanout,
+                    Fanout
+                );
+
+            }
+
+            
+            for (var index = 0; index <= 4; index++){
+                const sent = 5 * 10 ** 6;
+
+                await mint.mintTo(mintAcctAuthority, authorityWallet.publicKey, [], sent );
+                await mint.transfer(mintAcctAuthority, tokenAccount, authorityWallet.publicKey, [], sent);
+            }
+            
+            let ix = await fanoutSdk.distributeTokenMemberInstructions(
+                {
+                    distributeForMint: true,
+                    fanoutMint: mint.publicKey,
+                    membershipMint: membershipMint.publicKey,
+                    fanout: fanout,
+                    // defined in the loop
+                    // @ts-ignore
+                    member: member.publicKey,
+                    payer: distBot.publicKey
+
+                }
+            );
+            // @ts-ignore
+            const memberBefore = await fanoutSdk.connection.getAccountInfo(member.publicKey);
+            const tx = await fanoutSdk.sendInstructions(
+                ix.instructions,
+                [distBot],
+                distBot.publicKey
+            );
+
+            if (!!tx.RpcResponseAndContext.value.err) {
+                const txdetails = await connection.getConfirmedTransaction(tx.TransactionSignature);
+                console.log(txdetails, tx.RpcResponseAndContext.value.err);
+            }
+            const voucher = await fanoutSdk.fetch<FanoutMembershipVoucher>(ix.output.membershipVoucher, FanoutMembershipVoucher);
+            // @ts-ignore
+            const memberAfter = await fanoutSdk.connection.getAccountInfo(member.publicKey);
+            expect(voucher.shares.toString()).to.equal(`${pseudoRng}`)
+
+        });
+
+        // This presently creates tx error 6000
+        
+        it("Creates fanout w/ token, 2 members stake, has 5 random revenue events, and distributes", async () => {
+
+            const membershipMint = await Token.createMint(
+                connection,
+                authorityWallet,
+                authorityWallet.publicKey,
+                null,
+                6,
+                TOKEN_PROGRAM_ID
+            );
+            const distBot = new Keypair();
+            await airdrop(connection, distBot.publicKey, 1);
+            const supply = 1000000 * (10 ** 6);
+            const tokenAcct = await membershipMint.createAccount(authorityWallet.publicKey)
+            const {fanout} = await fanoutSdk.initializeFanout({
+                totalShares: 0,
+                name: `Test${Date.now()}`,
+                membershipModel: MembershipModel.Token,
+                mint: membershipMint.publicKey
+            });
+            const mint = await Token.createMint(
+                connection,
+                authorityWallet,
+                authorityWallet.publicKey,
+                null,
+                6,
+                TOKEN_PROGRAM_ID
+            );
+            let mintAcctAuthority = await mint.createAssociatedTokenAccount(authorityWallet.publicKey)
+            const {fanoutForMint, tokenAccount} =
+                await fanoutSdk.initializeFanoutForMint({
+                    fanout,
+                    mint: mint.publicKey,
+                });
+
+            const fanoutMintAccount = await fanoutSdk.fetch<FanoutMint>(
+                fanoutForMint,
+                FanoutMint
+            );
+
+            expect(fanoutMintAccount.mint.toBase58()).to.equal(
+                mint.publicKey.toBase58()
+            );
+            expect(fanoutMintAccount.fanout.toBase58()).to.equal(fanout.toBase58());
+            expect(fanoutMintAccount.tokenAccount.toBase58()).to.equal(
+                tokenAccount.toBase58()
+            );
+            expect(fanoutMintAccount.totalInflow.toString()).to.equal("0");
+            expect(fanoutMintAccount.lastSnapshotAmount.toString()).to.equal("0");
+            var member;
+            let mintAcctMember;
+            var pseudoRng;
+            for (var index = 0; index <= 1; index++){
+                member = new Keypair();  
+                pseudoRng = Math.floor(supply * Math.random() * 0.138);
+
+                await airdrop(connection, member.publicKey, 1);
+                
+
+                const tokenAcctMember = await membershipMint.createAssociatedTokenAccount(member.publicKey);
+                mintAcctMember = await mint.createAssociatedTokenAccount(member.publicKey);
+                await membershipMint.mintTo(tokenAcct, authorityWallet.publicKey, [], supply / 2);
+                await membershipMint.transfer(tokenAcct, tokenAcctMember, authorityWallet.publicKey, [], pseudoRng);
+
+                
+
+                const ixs = await fanoutSdk.stakeTokenMemberInstructions(
+                    {
+                        shares: pseudoRng,
+                        fanout: fanout,
+                        membershipMintTokenAccount: tokenAcctMember,
+                        membershipMint: membershipMint.publicKey,
+                        member: member.publicKey,
+                        payer: member.publicKey
+                    }
+                );
+                const tx = await fanoutSdk.sendInstructions(
+                    ixs.instructions,
+                    [member],
+                    member.publicKey
+                );
+                if (!!tx.RpcResponseAndContext.value.err) {
+                    const txdetails = await connection.getConfirmedTransaction(tx.TransactionSignature);
+                    console.log(txdetails, tx.RpcResponseAndContext.value.err);
+                }
+                const voucher = await fanoutSdk.fetch<FanoutMembershipVoucher>(ixs.output.membershipVoucher, FanoutMembershipVoucher);
+
+                expect(voucher.shares?.toString()).to.equal(`${pseudoRng}`);
+                expect(voucher.membershipKey?.toBase58()).to.equal(member.publicKey.toBase58());
+                expect(voucher.fanout?.toBase58()).to.equal(fanout.toBase58());
+                const stake = await membershipMint.getAccountInfo(ixs.output.stakeAccount);
+                expect(stake.amount.toString()).to.equal(`${pseudoRng}`);
+                const fanoutAccountData = await fanoutSdk.fetch<Fanout>(
+                    fanout,
+                    Fanout
+                );
+
+            }
+            for (var index = 0; index <= 4; index++){
+                const sent = Math.floor(Math.random() * 100 * 10 ** 6);
+
+                await mint.mintTo(mintAcctAuthority, authorityWallet.publicKey, [], sent );
+                await mint.transfer(mintAcctAuthority, tokenAccount, authorityWallet.publicKey, [], sent);
+
+            }
+            
+            let ix = await fanoutSdk.distributeTokenMemberInstructions(
+                {
+                    distributeForMint: true,
+                    fanoutMint: mint.publicKey,
+                    membershipMint: membershipMint.publicKey,
+                    fanout: fanout,
+                    // defined in the loop
+                    // @ts-ignore
+                    member: member.publicKey,
+                    payer: distBot.publicKey
+
+                }
+            );
+            // @ts-ignore
+            const memberBefore = await fanoutSdk.connection.getAccountInfo(member.publicKey);
+            const tx = await fanoutSdk.sendInstructions(
+                ix.instructions,
+                [distBot],
+                distBot.publicKey
+            );
+
+            if (!!tx.RpcResponseAndContext.value.err) {
+                const txdetails = await connection.getConfirmedTransaction(tx.TransactionSignature);
+                console.log(txdetails, tx.RpcResponseAndContext.value.err);
+            }
+            const voucher = await fanoutSdk.fetch<FanoutMembershipVoucher>(ix.output.membershipVoucher, FanoutMembershipVoucher);
+            // @ts-ignore
+            const memberAfter = await fanoutSdk.connection.getAccountInfo(member.publicKey);
+            expect(voucher.shares.toString()).to.equal(`${pseudoRng}`)
+
+        });
+        
         it("Init", async () => {
 
             const membershipMint = await Token.createMint(
@@ -318,6 +604,6 @@ describe("fanout", async () => {
             expect(afterUnstake.totalStakedShares?.toString()).to.equal(`${(beforeUnstake?.totalStakedShares as BN).sub(voucherBefore.shares as BN)}`)
         });
 
-
+           
     });
 });
