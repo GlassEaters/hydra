@@ -1,6 +1,11 @@
 import {Account, Connection, Keypair, LAMPORTS_PER_SOL} from "@solana/web3.js";
 import {NodeWallet} from "@project-serum/common"; //TODO remove this
-import {ASSOCIATED_TOKEN_PROGRAM_ID, Token, TOKEN_PROGRAM_ID} from "@solana/spl-token";
+import {
+  NATIVE_MINT,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  Token,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import {expect, use} from "chai";
 import ChaiAsPromised from "chai-as-promised";
 import {
@@ -295,20 +300,11 @@ describe("fanout", async () => {
 
             await airdrop(connection, builtFanout.fanoutAccountData.accountKey, sent2);
             const secondInflow = (sent2 * LAMPORTS_PER_SOL);
-            let distFinalMember1 = await fanoutSdk.distributeNftMemberInstructions(
-                {
-                    distributeForMint: false,
-                    member: member1.wallet.publicKey,
-                    membershipKey: member1.mint,
-                    fanout: builtFanout.fanout,
-                    payer: distBot.publicKey,
-                },
-            );
-            await fanoutSdk.sendInstructions(
-                [...distFinalMember1.instructions],
-                [distBot],
-                distBot.publicKey
-            );
+            await fanoutSdk.distributeAll({
+              fanout: builtFanout.fanout,
+              payer: fanoutSdk.wallet.publicKey,
+              mint: NATIVE_MINT,
+            });
             const memberDataAfterFinal1 = await connection.getAccountInfo(member1.wallet.publicKey);
             // @ts-ignore
             expect(memberDataAfterFinal1?.lamports).to.equal(memberDataAfter1?.lamports + secondInflow * 0.2);
