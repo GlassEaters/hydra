@@ -1,6 +1,6 @@
 {
   "name": "@glasseaters/hydra",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "workspaces": [
     "packages/*"
   ],
@@ -34,5 +34,9 @@
     "test": "ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""
   },
   "private": true,
-  "packageManager": "yarn@3.2.0-rc.12"
+  "packageManager": "yarn@3.2.0-rc.12",
+  "dependencies": {
+    "@strata-foundation/spl-utils": "^3.4.5",
+    "bs58": "^5.0.0"
+  }
 }
