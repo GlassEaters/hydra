@@ -59,20 +59,15 @@ pub fn distribute_mint<'info>(
     let fanout_mint_member_token_account_info = fanout_mint_member_token_account.to_account_info();
     let fanout_for_mint = fanout_for_mint;
     let total_shares = fanout.total_shares as u64;
-    msg!("1");
     assert_owned_by(&fanout_for_mint, &crate::ID)?;
-    msg!("2");
     assert_owned_by(&fanout_mint_member_token_account_info, &Token::id())?;
-    msg!("3");
     assert_owned_by(holding_account, &anchor_spl::token::Token::id())?;
-    msg!("4");
     assert_ata(
         &holding_account.to_account_info(),
         &fanout.key(),
         &fanout_mint.key(),
         Some(ErrorCode::HoldingAccountMustBeAnATA.into()),
     )?;
-    msg!("5");
     let fanout_for_mint_object =
         &mut parse_fanout_mint(fanout_for_mint, &fanout.key(), &mint.key())?;
     if holding_account.key() != fanout_for_mint_object.token_account {
@@ -91,14 +86,11 @@ pub fn distribute_mint<'info>(
         &mint.key(),
         &fanout.key(),
     )?;
-    msg!("6");
     let holding_account_ata = parse_token_account(holding_account, &fanout.key())?;
     parse_token_account(&fanout_mint_member_token_account_info, &member.key())?;
-    
-    msg!("7");
+
     let current_snapshot = holding_account_ata.amount;
     update_inflow_for_mint(fanout, fanout_for_mint_object, current_snapshot)?;
-    msg!("8");
     let inflow_diff = calculate_inflow_change(
         fanout_for_mint_object.total_inflow,
         fanout_for_mint_membership_voucher.last_inflow,

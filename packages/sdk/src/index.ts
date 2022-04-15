@@ -301,7 +301,7 @@ export class FanoutClient {
 
   static async mintMembershipVoucher(
     fanoutForMintConfig: PublicKey,
-    membershipMint: PublicKey,
+    membershipKey: PublicKey,
     fanoutMint: PublicKey,
     programId: PublicKey = FanoutClient.ID
   ): Promise<[PublicKey, number]> {
@@ -309,7 +309,7 @@ export class FanoutClient {
       [
         Buffer.from("fanout-membership"),
         fanoutForMintConfig.toBuffer(),
-        membershipMint.toBuffer(),
+        membershipKey.toBuffer(),
         fanoutMint.toBuffer(),
       ],
       programId
@@ -773,7 +773,13 @@ export class FanoutClient {
     let holdingAccount;
     let [fanoutForMint, fanoutForMintBump] =
       await FanoutClient.fanoutForMintKey(opts.fanout, fanoutMint);
-
+    let fanoutMintMemberTokenAccount = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      fanoutMint,
+      opts.member,
+      true
+    );
     let [
       fanoutForMintMembershipVoucher,
       fanoutForMintMembershipVoucherBumpSeed,
@@ -782,13 +788,7 @@ export class FanoutClient {
       opts.member,
       fanoutMint
     );
-    let fanoutMintMemberTokenAccount = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      fanoutMint,
-      opts.member,
-      true
-    );
+
     if (opts.distributeForMint) {
       holdingAccount = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,

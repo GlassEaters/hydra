@@ -1,5 +1,5 @@
 use super::arg::AddMemberArgs;
-use crate::error::ErrorCode;
+
 use crate::state::{Fanout, FanoutMembershipVoucher, FANOUT_MEMBERSHIP_VOUCHER_SIZE};
 use crate::utils::logic::calculation::*;
 use crate::utils::validation::{assert_membership_model, assert_owned_by, assert_valid_metadata};

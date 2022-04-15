@@ -1,7 +1,9 @@
 ---
 sidebar_position: 2
 ---
+
 # Getting Started
+
 To get started with Hydra, you'll need the package for your programming environment.
 
 If you are using Rust grab the crate here:
@@ -20,6 +22,7 @@ We dont support the use of the Anchor TS library, we only support the Hydra SDK.
 ## Quick Start - JS
 
 Install the package from npm:
+
 ```bash
 yarn add @glasseaters/hydra-sdk
 ```
@@ -118,4 +121,3 @@ if (!!tx.RpcResponseAndContext.value.err) {
 // Member1 Should have 0.2 more sol in their wallet
 
 ```
-
