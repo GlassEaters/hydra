@@ -1,0 +1,15 @@
+# Ignore artifacts:
+build
+coverage
+
+# Ignore all HTML files:
+*.html
+target/*
+programs/*
+.yarn/*
+cli/*
+**/.git
+**/.svn
+**/.hg
+**/node_modules
+.husky/*
