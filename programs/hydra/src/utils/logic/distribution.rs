@@ -88,6 +88,7 @@ pub fn distribute_mint<'info>(
     )?;
     let holding_account_ata = parse_token_account(holding_account, &fanout.key())?;
     parse_token_account(&fanout_mint_member_token_account_info, &member.key())?;
+
     let current_snapshot = holding_account_ata.amount;
     update_inflow_for_mint(fanout, fanout_for_mint_object, current_snapshot)?;
     let inflow_diff = calculate_inflow_change(
