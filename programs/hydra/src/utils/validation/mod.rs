@@ -32,6 +32,14 @@ pub fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> ProgramResult {
     }
 }
 
+pub fn assert_owned_by_or_owned_by(account: &AccountInfo, owner: &Pubkey, or_owner: &Pubkey) -> ProgramResult {
+    if account.owner != owner || account.owner != or_owner {
+        Err(ErrorCode::IncorrectOwner.into())
+    } else {
+        Ok(())
+    }
+}
+
 pub fn assert_membership_model(
     fanout: &Account<Fanout>,
     model: MembershipModel,
