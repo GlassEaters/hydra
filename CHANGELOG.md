@@ -10,7 +10,8 @@ Had to upgrade anchor because Armani Yanked
 
 Fixes:
 
-yarn
+signing nfts
+
 ## 0.2.1 (2022-03-25) - Unstable release API MAY CHANGE in a future release
 
 Fixes:
