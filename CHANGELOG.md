@@ -1,10 +1,12 @@
 # CHANGELOG.md
 
-## 0.2.2 (2022-04-28) - Unstable release API MAY CHANGE in a future release
+## 0.2.3 (2022-04-28) - Unstable release API MAY CHANGE in a future release
 
 Stupid Crap:
 
 Had to upgrade anchor because Armani Yanked
+
+## 0.2.2 (2022-04-28) - Unstable release API MAY CHANGE in a future release
 
 Fixes:
 
