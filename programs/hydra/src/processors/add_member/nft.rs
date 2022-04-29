@@ -34,7 +34,7 @@ pub struct AddMemberWithNFT<'info> {
     pub rent: Sysvar<'info, Rent>,
     pub token_program: Program<'info, Token>,
 }
-pub fn add_member_nft(ctx: Context<AddMemberWithNFT>, args: AddMemberArgs) -> ProgramResult {
+pub fn add_member_nft(ctx: Context<AddMemberWithNFT>, args: AddMemberArgs) -> Result<()> {
     let fanout = &mut ctx.accounts.fanout;
     let membership_account = &mut ctx.accounts.membership_account;
     let metadata = &ctx.accounts.metadata;

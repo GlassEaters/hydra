@@ -2,6 +2,10 @@
 
 ## 0.2.2 (2022-04-28) - Unstable release API MAY CHANGE in a future release
 
+Stupid Crap:
+
+Had to upgrade anchor because Armani Yanked
+
 Fixes:
 
 yarn

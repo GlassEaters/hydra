@@ -1,4 +1,4 @@
-use crate::error::ErrorCode;
+use crate::error::HydraError;
 
 use crate::state::{Fanout, FanoutMembershipVoucher, MembershipModel};
 
@@ -71,7 +71,7 @@ pub struct DistributeTokenMember<'info> {
 pub fn distribute_for_token(
     ctx: Context<DistributeTokenMember>,
     distribute_for_mint: bool,
-) -> ProgramResult {
+) -> Result<()> {
     let fanout = &mut ctx.accounts.fanout;
     let fanout_info = fanout.to_account_info();
     let membership_voucher = &mut ctx.accounts.membership_voucher;
@@ -83,7 +83,7 @@ pub fn distribute_for_token(
         &ctx.accounts.member_stake_account.to_account_info(),
         &membership_voucher.key(),
         &membership_mint.key(),
-        Some(ErrorCode::InvalidStakeAta.into()),
+        Some(HydraError::InvalidStakeAta.into()),
     )?;
     assert_owned_by(&fanout_info, &crate::ID)?;
     assert_owned_by(&membership_voucher_info, &crate::ID)?;

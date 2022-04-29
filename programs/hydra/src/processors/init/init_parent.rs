@@ -1,4 +1,4 @@
-use crate::error::ErrorCode;
+use crate::error::HydraError;
 use crate::state::{Fanout, MembershipModel};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token};
@@ -44,7 +44,7 @@ pub fn init(
     ctx: Context<InitializeFanout>,
     args: InitializeFanoutArgs,
     model: MembershipModel,
-) -> ProgramResult {
+) -> Result<()> {
     let membership_mint = &ctx.accounts.membership_mint;
     let fanout = &mut ctx.accounts.fanout;
     fanout.authority = ctx.accounts.authority.to_account_info().key();
@@ -70,7 +70,7 @@ pub fn init(
             fanout.total_shares = membership_mint.supply;
             fanout.total_available_shares = 0;
             if fanout.membership_mint.is_none() {
-                return Err(ErrorCode::MintAccountRequired.into());
+                return Err(HydraError::MintAccountRequired.into());
             }
             let mint = &ctx.accounts.membership_mint;
             fanout.total_staked_shares = Some(0);

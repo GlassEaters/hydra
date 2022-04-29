@@ -6,12 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anchor-client = "0.21.0"
+anchor-client = "0.24.2"
 emoji-printer = "0.4.3"
 indicatif = "0.16.2"
-solana-sdk = "1.10.0"
+solana-sdk = "1.9.15"
 clap = "2.33.0"
-solana-clap-utils = "1.10.0"
-solana-cli-config = "1.10.0"
+solana-clap-utils = "1.9.15"
+solana-cli-config = "1.9.15"
 hydra_wallet = { path = "../../programs/hydra" }
-solana-account-decoder = "1.10.0"
+solana-account-decoder = "1.9.15"

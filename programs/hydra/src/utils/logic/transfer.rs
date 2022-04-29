@@ -1,4 +1,4 @@
-use crate::error::ErrorCode;
+use crate::error::HydraError;
 use crate::state::Fanout;
 use anchor_lang::prelude::*;
 
@@ -9,7 +9,7 @@ pub fn transfer_from_mint_holding<'info>(
     source: AccountInfo<'info>,
     dest: AccountInfo<'info>,
     amount: u64,
-) -> Result<(), ProgramError> {
+) -> Result<()> {
     if amount > 0 {
         let cpi_program = token_program;
         let accounts = anchor_spl::token::Transfer {
@@ -34,15 +34,15 @@ pub fn transfer_native<'info>(
     dest: AccountInfo<'info>,
     current_snapshot: u64,
     amount: u64,
-) -> Result<(), ProgramError> {
+) -> Result<()> {
     if amount > 0 {
         **source.lamports.borrow_mut() = current_snapshot
             .checked_sub(amount)
-            .ok_or(ErrorCode::NumericalOverflow)?;
+            .ok_or(HydraError::NumericalOverflow)?;
         **dest.lamports.borrow_mut() = dest
             .lamports()
             .checked_add(amount)
-            .ok_or(ErrorCode::NumericalOverflow)?;
+            .ok_or(HydraError::NumericalOverflow)?;
     }
     Ok(())
 }

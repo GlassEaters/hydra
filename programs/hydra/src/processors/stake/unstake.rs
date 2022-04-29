@@ -50,7 +50,7 @@ pub struct UnStakeTokenMember<'info> {
     pub instructions: UncheckedAccount<'info>,
 }
 
-pub fn unstake(ctx: Context<UnStakeTokenMember>) -> ProgramResult {
+pub fn unstake(ctx: Context<UnStakeTokenMember>) -> Result<()> {
     let fanout = &mut ctx.accounts.fanout;
     let member = &ctx.accounts.member;
     let ixs = &ctx.accounts.instructions;

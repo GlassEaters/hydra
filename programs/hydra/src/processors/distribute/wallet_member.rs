@@ -48,7 +48,7 @@ pub struct DistributeWalletMember<'info> {
 pub fn distribute_for_wallet(
     ctx: Context<DistributeWalletMember>,
     distribute_for_mint: bool,
-) -> ProgramResult {
+) -> Result<()> {
     let fanout = &mut ctx.accounts.fanout;
     let fanout_info = fanout.to_account_info();
     let membership_voucher = &mut ctx.accounts.membership_voucher;
