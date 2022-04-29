@@ -749,6 +749,7 @@ export class FanoutClient {
         authority: authority,
         holdingAccount: holdingAccount,
         metadata: opts.metadata,
+        tokenMetadataProgram: MetadataProgram.PUBKEY,
       })
     );
     return {
