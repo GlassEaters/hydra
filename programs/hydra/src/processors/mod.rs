@@ -14,6 +14,7 @@ pub use self::distribute::token_member::*;
 pub use self::distribute::wallet_member::*;
 pub use self::init::init_for_mint::*;
 pub use self::init::init_parent::*;
+pub use self::init::transfer_to_hodling::*;
 pub use self::remove_member::remove_member::*;
 pub use self::signing::sign_metadata::*;
 pub use self::stake::set::*;
