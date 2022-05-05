@@ -88,4 +88,7 @@ pub enum HydraError {
 
     #[msg("Remove is not supported on this membership model")]
     RemoveNotSupported,
+
+    #[msg("Payer Associated Token Account must be supplied")]
+    PayerATANotSupplied
 }

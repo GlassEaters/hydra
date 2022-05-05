@@ -9,6 +9,7 @@ pub struct InitializeFanoutArgs {
     pub native_account_bump_seed: u8,
     pub name: String,
     pub total_shares: u64,
+    pub payer_reward_basis_points: u64,
 }
 
 #[derive(Accounts)]
@@ -50,6 +51,7 @@ pub fn init(
     fanout.authority = ctx.accounts.authority.to_account_info().key();
     fanout.account_key = ctx.accounts.holding_account.to_account_info().key();
     fanout.name = args.name;
+    fanout.payer_reward_basis_points = args.payer_reward_basis_points;
     fanout.total_shares = args.total_shares;
     fanout.total_available_shares = args.total_shares;
     fanout.total_inflow = 0;

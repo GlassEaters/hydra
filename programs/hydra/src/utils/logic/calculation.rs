@@ -7,6 +7,25 @@ pub fn calculate_inflow_change(total_inflow: u64, last_inflow: u64) -> Result<u6
     Ok(diff)
 }
 
+
+pub fn calculate_payer_rewards(
+    total_inflow: u64,
+    payer_reward_basis_points: u64,
+) -> Result<u64> {
+    if payer_reward_basis_points == 0 {
+        return Ok(payer_reward_basis_points as u64)
+    }
+    // todo - Add transaction fee to rewards to payer; stacc says no, let the distbots fight 
+    // https://github.com/GlassEaters/hydra/pull/14#issuecomment-1118020369
+    let payer_reward = total_inflow
+                        .checked_mul(payer_reward_basis_points)
+                        .or_arith_error()?
+                        .checked_div(10000)
+                        .or_arith_error()?;
+    Ok(payer_reward as u64)
+}
+
+
 pub fn calculate_dist_amount(
     member_shares: u64,
     inflow_diff: u64,

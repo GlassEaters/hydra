@@ -23,7 +23,7 @@ import { publicKey } from "@project-serum/anchor/dist/cjs/utils";
 use(ChaiAsPromised);
 
 describe("fanout", async () => {
-  const connection = new Connection(LOCALHOST, "confirmed");
+  const connection = new Connection("http://localhost:8899", "confirmed");
   let authorityWallet: Keypair;
   let fanoutSdk: FanoutClient;
   beforeEach(async () => {
@@ -46,8 +46,16 @@ describe("fanout", async () => {
         6,
         TOKEN_PROGRAM_ID
       );
-      const distBot = new Keypair();
-      await airdrop(connection, distBot.publicKey, 1);
+      const distBot = new Account();
+      let fanoutSdk2 = new FanoutClient(
+        connection,
+        new NodeWallet(distBot)
+      );
+      let someReward = Math.floor(Math.random() * 1000) + 138;
+      await airdrop(connection, distBot.publicKey, LAMPORTS_PER_SOL * 1);
+      const botBefore = await fanoutSdk.connection.getAccountInfo(
+        distBot.publicKey
+      );
       const supply = 1000000 * 10 ** 6;
       const tokenAcct = await membershipMint.createAccount(
         authorityWallet.publicKey
@@ -57,6 +65,8 @@ describe("fanout", async () => {
         name: `Test${Date.now()}`,
         membershipModel: MembershipModel.Token,
         mint: membershipMint.publicKey,
+        payer_reward_basis_points: someReward
+
       });
       const mint = await Token.createMint(
         connection,
@@ -97,7 +107,7 @@ describe("fanout", async () => {
         [],
         supply
       );
-      for (let index = 0; index <= 4; index++) {
+      for (let index = 0; index <= 1; index++) {
         let member = new Keypair();
         let pseudoRng = Math.floor(supply * Math.random() * 0.138);
         await airdrop(connection, member.publicKey, 1);
@@ -154,8 +164,12 @@ describe("fanout", async () => {
           shares: pseudoRng,
         });
       }
+      
+      let [holdingAccount, bump] = await FanoutClient.nativeAccount(fanout)
+      await airdrop(connection, holdingAccount, LAMPORTS_PER_SOL * 10);
+
       let runningTotal = 0;
-      for (let index = 0; index <= 4; index++) {
+      for (let index = 0; index <= 1; index++) {
         const sent = Math.floor(Math.random() * 100 * 10 ** 6);
         await mint.mintTo(
           mintAcctAuthority,
@@ -172,17 +186,30 @@ describe("fanout", async () => {
         );
         runningTotal += sent;
         let member = members[index];
-        let ix = await fanoutSdk.distributeTokenMemberInstructions({
+        const distBotTokenAcct =
+          await membershipMint.createAssociatedTokenAccount(distBot.publicKey);
+        let ix = await fanoutSdk2.distributeToken({
           distributeForMint: true,
           fanoutMint: mint.publicKey,
           membershipMint: membershipMint.publicKey,
           fanout: fanout,
           member: member.member.publicKey,
           payer: distBot.publicKey,
+          authority: authorityWallet.publicKey,
+          payerTokenAccount: distBotTokenAcct
         });
-        // @ts-ignore
+        let ix2 = await fanoutSdk2.distributeToken({
+          distributeForMint: false,
+          membershipMint: membershipMint.publicKey,
+          fanout: fanout,
+          member: member.member.publicKey,
+          payer: distBot.publicKey,
+          authority: authorityWallet.publicKey,
+          payerTokenAccount: distBotTokenAcct
+        });
+       /* // @ts-ignore
         const tx = await fanoutSdk.sendInstructions(
-          ix.instructions,
+          ix.instructions,//[...ix.instructions, ...ix2.instructions],
           [distBot],
           distBot.publicKey
         );
@@ -193,16 +220,26 @@ describe("fanout", async () => {
           );
           console.log(txdetails, tx.RpcResponseAndContext.value.err);
         }
+        */
         const tokenAcctInfo = await connection.getTokenAccountBalance(
           member.fanoutMintTokenAccount,
           "confirmed"
         );
+
         let diff = ((supply - totalStaked) * sent) / totalStaked;
+        const botAfter = await fanoutSdk.connection.getAccountInfo(
+          distBot.publicKey
+        );
+        if (botAfter && botBefore){
+          let botDiff = botAfter?.lamports - botBefore?.lamports
+          expect(botDiff > 0, `${botDiff}`);
+        }
         let amountDist = (member.shares * diff) / supply;
         expect(tokenAcctInfo.value.amount, `${amountDist}`);
         // @ts-ignore
       }
     });
+    /*
 
     it("Init", async () => {
       const membershipMint = await Token.createMint(
@@ -242,7 +279,7 @@ describe("fanout", async () => {
       );
       expect(fanoutAccount.totalStakedShares?.toString()).to.equal("0");
     });
-
+    /*
     it("Init For mint", async () => {
       const membershipMint = await Token.createMint(
         connection,
@@ -483,12 +520,17 @@ describe("fanout", async () => {
       const firstSnapshot = sent * LAMPORTS_PER_SOL;
       const firstMemberAmount = firstSnapshot * 0.2;
       let member1 = builtFanout.members[0];
+      
+      const distBotTokenAcct =
+      await membershipMint.createAssociatedTokenAccount(distBot.publicKey);
       let ix = await fanoutSdk.distributeTokenMemberInstructions({
         distributeForMint: false,
         membershipMint: membershipMint.publicKey,
         fanout: builtFanout.fanout,
         member: member1.wallet.publicKey,
         payer: distBot.publicKey,
+        authority: authorityWallet.publicKey,
+        payerTokenAccount: distBotTokenAcct
       });
       const memberBefore = await fanoutSdk.connection.getAccountInfo(
         member1.wallet.publicKey
@@ -552,12 +594,16 @@ describe("fanout", async () => {
         connection,
         new NodeWallet(new Account(member1.wallet.secretKey))
       );
+      const distBotTokenAcct =
+        await membershipMint.createAssociatedTokenAccount(distBot.publicKey);
       let ix = await memberFanoutSdk.distributeTokenMemberInstructions({
         distributeForMint: false,
         membershipMint: membershipMint.publicKey,
         fanout: builtFanout.fanout,
         member: member1.wallet.publicKey,
         payer: member1.wallet.publicKey,
+        authority: authorityWallet.publicKey,
+        payerTokenAccount: distBotTokenAcct
       });
       const voucherBefore =
         await memberFanoutSdk.fetch<FanoutMembershipVoucher>(
@@ -582,5 +628,6 @@ describe("fanout", async () => {
         )}`
       );
     });
+  */
   });
 });

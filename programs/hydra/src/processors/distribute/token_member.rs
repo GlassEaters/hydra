@@ -3,7 +3,9 @@ use crate::error::HydraError;
 use crate::state::{Fanout, FanoutMembershipVoucher, MembershipModel};
 
 use crate::utils::logic::distribution::{distribute_mint, distribute_native};
-
+use crate::utils::parse_token_account;
+use crate::utils::logic::calculation::{calculate_payer_rewards};
+use crate::utils::logic::transfer::{transfer_from_mint_holding, transfer_native};
 use crate::utils::validation::*;
 
 use anchor_lang::prelude::*;
@@ -16,6 +18,13 @@ pub struct DistributeTokenMember<'info> {
     #[account(mut)]
     /// CHECK: Optional Account
     pub member: UncheckedAccount<'info>,
+    #[
+    account(
+    mut,
+    address = fanout.authority
+    )]
+    /// CHECK: Restricted to fanout
+    pub authority: UncheckedAccount<'info>,
     #[
     account(
     mut,
@@ -66,6 +75,8 @@ pub struct DistributeTokenMember<'info> {
     constraint = member_stake_account.amount > 0
     )]
     pub member_stake_account: Account<'info, TokenAccount>,
+    /// CHECK: Optional Account
+    pub payer_token_account: UncheckedAccount<'info>,
 }
 
 pub fn distribute_for_token(
@@ -77,7 +88,10 @@ pub fn distribute_for_token(
     let membership_voucher = &mut ctx.accounts.membership_voucher;
     let membership_voucher_info = membership_voucher.to_account_info();
     let member = &mut ctx.accounts.member;
+    let authority = &mut ctx.accounts.authority;
     let membership_mint = &ctx.accounts.membership_mint;
+    let payer_token_account = &mut ctx.accounts.payer_token_account;
+    let payer = &mut ctx.accounts.payer;
     fanout.total_shares = membership_mint.supply;
     assert_ata(
         &ctx.accounts.member_stake_account.to_account_info(),
@@ -88,10 +102,31 @@ pub fn distribute_for_token(
     assert_owned_by(&fanout_info, &crate::ID)?;
     assert_owned_by(&membership_voucher_info, &crate::ID)?;
     assert_owned_by(&member.to_account_info(), &System::id())?;
+    assert_owned_by(&authority.to_account_info(), &System::id())?;
+    assert_owned_by(&payer.to_account_info(), &System::id())?;
+    assert_owned_by(&payer_token_account.to_account_info(), &ctx.accounts.token_program.key())?;
     assert_membership_model(fanout, MembershipModel::Token)?;
     assert_shares_distributed(fanout)?;
+    let rewards: u64 = fanout.payer_reward_basis_points | 666;
 
+    let payer_rewards = calculate_payer_rewards(fanout.total_inflow, rewards)?;
+    
+   
     if distribute_for_mint {
+        if payer_rewards > 0 as u64 {
+
+            transfer_from_mint_holding(
+                &ctx.accounts.fanout,
+                authority.to_account_info(),
+                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.payer.to_account_info(),
+                payer_token_account.to_account_info(),
+                payer_rewards
+            )?;
+            
+            
+            return Err(HydraError::PayerATANotSupplied.into());
+        }
         distribute_mint(
             ctx.accounts.fanout_mint.to_owned(),
             &mut ctx.accounts.fanout_for_mint,
@@ -108,6 +143,15 @@ pub fn distribute_for_token(
             &ctx.accounts.member.key(),
         )?;
     } else {
+
+        if payer_rewards > 0 {
+            transfer_native(
+                ctx.accounts.holding_account.to_account_info(),
+                ctx.accounts.payer.to_account_info(),
+                ctx.accounts.holding_account.lamports(),
+                payer_rewards,
+            )?;
+        }
         distribute_native(
             &mut ctx.accounts.holding_account,
             &mut ctx.accounts.fanout,
