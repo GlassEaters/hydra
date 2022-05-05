@@ -1,4 +1,4 @@
-use crate::error::ErrorCode;
+use crate::error::HydraError;
 use crate::state::{Fanout, FanoutMint};
 use crate::utils::validation::assert_ata;
 use anchor_lang::prelude::*;
@@ -7,6 +7,7 @@ use anchor_spl::token::{Mint, TokenAccount};
 #[derive(Accounts)]
 #[instruction(bump_seed: u8)]
 pub struct InitializeFanoutForMint<'info> {
+    #[account(mut)]
     pub authority: Signer<'info>,
     #[account(
     mut,
@@ -38,7 +39,7 @@ pub struct InitializeFanoutForMint<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn init_for_mint(ctx: Context<InitializeFanoutForMint>, bump_seed: u8) -> ProgramResult {
+pub fn init_for_mint(ctx: Context<InitializeFanoutForMint>, bump_seed: u8) -> Result<()> {
     let fanout_mint = &mut ctx.accounts.fanout_for_mint;
     let fanout = &ctx.accounts.fanout;
     let mint_holding_account = &ctx.accounts.mint_holding_account;
@@ -51,7 +52,7 @@ pub fn init_for_mint(ctx: Context<InitializeFanoutForMint>, bump_seed: u8) -> Pr
         &mint_holding_account.to_account_info(),
         &fanout.key(),
         &ctx.accounts.mint.key(),
-        Some(ErrorCode::HoldingAccountMustBeAnATA.into()),
+        Some(HydraError::HoldingAccountMustBeAnATA.into()),
     )?;
     fanout_mint.token_account = mint_holding_account.to_account_info().key();
     Ok(())

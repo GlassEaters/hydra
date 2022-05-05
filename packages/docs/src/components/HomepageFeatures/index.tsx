@@ -1,6 +1,6 @@
-import React from 'react';
-import clsx from 'clsx';
-import styles from './styles.module.css';
+import React from "react";
+import clsx from "clsx";
+import styles from "./styles.module.css";
 
 type FeatureItem = {
   title: string;
@@ -10,45 +10,44 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Wallet of Wallets',
+    title: "Wallet of Wallets",
     description: (
       <>
-        Create a huge wallet with tons of members, sign NFTs and let unlimited of people get a piece of royalties
+        Create a huge wallet with tons of members, sign NFTs and let unlimited
+        of people get a piece of royalties
       </>
     ),
   },
   {
-    title: 'NFT Membership Utility',
+    title: "NFT Membership Utility",
+    description: (
+      <>Add your NFTs to a Hydra and stream sale royalties to your HodLers</>
+    ),
+  },
+  {
+    title: "Token Membership",
     description: (
       <>
-        Add your NFTs to a Hydra and stream sale royalties to your HodLers
+        Easy Staking rewards for people who hold and stake your token that is
+        connected to a Hydra
       </>
     ),
   },
   {
-    title: 'Token Membership',
+    title: "Tokenized Royalties",
     description: (
       <>
-        Easy Staking rewards for people who hold and stake your token that is connected to a Hydra
-      </>
-    ),
-  },
-  {
-    title: 'Tokenized Royalties',
-    description: (
-      <>
-        Easily transfer or sell portions of Royalty streams tied to a Hydra Wallet Address
+        Easily transfer or sell portions of Royalty streams tied to a Hydra
+        Wallet Address
       </>
     ),
   },
 ];
 
-function Feature({title, description}: FeatureItem) {
+function Feature({ title, description }: FeatureItem) {
   return (
-    <div className={clsx('col col--4')}>
-      <div className="text--center">
-
-      </div>
+    <div className={clsx("col col--4")}>
+      <div className="text--center"></div>
       <div className="text--center padding-horiz--md">
         <h3>{title}</h3>
         <p>{description}</p>

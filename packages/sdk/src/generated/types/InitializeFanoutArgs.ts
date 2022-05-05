@@ -11,6 +11,7 @@ export type InitializeFanoutArgs = {
   nativeAccountBumpSeed: number;
   name: string;
   totalShares: beet.bignum;
+  payerRewardBasisPoints: beet.bignum;
 };
 
 /**
@@ -24,6 +25,7 @@ export const initializeFanoutArgsBeet =
       ["nativeAccountBumpSeed", beet.u8],
       ["name", beet.utf8String],
       ["totalShares", beet.u64],
+      ["payerRewardBasisPoints", beet.u64],
     ],
     "InitializeFanoutArgs"
   );

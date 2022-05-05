@@ -42,6 +42,7 @@ const processDistributeWalletStruct = new beet.BeetArgsStruct<
 export type ProcessDistributeWalletInstructionAccounts = {
   payer: web3.PublicKey;
   member: web3.PublicKey;
+  authority: web3.PublicKey;
   membershipVoucher: web3.PublicKey;
   fanout: web3.PublicKey;
   holdingAccount: web3.PublicKey;
@@ -49,6 +50,7 @@ export type ProcessDistributeWalletInstructionAccounts = {
   fanoutForMintMembershipVoucher: web3.PublicKey;
   fanoutMint: web3.PublicKey;
   fanoutMintMemberTokenAccount: web3.PublicKey;
+  payerTokenAccount: web3.PublicKey;
 };
 
 const processDistributeWalletInstructionDiscriminator = [
@@ -72,6 +74,7 @@ export function createProcessDistributeWalletInstruction(
   const {
     payer,
     member,
+    authority,
     membershipVoucher,
     fanout,
     holdingAccount,
@@ -79,6 +82,7 @@ export function createProcessDistributeWalletInstruction(
     fanoutForMintMembershipVoucher,
     fanoutMint,
     fanoutMintMemberTokenAccount,
+    payerTokenAccount,
   } = accounts;
 
   const [data] = processDistributeWalletStruct.serialize({
@@ -93,6 +97,11 @@ export function createProcessDistributeWalletInstruction(
     },
     {
       pubkey: member,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: authority,
       isWritable: true,
       isSigner: false,
     },
@@ -143,6 +152,11 @@ export function createProcessDistributeWalletInstruction(
     },
     {
       pubkey: splToken.TOKEN_PROGRAM_ID,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: payerTokenAccount,
       isWritable: false,
       isSigner: false,
     },

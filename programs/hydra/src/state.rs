@@ -36,7 +36,7 @@ pub struct Fanout {
 }
 
 #[account]
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct FanoutMint {
     pub mint: Pubkey,              //32
     pub fanout: Pubkey,            //32

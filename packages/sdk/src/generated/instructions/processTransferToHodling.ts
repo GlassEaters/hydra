@@ -5,84 +5,70 @@
  * See: https://github.com/metaplex-foundation/solita
  */
 
-import * as splToken from "@solana/spl-token";
 import * as beet from "@metaplex-foundation/beet";
 import * as web3 from "@solana/web3.js";
-import {
-  InitializeFanoutArgs,
-  initializeFanoutArgsBeet,
-} from "../types/InitializeFanoutArgs";
-import { MembershipModel, membershipModelBeet } from "../types/MembershipModel";
+import { TransferToArgs, transferToArgsBeet } from "../types/TransferToArgs";
 
 /**
  * @category Instructions
- * @category ProcessInit
+ * @category ProcessTransferToHodling
  * @category generated
  */
-export type ProcessInitInstructionArgs = {
-  args: InitializeFanoutArgs;
-  model: MembershipModel;
+export type ProcessTransferToHodlingInstructionArgs = {
+  args: TransferToArgs;
 };
 /**
  * @category Instructions
- * @category ProcessInit
+ * @category ProcessTransferToHodling
  * @category generated
  */
-const processInitStruct = new beet.FixableBeetArgsStruct<
-  ProcessInitInstructionArgs & {
+const processTransferToHodlingStruct = new beet.BeetArgsStruct<
+  ProcessTransferToHodlingInstructionArgs & {
     instructionDiscriminator: number[] /* size: 8 */;
   }
 >(
   [
     ["instructionDiscriminator", beet.uniformFixedSizeArray(beet.u8, 8)],
-    ["args", initializeFanoutArgsBeet],
-    ["model", membershipModelBeet],
+    ["args", transferToArgsBeet],
   ],
-  "ProcessInitInstructionArgs"
+  "ProcessTransferToHodlingInstructionArgs"
 );
 /**
- * Accounts required by the _processInit_ instruction
+ * Accounts required by the _processTransferToHodling_ instruction
  * @category Instructions
- * @category ProcessInit
+ * @category ProcessTransferToHodling
  * @category generated
  */
-export type ProcessInitInstructionAccounts = {
-  authority: web3.PublicKey;
+export type ProcessTransferToHodlingInstructionAccounts = {
   fanout: web3.PublicKey;
   holdingAccount: web3.PublicKey;
-  membershipMint: web3.PublicKey;
 };
 
-const processInitInstructionDiscriminator = [
-  172, 5, 165, 143, 86, 159, 50, 237,
+const processTransferToHodlingInstructionDiscriminator = [
+  16, 112, 74, 44, 106, 43, 83, 76,
 ];
 
 /**
- * Creates a _ProcessInit_ instruction.
+ * Creates a _ProcessTransferToHodling_ instruction.
  *
  * @param accounts that will be accessed while the instruction is processed
  * @param args to provide as instruction data to the program
  *
  * @category Instructions
- * @category ProcessInit
+ * @category ProcessTransferToHodling
  * @category generated
  */
-export function createProcessInitInstruction(
-  accounts: ProcessInitInstructionAccounts,
-  args: ProcessInitInstructionArgs
+export function createProcessTransferToHodlingInstruction(
+  accounts: ProcessTransferToHodlingInstructionAccounts,
+  args: ProcessTransferToHodlingInstructionArgs
 ) {
-  const { authority, fanout, holdingAccount, membershipMint } = accounts;
+  const { fanout, holdingAccount } = accounts;
 
-  const [data] = processInitStruct.serialize({
-    instructionDiscriminator: processInitInstructionDiscriminator,
+  const [data] = processTransferToHodlingStruct.serialize({
+    instructionDiscriminator: processTransferToHodlingInstructionDiscriminator,
     ...args,
   });
   const keys: web3.AccountMeta[] = [
-    {
-      pubkey: authority,
-      isWritable: true,
-      isSigner: true,
-    },
     {
       pubkey: fanout,
       isWritable: true,
@@ -99,17 +85,7 @@ export function createProcessInitInstruction(
       isSigner: false,
     },
     {
-      pubkey: membershipMint,
-      isWritable: true,
-      isSigner: false,
-    },
-    {
       pubkey: web3.SYSVAR_RENT_PUBKEY,
-      isWritable: false,
-      isSigner: false,
-    },
-    {
-      pubkey: splToken.TOKEN_PROGRAM_ID,
       isWritable: false,
       isSigner: false,
     },

@@ -30,6 +30,7 @@ export type ProcessSignMetadataInstructionAccounts = {
   fanout: web3.PublicKey;
   holdingAccount: web3.PublicKey;
   metadata: web3.PublicKey;
+  tokenMetadataProgram: web3.PublicKey;
 };
 
 const processSignMetadataInstructionDiscriminator = [
@@ -48,7 +49,8 @@ const processSignMetadataInstructionDiscriminator = [
 export function createProcessSignMetadataInstruction(
   accounts: ProcessSignMetadataInstructionAccounts
 ) {
-  const { authority, fanout, holdingAccount, metadata } = accounts;
+  const { authority, fanout, holdingAccount, metadata, tokenMetadataProgram } =
+    accounts;
 
   const [data] = processSignMetadataStruct.serialize({
     instructionDiscriminator: processSignMetadataInstructionDiscriminator,
@@ -71,6 +73,11 @@ export function createProcessSignMetadataInstruction(
     },
     {
       pubkey: metadata,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: tokenMetadataProgram,
       isWritable: false,
       isSigner: false,
     },

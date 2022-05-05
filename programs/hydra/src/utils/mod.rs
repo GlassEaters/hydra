@@ -1,7 +1,7 @@
 pub mod logic;
 pub mod validation;
 
-use crate::error::ErrorCode;
+use crate::error::HydraError;
 use crate::state::{FanoutMembershipMintVoucher, FanoutMint, FANOUT_MINT_MEMBERSHIP_VOUCHER_SIZE};
 use crate::utils::validation::{assert_derivation, assert_owned_by};
 use anchor_lang::prelude::*;
@@ -19,7 +19,7 @@ pub fn create_or_allocate_account_raw<'a>(
     size: usize,
     signer_seeds: &[&[u8]],
     new_acct_seeds: &[&[u8]],
-) -> Result<(), ProgramError> {
+) -> Result<()> {
     let rent = &Rent::from_account_info(rent_sysvar_info)?;
     let required_lamports = rent
         .minimum_balance(size)
@@ -62,20 +62,20 @@ pub fn parse_fanout_mint(
     fanout_for_mint: &mut UncheckedAccount,
     fanout: &Pubkey,
     fanout_mint: &Pubkey,
-) -> Result<FanoutMint, ProgramError> {
+) -> Result<FanoutMint> {
     let account_info = fanout_for_mint.to_account_info();
     let fanout_mint_bump = assert_derivation(
         &crate::ID,
         &account_info,
         &[b"fanout-config", fanout.as_ref(), fanout_mint.as_ref()],
-        Some(ErrorCode::InvalidFanoutForMint.into()),
+        Some(HydraError::InvalidFanoutForMint.into()),
     )?;
     let fanout_mint_data: &mut [u8] = &mut fanout_for_mint.try_borrow_mut_data()?;
     let fanout_for_mint_object: FanoutMint =
         FanoutMint::try_deserialize(&mut fanout_mint_data.as_ref())?;
     if fanout_mint_bump != fanout_for_mint_object.bump_seed {
         msg!("Invalid Fanout For Mint");
-        return Err(ErrorCode::InvalidFanoutForMint.into());
+        return Err(HydraError::InvalidFanoutForMint.into());
     }
     Ok(fanout_for_mint_object)
 }
@@ -83,13 +83,13 @@ pub fn parse_fanout_mint(
 pub fn parse_token_account(
     account: &AccountInfo,
     owner: &Pubkey,
-) -> Result<TokenAccount, ProgramError> {
+) -> Result<TokenAccount> {
     let ref_data = account.try_borrow_data()?;
     let mut account_data: &[u8] = &ref_data;
     let account_object = TokenAccount::try_deserialize(&mut account_data)?;
     if &account_object.owner != owner {
         msg!("Token Account has wrong owner");
-        return Err(ProgramError::IllegalOwner);
+        return Err(HydraError::IncorrectOwner.into());
     }
     Ok(account_object)
 }
@@ -103,7 +103,7 @@ pub fn parse_mint_membership_voucher<'info>(
     fanout_for_mint: &Pubkey,
     fanout_mint: &Pubkey,
     fanout: &Pubkey,
-) -> Result<FanoutMembershipMintVoucher, ProgramError> {
+) -> Result<FanoutMembershipMintVoucher> {
     let account_info = fanout_for_mint_membership_voucher.to_account_info();
     let mint_membership_voucher_bump = assert_derivation(
         &crate::ID,
@@ -114,7 +114,7 @@ pub fn parse_mint_membership_voucher<'info>(
             membership_key.as_ref(),
             fanout_mint.as_ref(),
         ],
-        Some(ErrorCode::InvalidMembershipVoucher.into()),
+        Some(HydraError::InvalidMembershipVoucher.into()),
     )?;
     let mint_voucher_empty = fanout_for_mint_membership_voucher.data_is_empty();
 
@@ -148,7 +148,7 @@ pub fn parse_mint_membership_voucher<'info>(
         let membership = FanoutMembershipMintVoucher::try_deserialize(&mut membership_data)?;
         if membership.bump_seed != mint_membership_voucher_bump {
             msg!("Mint Membership Bump Doesnt match");
-            return Err(ErrorCode::InvalidMembershipVoucher.into());
+            return Err(HydraError::InvalidMembershipVoucher.into());
         }
         membership
     })

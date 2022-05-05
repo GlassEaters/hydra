@@ -1,4 +1,4 @@
-use crate::error::{ErrorCode, OrArithError};
+use crate::error::{HydraError, OrArithError};
 use crate::state::{Fanout, FanoutMembershipVoucher, FANOUT_MEMBERSHIP_VOUCHER_SIZE};
 
 use crate::utils::validation::*;
@@ -48,7 +48,7 @@ pub struct SetTokenMemberStake<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-pub fn set_token_member_stake(ctx: Context<SetTokenMemberStake>, shares: u64) -> ProgramResult {
+pub fn set_token_member_stake(ctx: Context<SetTokenMemberStake>, shares: u64) -> Result<()> {
     let fanout = &mut ctx.accounts.fanout;
     let member = &ctx.accounts.member;
     let membership_voucher = &mut ctx.accounts.membership_voucher;
@@ -60,7 +60,7 @@ pub fn set_token_member_stake(ctx: Context<SetTokenMemberStake>, shares: u64) ->
         &ctx.accounts.member_stake_account.to_account_info(),
         &membership_voucher.key(),
         &membership_mint.key(),
-        Some(ErrorCode::InvalidStakeAta.into()),
+        Some(HydraError::InvalidStakeAta.into()),
     )?;
     membership_voucher.fanout = fanout.key();
     membership_voucher.membership_key = member.key();

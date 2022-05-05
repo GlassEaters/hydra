@@ -11,6 +11,7 @@ use anchor_spl::token::Token;
 pub struct AddMemberWallet<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
+    /// CHECK: Checked in program
     pub member: UncheckedAccount<'info>,
     #[account(
     mut,
@@ -32,7 +33,7 @@ pub struct AddMemberWallet<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-pub fn add_member_wallet(ctx: Context<AddMemberWallet>, args: AddMemberArgs) -> ProgramResult {
+pub fn add_member_wallet(ctx: Context<AddMemberWallet>, args: AddMemberArgs) -> Result<()> {
     let fanout = &mut ctx.accounts.fanout;
     let member = &ctx.accounts.member;
     let membership_account = &mut ctx.accounts.membership_account;

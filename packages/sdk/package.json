@@ -1,40 +1,40 @@
 {
-    "name": "@glasseaters/hydra-sdk",
-    "version": "0.1.0",
-    "description": "Interface to the hydra smart contract",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/GlassChewers/hydra"
-    },
-    "publishConfig": {
-        "access": "public"
-    },
-    "main": "dist/lib/index.js",
-    "types": "dist/lib/index.d.ts",
-    "exports": {
-        ".": "./dist/lib/index.js"
-    },
-    "files": [
-        "dist/lib/**/*"
-    ],
-    "scripts": {
-        "build": "tsc --project tsconfig.json",
-        "watch": "tsc --watch --project tsconfig.json",
-        "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-        "precommit": "yarn format"
-    },
-    "dependencies": {
-        "@metaplex-foundation/beet": "0.0.8",
-        "@metaplex-foundation/beet-solana": "0.0.6",
-        "@metaplex-foundation/mpl-token-metadata": "1.2.4",
-        "@project-serum/common": "0.0.1-beta.3",
-        "@solana/spl-token": "^0.1.8",
-        "@solana/web3.js": "^1.31.0",
-        "bn.js": "^5.2.0"
-    },
-    "devDependencies": {
-        "style-loader": "^2.0.0",
-        "ts-loader": "^9.2.3",
-        "typescript": "^4.3.4"
-    }
+  "name": "@glasseaters/hydra-sdk",
+  "version": "0.3.1",
+  "description": "Interface to the hydra smart contract",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GlassChewers/hydra"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "dist/lib/index.js",
+  "types": "dist/lib/index.d.ts",
+  "exports": {
+    ".": "./dist/lib/index.js"
+  },
+  "files": [
+    "dist/lib/**/*"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "watch": "tsc --watch --project tsconfig.json",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "precommit": "yarn format"
+  },
+  "dependencies": {
+    "@metaplex-foundation/beet": "0.0.8",
+    "@metaplex-foundation/beet-solana": "0.0.6",
+    "@metaplex-foundation/mpl-token-metadata": "^1.2.4",
+    "@project-serum/common": "0.0.1-beta.3",
+    "@solana/spl-token": "^0.1.8",
+    "@solana/web3.js": "^1.31.0",
+    "bn.js": "^5.2.0"
+  },
+  "devDependencies": {
+    "style-loader": "^2.0.0",
+    "ts-loader": "^9.2.3",
+    "typescript": "^4.3.4"
+  }
 }

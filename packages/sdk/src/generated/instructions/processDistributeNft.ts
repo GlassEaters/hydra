@@ -42,6 +42,7 @@ const processDistributeNftStruct = new beet.BeetArgsStruct<
 export type ProcessDistributeNftInstructionAccounts = {
   payer: web3.PublicKey;
   member: web3.PublicKey;
+  authority: web3.PublicKey;
   membershipMintTokenAccount: web3.PublicKey;
   membershipKey: web3.PublicKey;
   membershipVoucher: web3.PublicKey;
@@ -51,6 +52,7 @@ export type ProcessDistributeNftInstructionAccounts = {
   fanoutForMintMembershipVoucher: web3.PublicKey;
   fanoutMint: web3.PublicKey;
   fanoutMintMemberTokenAccount: web3.PublicKey;
+  payerTokenAccount: web3.PublicKey;
 };
 
 const processDistributeNftInstructionDiscriminator = [
@@ -74,6 +76,7 @@ export function createProcessDistributeNftInstruction(
   const {
     payer,
     member,
+    authority,
     membershipMintTokenAccount,
     membershipKey,
     membershipVoucher,
@@ -83,6 +86,7 @@ export function createProcessDistributeNftInstruction(
     fanoutForMintMembershipVoucher,
     fanoutMint,
     fanoutMintMemberTokenAccount,
+    payerTokenAccount,
   } = accounts;
 
   const [data] = processDistributeNftStruct.serialize({
@@ -97,6 +101,11 @@ export function createProcessDistributeNftInstruction(
     },
     {
       pubkey: member,
+      isWritable: true,
+      isSigner: false,
+    },
+    {
+      pubkey: authority,
       isWritable: true,
       isSigner: false,
     },
@@ -157,6 +166,11 @@ export function createProcessDistributeNftInstruction(
     },
     {
       pubkey: splToken.TOKEN_PROGRAM_ID,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: payerTokenAccount,
       isWritable: false,
       isSigner: false,
     },

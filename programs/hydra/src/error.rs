@@ -1,29 +1,29 @@
 use anchor_lang::prelude::*;
 use std::result::Result as StdResult;
 pub trait OrArithError<T> {
-    fn or_arith_error(self) -> StdResult<T, ProgramError>;
+    fn or_arith_error(self) -> StdResult<T, error::Error>;
 }
 
 impl OrArithError<u64> for Option<u64> {
-    fn or_arith_error(self) -> StdResult<u64, ProgramError> {
-        self.ok_or(ErrorCode::BadArtithmetic.into())
+    fn or_arith_error(self) -> StdResult<u64, error::Error> {
+        self.ok_or(HydraError::BadArtithmetic.into())
     }
 }
 
 impl OrArithError<u32> for Option<u32> {
-    fn or_arith_error(self) -> StdResult<u32, ProgramError> {
-        self.ok_or(ErrorCode::BadArtithmetic.into())
+    fn or_arith_error(self) -> StdResult<u32, error::Error> {
+        self.ok_or(HydraError::BadArtithmetic.into())
     }
 }
 
 impl OrArithError<u128> for Option<u128> {
-    fn or_arith_error(self) -> StdResult<u128, ProgramError> {
-        self.ok_or(ErrorCode::BadArtithmetic.into())
+    fn or_arith_error(self) -> StdResult<u128, error::Error> {
+        self.ok_or(HydraError::BadArtithmetic.into())
     }
 }
 
-#[error]
-pub enum ErrorCode {
+#[error_code]
+pub enum HydraError {
     #[msg("Encountered an arithmetic error")]
     BadArtithmetic,
 
@@ -88,4 +88,7 @@ pub enum ErrorCode {
 
     #[msg("Remove is not supported on this membership model")]
     RemoveNotSupported,
+
+    #[msg("Payer Associated Token Account must be supplied")]
+    PayerATANotSupplied
 }

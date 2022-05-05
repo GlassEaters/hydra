@@ -1,17 +1,36 @@
-use crate::error::{ErrorCode, OrArithError};
+use crate::error::{HydraError, OrArithError};
 use crate::state::{Fanout, FanoutMembershipMintVoucher, FanoutMembershipVoucher, FanoutMint};
 use anchor_lang::prelude::*;
 
-pub fn calculate_inflow_change(total_inflow: u64, last_inflow: u64) -> Result<u64, ProgramError> {
+pub fn calculate_inflow_change(total_inflow: u64, last_inflow: u64) -> Result<u64> {
     let diff: u64 = total_inflow.checked_sub(last_inflow).or_arith_error()?;
     Ok(diff)
 }
+
+
+pub fn calculate_payer_rewards(
+    total_inflow: u64,
+    payer_reward_basis_points: u64,
+) -> Result<u64> {
+    if payer_reward_basis_points == 0 {
+        return Ok(payer_reward_basis_points as u64)
+    }
+    // todo - Add transaction fee to rewards to payer; stacc says no, let the distbots fight 
+    // https://github.com/GlassEaters/hydra/pull/14#issuecomment-1118020369
+    let payer_reward = total_inflow
+                        .checked_mul(payer_reward_basis_points)
+                        .or_arith_error()?
+                        .checked_div(10000)
+                        .or_arith_error()?;
+    Ok(payer_reward as u64)
+}
+
 
 pub fn calculate_dist_amount(
     member_shares: u64,
     inflow_diff: u64,
     total_shares: u64,
-) -> Result<u64, ProgramError> {
+) -> Result<u64> {
     let member_shares = member_shares as u128;
     let total_shares = total_shares as u128;
     let inflow_diff = inflow_diff as u128;
@@ -23,26 +42,10 @@ pub fn calculate_dist_amount(
     Ok(dist_amount as u64)
 }
 
-pub fn calculate_payer_rewards(
-    total_inflow: u64,
-    payer_reward_basis_points: u64,
-) -> Result<u64, ProgramError> {
-    if payer_reward_basis_points == 0 {
-        Ok(0)
-    }
-    // todo - Add transaction fee to rewards to payer
-    let payer_reward = total_inflow
-                        .checked_mul(payer_reward_basis_points)
-                        .or_arith_error()?
-                        .checked_div(10000)
-                        .or_arith_error()?;
-    Ok(payer_reward as u64)
-}
-
 pub fn update_fanout_for_add(
     fanout: &mut Account<Fanout>,
     shares: u64,
-) -> Result<(), ProgramError> {
+) -> Result<()> {
     let less_shares = fanout
         .total_available_shares
         .checked_sub(shares)
@@ -52,7 +55,7 @@ pub fn update_fanout_for_add(
     if less_shares.ge(&0) {
         Ok(())
     } else {
-        Err(ErrorCode::InsufficientShares.into())
+        Err(HydraError::InsufficientShares.into())
     }
 }
 
@@ -60,7 +63,7 @@ pub fn update_inflow_for_mint(
     fanout: &mut Account<Fanout>,
     fanout_for_mint: &mut FanoutMint,
     current_snapshot: u64,
-) -> Result<(), ProgramError> {
+) -> Result<()> {
     let diff = current_snapshot
         .checked_sub(fanout_for_mint.last_snapshot_amount)
         .or_arith_error()?;
@@ -73,18 +76,18 @@ pub fn update_inflow_for_mint(
         let shares_diff = (fanout.total_shares as u64)
             .checked_sub(tss)
             .or_arith_error()?;
-        let unstaked_correction = diff
-            .checked_mul(shares_diff)
+        let unstaked_correction = (diff as u128)
+            .checked_mul(shares_diff as u128)
             .or_arith_error()?
-            .checked_div(tss)
-            .or_arith_error()?;
+            .checked_div(tss as u128)
+            .or_arith_error()? as u64;
         fanout_for_mint.total_inflow += unstaked_correction;
     }
     fanout_for_mint.last_snapshot_amount = current_snapshot;
     Ok(())
 }
 
-pub fn update_inflow(fanout: &mut Fanout, current_snapshot: u64) -> Result<(), ProgramError> {
+pub fn update_inflow(fanout: &mut Fanout, current_snapshot: u64) -> Result<()> {
     let diff = current_snapshot
         .checked_sub(fanout.last_snapshot_amount)
         .or_arith_error()?;
@@ -94,11 +97,11 @@ pub fn update_inflow(fanout: &mut Fanout, current_snapshot: u64) -> Result<(), P
         let shares_diff = (fanout.total_shares as u64)
             .checked_sub(tss)
             .or_arith_error()?;
-        let unstaked_correction = diff
-            .checked_mul(shares_diff)
+        let unstaked_correction = (diff as u128)
+            .checked_mul(shares_diff as u128)
             .or_arith_error()?
-            .checked_div(tss)
-            .or_arith_error()?;
+            .checked_div(tss as u128)
+            .or_arith_error()? as u64;
         fanout.total_inflow += unstaked_correction;
     }
     fanout.last_snapshot_amount = current_snapshot;
@@ -109,7 +112,7 @@ pub fn update_snapshot(
     fanout: &mut Account<Fanout>,
     fanout_voucher: &mut Account<FanoutMembershipVoucher>,
     distribution_amount: u64,
-) -> Result<(), ProgramError> {
+) -> Result<()> {
     fanout_voucher.last_inflow = fanout.total_inflow;
     fanout.last_snapshot_amount = fanout
         .last_snapshot_amount
@@ -122,7 +125,7 @@ pub fn update_snapshot_for_mint(
     fanout_mint: &mut FanoutMint,
     fanout_mint_voucher: &mut FanoutMembershipMintVoucher,
     distribution_amount: u64,
-) -> Result<(), ProgramError> {
+) -> Result<()> {
     fanout_mint_voucher.last_inflow = fanout_mint.total_inflow;
     fanout_mint.last_snapshot_amount = fanout_mint
         .last_snapshot_amount
@@ -135,9 +138,9 @@ pub fn current_lamports(
     rent: &Sysvar<Rent>,
     size: usize,
     holding_account_lamports: u64,
-) -> Result<u64, ProgramError> {
+) -> Result<u64> {
     let subtract_size = rent.minimum_balance(size).max(1);
     holding_account_lamports
         .checked_sub(subtract_size)
-        .ok_or(ErrorCode::NumericalOverflow.into())
+        .ok_or(HydraError::NumericalOverflow.into())
 }

@@ -1,20 +1,20 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const lightCodeTheme = require("prism-react-renderer/themes/github");
+const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Hydra',
-  tagline: 'The Fanout Wallet',
-  url: 'https://hydra-docs.glasseaters.xyz',
-  baseUrl: '/',
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/favicon.ico',
-  organizationName: 'glasseaters', // Usually your GitHub org/user name.
-  projectName: 'hydra', // Usually your repo name.
+  title: "Hydra",
+  tagline: "The Fanout Wallet",
+  url: "https://hydra-docs.glasseaters.xyz",
+  baseUrl: "/",
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "warn",
+  favicon: "img/favicon.ico",
+  organizationName: "glasseaters", // Usually your GitHub org/user name.
+  projectName: "hydra", // Usually your repo name.
   ssrTemplate: `<!DOCTYPE html>
 <html <%~ it.htmlAttributes %>>
   <head>
@@ -49,17 +49,18 @@ const config = {
 </html>`,
   presets: [
     [
-      'classic',
+      "classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
+          sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
-          editUrl: 'https://github.com/glasseaters/hydra/tree/main/packages/docs/',
+          editUrl:
+            "https://github.com/glasseaters/hydra/tree/main/packages/docs/",
         },
         blog: false,
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: require.resolve("./src/css/custom.css"),
         },
       }),
     ],
@@ -69,43 +70,43 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'Hydra Docs',
+        title: "Hydra Docs",
         logo: {
-          alt: 'The Hydra',
-          src: 'img/logo.jpeg',
+          alt: "The Hydra",
+          src: "img/logo.jpeg",
         },
         items: [
           {
-            type: 'doc',
-            docId: 'intro',
-            position: 'left',
-            label: 'Introduction',
+            type: "doc",
+            docId: "intro",
+            position: "left",
+            label: "Introduction",
           },
           {
-            href: 'https://github.com/glasseaters/hydra',
-            label: 'GitHub',
-            position: 'right',
+            href: "https://github.com/glasseaters/hydra",
+            label: "GitHub",
+            position: "right",
           },
         ],
       },
       footer: {
-        style: 'dark',
+        style: "dark",
         links: [
           {
-            title: 'Docs',
+            title: "Docs",
             items: [
               {
-                label: 'Introduction',
-                to: '/docs/intro',
+                label: "Introduction",
+                to: "/docs/intro",
               },
             ],
           },
           {
-            title: 'More',
+            title: "More",
             items: [
               {
-                label: 'GitHub',
-                href: 'https://github.com/glasseaters/hydra',
+                label: "GitHub",
+                href: "https://github.com/glasseaters/hydra",
               },
             ],
           },

@@ -13,10 +13,10 @@ pub fn distribute_native<'info>(
     membership_voucher: &mut Account<'info, FanoutMembershipVoucher>,
     member: UncheckedAccount<'info>,
     rent: Sysvar<'info, anchor_lang::prelude::Rent>,
-) -> Result<(), ProgramError> {
+) -> Result<()> {
     let total_shares = fanout.total_shares as u64;
     if holding_account.key() != fanout.account_key {
-        return Err(ErrorCode::InvalidHoldingAccount.into());
+        return Err(HydraError::InvalidHoldingAccount.into());
     }
     let current_snapshot = holding_account.lamports();
     let current_snapshot_less_min =
@@ -29,7 +29,7 @@ pub fn distribute_native<'info>(
     membership_voucher.total_inflow = membership_voucher
         .total_inflow
         .checked_add(dif_dist)
-        .ok_or(ErrorCode::NumericalOverflow)?;
+        .ok_or(HydraError::NumericalOverflow)?;
     transfer_native(
         holding_account.to_account_info(),
         member.to_account_info(),
@@ -52,7 +52,7 @@ pub fn distribute_mint<'info>(
     payer: AccountInfo<'info>,
     member: UncheckedAccount<'info>,
     membership_key: &Pubkey,
-) -> Result<(), ProgramError> {
+) -> Result<()> {
     msg!("Distribute For Mint");
     let mint = &fanout_mint;
     let fanout_for_mint_membership_voucher_unchecked = fanout_for_mint_membership_voucher;
@@ -66,15 +66,15 @@ pub fn distribute_mint<'info>(
         &holding_account.to_account_info(),
         &fanout.key(),
         &fanout_mint.key(),
-        Some(ErrorCode::HoldingAccountMustBeAnATA.into()),
+        Some(HydraError::HoldingAccountMustBeAnATA.into()),
     )?;
     let fanout_for_mint_object =
         &mut parse_fanout_mint(fanout_for_mint, &fanout.key(), &mint.key())?;
     if holding_account.key() != fanout_for_mint_object.token_account {
-        return Err(ErrorCode::InvalidHoldingAccount.into());
+        return Err(HydraError::InvalidHoldingAccount.into());
     }
     if fanout_for_mint_object.mint != mint.to_account_info().key() {
-        return Err(ErrorCode::MintDoesNotMatch.into());
+        return Err(HydraError::MintDoesNotMatch.into());
     }
     let fanout_for_mint_membership_voucher = &mut parse_mint_membership_voucher(
         fanout_for_mint_membership_voucher_unchecked,
@@ -88,6 +88,7 @@ pub fn distribute_mint<'info>(
     )?;
     let holding_account_ata = parse_token_account(holding_account, &fanout.key())?;
     parse_token_account(&fanout_mint_member_token_account_info, &member.key())?;
+
     let current_snapshot = holding_account_ata.amount;
     update_inflow_for_mint(fanout, fanout_for_mint_object, current_snapshot)?;
     let inflow_diff = calculate_inflow_change(

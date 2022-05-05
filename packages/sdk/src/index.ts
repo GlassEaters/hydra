@@ -1,5 +1,5 @@
 import * as anchor from "@project-serum/anchor";
-import { Program, Provider } from "@project-serum/anchor";
+import { BorshAccountsCoder, Program, Provider } from "@project-serum/anchor";
 import {
   AccountLayout,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -10,6 +10,7 @@ import {
 import {
   Commitment,
   Connection,
+  Finality,
   PublicKey,
   RpcResponseAndContext,
   SignatureResult,
@@ -31,27 +32,33 @@ import {
   createProcessAddMemberWalletInstruction,
   createProcessDistributeWalletInstruction,
   createProcessSetTokenMemberStakeInstruction,
+  createProcessSetForTokenMemberStakeInstruction,
   createProcessDistributeTokenInstruction,
-  createProcessUnstakeInstruction, createProcessSignMetadataInstruction,
+  createProcessUnstakeInstruction,
+  createProcessSignMetadataInstruction,
 } from "./generated/instructions";
 import { MembershipModel } from "./generated/types";
-import { Fanout } from "./generated/accounts";
+import { Fanout, FanoutMembershipVoucher } from "./generated/accounts";
+
 export * from "./generated/types";
 export * from "./generated/accounts";
 export * from "./generated/errors";
 import { MetadataProgram } from "@metaplex-foundation/mpl-token-metadata";
-
-export interface InstructionResult<A> {
-  instructions: TransactionInstruction[];
-  signers: Signer[];
-  output: A;
-}
+import {
+  BigInstructionResult,
+  InstructionResult,
+  sendMultipleInstructions,
+} from "@strata-foundation/spl-utils";
+import bs58 from "bs58";
+import { getTokenAccount } from "@project-serum/common";
+import { chunks } from "./utils";
 
 interface InitializeFanoutArgs {
   name: string;
   membershipModel: MembershipModel;
   totalShares: number;
   mint?: PublicKey;
+  payer_reward_basis_points?: number;
 }
 
 interface InitializeFanoutForMintArgs {
@@ -70,6 +77,7 @@ interface AddMemberArgs {
 interface StakeMemberArgs {
   shares: number;
   fanout: PublicKey;
+  fanoutAuthority?: PublicKey;
   membershipMint?: PublicKey;
   membershipMintTokenAccount?: PublicKey;
   fanoutNativeAccount?: PublicKey;
@@ -94,12 +102,14 @@ interface UnstakeMemberArgs {
 }
 
 interface DistributeMemberArgs {
+  authority: PublicKey;
   distributeForMint: boolean;
   member: PublicKey;
   membershipKey?: PublicKey;
   fanout: PublicKey;
   fanoutMint?: PublicKey;
   payer: PublicKey;
+  payerTokenAccount: PublicKey
 }
 
 interface DistributeTokenMemberArgs {
@@ -109,6 +119,14 @@ interface DistributeTokenMemberArgs {
   fanout: PublicKey;
   fanoutMint?: PublicKey;
   membershipMintTokenAccount?: PublicKey;
+  payer: PublicKey;
+  authority: PublicKey;
+  payerTokenAccount: PublicKey;
+}
+
+interface DistributeAllArgs {
+  fanout: PublicKey;
+  mint: PublicKey;
   payer: PublicKey;
 }
 
@@ -122,7 +140,9 @@ export interface TransactionResult {
 
 export interface Wallet {
   signTransaction(tx: Transaction): Promise<Transaction>;
+
   signAllTransactions(txs: Transaction[]): Promise<Transaction[]>;
+
   publicKey: PublicKey;
 }
 
@@ -134,6 +154,7 @@ function promiseLog(c: any): any {
 export class FanoutClient {
   connection: Connection;
   wallet: Wallet;
+  provider: Provider;
 
   static ID = new PublicKey("hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg");
 
@@ -147,11 +168,54 @@ export class FanoutClient {
   constructor(connection: Connection, wallet: Wallet) {
     this.connection = connection;
     this.wallet = wallet;
+    this.provider = new Provider(connection, wallet, {});
   }
 
   async fetch<T>(key: PublicKey, type: any): Promise<T> {
     let a = await this.connection.getAccountInfo(key);
     return type.fromAccountInfo(a)[0] as T;
+  }
+
+  async getMembers({ fanout }: { fanout: PublicKey }): Promise<PublicKey[]> {
+    const name = "fanoutMembershipVoucher";
+    const descriminator = BorshAccountsCoder.accountDiscriminator(name);
+    const filters = [
+      {
+        memcmp: {
+          offset: 0,
+          bytes: bs58.encode(Buffer.concat([descriminator, fanout.toBuffer()])),
+        },
+      },
+    ];
+    const members = await this.connection.getProgramAccounts(FanoutClient.ID, {
+      // Get the membership key
+      dataSlice: {
+        length: 32,
+        offset: 8 + 32 + 8 + 8 + 1,
+      },
+      filters,
+    });
+
+    return members.map((mem) => new PublicKey(mem.account.data));
+  }
+
+  async executeBig<Output>(
+    command: Promise<BigInstructionResult<Output>>,
+    payer: PublicKey = this.wallet.publicKey,
+    finality?: Finality
+  ): Promise<Output> {
+    const { instructions, signers, output } = await command;
+    if (instructions.length > 0) {
+      await sendMultipleInstructions(
+        new Map(),
+        this.provider,
+        instructions,
+        signers,
+        payer || this.wallet.publicKey,
+        finality
+      );
+    }
+    return output;
   }
 
   async sendInstructions(
@@ -242,7 +306,7 @@ export class FanoutClient {
 
   static async mintMembershipVoucher(
     fanoutForMintConfig: PublicKey,
-    membershipMint: PublicKey,
+    membershipKey: PublicKey,
     fanoutMint: PublicKey,
     programId: PublicKey = FanoutClient.ID
   ): Promise<[PublicKey, number]> {
@@ -250,7 +314,7 @@ export class FanoutClient {
       [
         Buffer.from("fanout-membership"),
         fanoutForMintConfig.toBuffer(),
-        membershipMint.toBuffer(),
+        membershipKey.toBuffer(),
         fanoutMint.toBuffer(),
       ],
       programId
@@ -312,6 +376,7 @@ export class FanoutClient {
             nativeAccountBumpSeed: holdingAccountBumpSeed,
             totalShares: opts.totalShares,
             name: opts.name,
+            payerRewardBasisPoints: opts.payer_reward_basis_points || 0
           },
           model: opts.membershipModel,
         }
@@ -482,7 +547,8 @@ export class FanoutClient {
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         mint,
-        opts.member
+        opts.member,
+        true
       ));
     instructions.push(
       createProcessUnstakeInstruction({
@@ -494,6 +560,90 @@ export class FanoutClient {
         membershipMint: mint,
         membershipMintTokenAccount: membershipMintTokenAccount,
       })
+    );
+    return {
+      output: {
+        membershipVoucher: voucher,
+        membershipMintTokenAccount,
+        stakeAccount,
+      },
+      instructions,
+      signers,
+    };
+  }
+
+  async stakeForTokenMemberInstructions(opts: StakeMemberArgs): Promise<
+    InstructionResult<{
+      membershipVoucher: PublicKey;
+      membershipMintTokenAccount: PublicKey;
+      stakeAccount: PublicKey;
+    }>
+  > {
+    const instructions: TransactionInstruction[] = [];
+    const signers: Signer[] = [];
+    let mint = opts.membershipMint;
+    let auth = opts.fanoutAuthority;
+    if (!mint || !auth) {
+      let data = await this.fetch<Fanout>(opts.fanout, Fanout);
+      mint = data.membershipMint as PublicKey;
+      auth = data.authority as PublicKey;
+    }
+    const [voucher, _vbump] = await FanoutClient.membershipVoucher(
+      opts.fanout,
+      opts.member
+    );
+    const stakeAccount = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      mint,
+      voucher,
+      true
+    );
+    const membershipMintTokenAccount =
+      opts.membershipMintTokenAccount ||
+      (await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        mint,
+        auth,
+        true
+      ));
+    try {
+      await this.connection.getTokenAccountBalance(stakeAccount);
+    } catch (e) {
+      instructions.push(
+        await Token.createAssociatedTokenAccountInstruction(
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+          TOKEN_PROGRAM_ID,
+          mint,
+          stakeAccount,
+          voucher,
+          opts.payer
+        )
+      );
+    }
+    try {
+      await this.connection.getTokenAccountBalance(membershipMintTokenAccount);
+    } catch (e) {
+      throw new Error(
+        "Membership mint token account for authority must be initialized"
+      );
+    }
+    instructions.push(
+      createProcessSetForTokenMemberStakeInstruction(
+        {
+          fanout: opts.fanout,
+          authority: auth,
+          member: opts.member,
+          memberStakeAccount: stakeAccount,
+          membershipVoucher: voucher,
+          membershipMint: mint,
+          membershipMintTokenAccount: membershipMintTokenAccount,
+        },
+        {
+          shares: opts.shares,
+        }
+      )
     );
     return {
       output: {
@@ -537,7 +687,8 @@ export class FanoutClient {
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         mint,
-        opts.member
+        opts.member,
+        true
       ));
     try {
       await this.connection.getTokenAccountBalance(stakeAccount);
@@ -587,24 +738,24 @@ export class FanoutClient {
   }
 
   async signMetadataInstructions(
-      opts: SignMetadataArgs
-  ):  Promise<
-      InstructionResult<{}>
-      >{
-    let authority = opts.authority, holdingAccount = opts.holdingAccount;
-    if(!authority || !holdingAccount) {
-     const fanoutObj = await this.fetch<Fanout>(opts.fanout, Fanout);
-     authority = fanoutObj.authority as PublicKey;
-     holdingAccount = fanoutObj.accountKey as PublicKey;
+    opts: SignMetadataArgs
+  ): Promise<InstructionResult<{}>> {
+    let authority = opts.authority,
+      holdingAccount = opts.holdingAccount;
+    if (!authority || !holdingAccount) {
+      const fanoutObj = await this.fetch<Fanout>(opts.fanout, Fanout);
+      authority = fanoutObj.authority as PublicKey;
+      holdingAccount = fanoutObj.accountKey as PublicKey;
     }
     const instructions: TransactionInstruction[] = [];
     const signers: Signer[] = [];
     instructions.push(
-        createProcessSignMetadataInstruction({
+      createProcessSignMetadataInstruction({
         fanout: opts.fanout,
         authority: authority,
         holdingAccount: holdingAccount,
         metadata: opts.metadata,
+        tokenMetadataProgram: MetadataProgram.PUBKEY,
       })
     );
     return {
@@ -629,7 +780,13 @@ export class FanoutClient {
     let holdingAccount;
     let [fanoutForMint, fanoutForMintBump] =
       await FanoutClient.fanoutForMintKey(opts.fanout, fanoutMint);
-
+    let fanoutMintMemberTokenAccount = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      fanoutMint,
+      opts.member,
+      true
+    );
     let [
       fanoutForMintMembershipVoucher,
       fanoutForMintMembershipVoucherBumpSeed,
@@ -638,12 +795,7 @@ export class FanoutClient {
       opts.member,
       fanoutMint
     );
-    let fanoutMintMemberTokenAccount = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      fanoutMint,
-      opts.member
-    );
+
     if (opts.distributeForMint) {
       holdingAccount = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -688,7 +840,8 @@ export class FanoutClient {
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         opts.membershipMint,
-        opts.member
+        opts.member,
+        true
       ));
     try {
       await this.connection.getTokenAccountBalance(stakeAccount);
@@ -719,6 +872,8 @@ export class FanoutClient {
           payer: opts.payer,
           member: opts.member,
           fanout: opts.fanout,
+          authority: opts.authority,
+          payerTokenAccount: opts.payerTokenAccount
         },
         {
           distributeForMint: opts.distributeForMint,
@@ -737,6 +892,85 @@ export class FanoutClient {
     };
   }
 
+  async distributeAllInstructions({
+    fanout,
+    mint,
+    payer,
+  }: DistributeAllArgs): Promise<BigInstructionResult<null>> {
+    const fanoutAcct = await Fanout.fromAccountAddress(this.connection, fanout);
+    const members = await this.getMembers({ fanout });
+
+    const instructions = await Promise.all(
+      members.map(async (member) => {
+        switch (fanoutAcct.membershipModel) {
+          case MembershipModel.Token:
+            // Todo: ugh
+            try {
+            // @ts-ignore
+            return this.distributeTokenMemberInstructions({
+              distributeForMint: !mint.equals(NATIVE_MINT),
+              membershipMint: fanoutAcct.membershipMint!,
+              fanout,
+              member,
+              fanoutMint: mint,
+              payer: payer
+            });
+          } catch(err) {
+      
+          }
+          case MembershipModel.Wallet:
+            // Todo: ugh
+            try {
+            // @ts-ignore
+            return this.distributeWalletMemberInstructions({
+              distributeForMint: !mint.equals(NATIVE_MINT),
+              member,
+              fanout,
+              fanoutMint: mint,
+              payer: payer,
+            });
+
+    } catch(err) {
+
+    }
+          case MembershipModel.NFT:
+            const account = (
+              await this.connection.getTokenLargestAccounts(member)
+            ).value[0].address;
+            const wallet = (await getTokenAccount(this.provider, account))
+              .owner;
+              // Todo: ugh
+              try{ 
+              // @ts-ignore
+            return this.distributeNftMemberInstructions({
+              distributeForMint: !mint.equals(NATIVE_MINT),
+              fanout,
+              fanoutMint: mint,
+              membershipKey: member,
+              member: wallet,
+              payer: payer,
+            });
+          } catch(err) {
+      
+          }
+        }
+      })
+    );
+
+    // 3 at a time
+    const grouped: InstructionResult<any>[][] = chunks(instructions, 3);
+
+    return {
+      instructions: grouped.map((i) => i.map((o) => o.instructions).flat()),
+      signers: grouped.map((i) => i.map((o) => o.signers).flat()),
+      output: null,
+    };
+  }
+
+  async distributeAll(opts: DistributeAllArgs): Promise<null> {
+    return this.executeBig(this.distributeAllInstructions(opts), opts.payer);
+  }
+
   async distributeNftMemberInstructions(opts: DistributeMemberArgs): Promise<
     InstructionResult<{
       membershipVoucher: PublicKey;
@@ -745,7 +979,7 @@ export class FanoutClient {
     }>
   > {
     if (!opts.membershipKey) {
-      throw new Error("Missing membership key");
+      throw new Error("No membership key");
     }
     const instructions: TransactionInstruction[] = [];
     const signers: Signer[] = [];
@@ -766,7 +1000,8 @@ export class FanoutClient {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       fanoutMint,
-      opts.member
+      opts.member,
+      true
     );
     if (opts.distributeForMint) {
       holdingAccount = await Token.getAssociatedTokenAddress(
@@ -801,7 +1036,8 @@ export class FanoutClient {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       opts.membershipKey,
-      opts.member
+      opts.member,
+      true
     );
     const [membershipVoucher, membershipVoucherBump] =
       await FanoutClient.membershipVoucher(opts.fanout, opts.membershipKey);
@@ -819,6 +1055,8 @@ export class FanoutClient {
           payer: opts.payer,
           member: opts.member,
           fanout: opts.fanout,
+          authority: opts.authority,
+          payerTokenAccount: opts.payerTokenAccount
         },
         {
           distributeForMint: opts.distributeForMint,
@@ -862,7 +1100,8 @@ export class FanoutClient {
       ASSOCIATED_TOKEN_PROGRAM_ID,
       TOKEN_PROGRAM_ID,
       fanoutMint,
-      opts.member
+      opts.member,
+      true
     );
     if (opts.distributeForMint) {
       holdingAccount = await Token.getAssociatedTokenAddress(
@@ -907,6 +1146,8 @@ export class FanoutClient {
           payer: opts.payer,
           member: opts.member,
           fanout: opts.fanout,
+          authority: opts.authority,
+          payerTokenAccount: opts.payerTokenAccount
         },
         {
           distributeForMint: opts.distributeForMint,
@@ -968,9 +1209,16 @@ export class FanoutClient {
     return output;
   }
 
+  async stakeForTokenMember(opts: StakeMemberArgs) {
+    const { instructions, signers, output } =
+      await this.stakeForTokenMemberInstructions(opts);
+    await this.throwingSend(instructions, signers, this.wallet.publicKey);
+    return output;
+  }
+
   async signMetadata(opts: SignMetadataArgs) {
     const { instructions, signers, output } =
-        await this.signMetadataInstructions(opts);
+      await this.signMetadataInstructions(opts);
     await this.throwingSend(instructions, signers, this.wallet.publicKey);
     return output;
   }
@@ -986,7 +1234,11 @@ export class FanoutClient {
       signers: unstake_signers,
       output,
     } = await this.unstakeTokenMemberInstructions(opts);
+    // Todo: ugh
+    try {
     const { instructions: dist_ix, signers: dist_signers } =
+    
+    // @ts-ignore
       await this.distributeTokenMemberInstructions({
         distributeForMint: false,
         fanout,
@@ -994,11 +1246,15 @@ export class FanoutClient {
         membershipMint,
         payer,
       });
-    await this.throwingSend(
-      [...dist_ix, ...unstake_ix],
-      [...unstake_signers, ...dist_signers],
-      this.wallet.publicKey
-    );
+      await this.throwingSend(
+        [...dist_ix, ...unstake_ix],
+        [...unstake_signers, ...dist_signers],
+        this.wallet.publicKey
+      );
+    } catch(err) {
+
+    }
+    
     return output;
   }
 
