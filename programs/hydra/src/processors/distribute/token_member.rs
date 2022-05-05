@@ -75,8 +75,7 @@ pub struct DistributeTokenMember<'info> {
     constraint = member_stake_account.amount > 0
     )]
     pub member_stake_account: Account<'info, TokenAccount>,
-    /// CHECK: Optional Account
-    pub payer_token_account: UncheckedAccount<'info>,
+    pub payer_token_account: Account<'info, TokenAccount>,
 }
 
 pub fn distribute_for_token(

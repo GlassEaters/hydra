@@ -62,8 +62,8 @@ pub struct DistributeNftMember<'info> {
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
     pub token_program: Program<'info, Token>,
-    /// CHECK: Optional Account
-    pub payer_token_account: UncheckedAccount<'info>,}
+    pub payer_token_account: Account<'info, TokenAccount>,
+}
 
 pub fn distribute_for_nft(
     ctx: Context<DistributeNftMember>,

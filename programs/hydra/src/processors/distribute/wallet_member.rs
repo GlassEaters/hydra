@@ -11,7 +11,7 @@ use crate::utils::logic::calculation::{calculate_payer_rewards};
 use crate::utils::logic::transfer::{transfer_from_mint_holding, transfer_native};
 
 
-use anchor_spl::token::{Mint, Token};
+use anchor_spl::token::{Mint, Token, TokenAccount};
 
 #[derive(Accounts)]
 #[instruction(distribute_for_mint: bool)]
@@ -56,8 +56,7 @@ pub struct DistributeWalletMember<'info> {
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
     pub token_program: Program<'info, Token>,
-    /// CHECK: Optional Account
-    pub payer_token_account: UncheckedAccount<'info>,
+    pub payer_token_account: Account<'info, TokenAccount>,
 }
 
 pub fn distribute_for_wallet(
