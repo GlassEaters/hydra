@@ -1,7 +1,11 @@
 use super::arg::AddMemberArgs;
 use crate::state::{Fanout, FanoutMembershipVoucher, FANOUT_MEMBERSHIP_VOUCHER_SIZE};
 use crate::utils::logic::calculation::*;
+<<<<<<< Updated upstream
 use crate::utils::validation::{assert_membership_model, assert_owned_by, assert_owned_by_or_owned_by};
+=======
+use crate::utils::validation::{assert_membership_model, assert_owned_by, assert_owned_by_one};
+>>>>>>> Stashed changes
 use crate::MembershipModel;
 use anchor_lang::prelude::*;
 use anchor_spl::token::Token;
@@ -40,8 +44,8 @@ pub fn add_member_wallet(ctx: Context<AddMemberWallet>, args: AddMemberArgs) -> 
     update_fanout_for_add(fanout, args.shares)?;
     assert_membership_model(fanout, MembershipModel::Wallet)?;
     assert_owned_by(&fanout.to_account_info(), &crate::ID)?;
-    assert_owned_by_or_owned_by(&member.to_account_info(), &System::id(),  &crate::ID)?;
-    
+    assert_owned_by_one(&member.to_account_info(), vec![&System::id(), &crate::ID])?;
+
     membership_account.membership_key = member.key();
     membership_account.shares = args.shares;
     membership_account.bump_seed = *ctx.bumps.get("membership_account").unwrap();
