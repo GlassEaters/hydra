@@ -119,3 +119,42 @@ pub fn assert_valid_metadata(
     }
     Ok(meta)
 }
+
+pub fn assert_owned_by_one(account: &AccountInfo, owners: Vec<&Pubkey>) -> Result<()> {
+    for o in owners {
+        let res = assert_owned_by(account, o);
+        if res.is_ok() {
+            return res;
+        }
+    }
+    Err(HydraError::IncorrectOwner.into())
+}
+
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+
+    #[test]
+    fn test_multi_owner_check() {
+        let owner = Pubkey::new_unique();
+        let owner1 = Pubkey::new_unique();
+        let owner2 = Pubkey::new_unique();
+        let ad = Pubkey::new_unique();
+        let actual_owner = Pubkey::new_unique();
+        let lam= &mut 10000;
+        let a = AccountInfo::new(&ad, false, false, lam, &mut [0; 0], &actual_owner, false, 0);
+
+        let e = assert_owned_by_one(&a, vec![&owner, &owner2, &owner1]);
+
+        assert_eq!(e.is_err(), true);
+
+        let e = assert_owned_by_one(&a, vec![&owner, &actual_owner, &owner1]);
+
+        assert_eq!(e.is_ok(), true);
+
+    }
+
+
+}
