@@ -1,5 +1,11 @@
 # CHANGELOG.md
 
+## 0.2.2 (2022-03-25) - Unstable release API MAY CHANGE in a future release
+
+Features:
+
+- Allow wallet member to be a hydra wallet
+
 ## 0.2.1 (2022-03-25) - Unstable release API MAY CHANGE in a future release
 
 Fixes:
