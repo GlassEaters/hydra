@@ -32,6 +32,8 @@ pub struct Fanout {
     pub membership_model: MembershipModel, //1
     pub membership_mint: Option<Pubkey>,   //32
     pub total_staked_shares: Option<u64>,  //4
+    pub end_ts: u64,  //8
+    pub start_ts: u64,  //8
 }
 
 #[account]

@@ -9,6 +9,8 @@ pub struct InitializeFanoutArgs {
     pub native_account_bump_seed: u8,
     pub name: String,
     pub total_shares: u64,
+    pub end_ts: u64 ,
+    pub start_ts: u64 
 }
 
 #[derive(Accounts)]
@@ -56,6 +58,10 @@ pub fn init(
     fanout.last_snapshot_amount = fanout.total_inflow;
     fanout.bump_seed = args.bump_seed;
     fanout.membership_model = model;
+    if args.end_ts > 0 {
+        fanout.end_ts = args.end_ts;
+        fanout.start_ts = args.start_ts;
+    }
     fanout.membership_mint = if membership_mint.key() == spl_token::native_mint::id() {
         None
     } else {

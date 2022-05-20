@@ -24,7 +24,13 @@ pub fn distribute_native<'info>(
     update_inflow(fanout, current_snapshot_less_min)?;
     let inflow_diff = calculate_inflow_change(fanout.total_inflow, membership_voucher.last_inflow)?;
     let shares = membership_voucher.shares as u64;
-    let dif_dist = calculate_dist_amount(shares, inflow_diff, total_shares)?;
+    let dif_dist1 = calculate_dist_amount(shares, inflow_diff, total_shares)?;
+    let now_ts = Clock::get().unwrap().unix_timestamp as u64;
+    let dif = fanout.end_ts.checked_sub(fanout.start_ts).ok_or(HydraError::NumericalOverflow)?;
+    let til_end = now_ts.checked_sub(fanout.start_ts).ok_or(HydraError::NumericalOverflow)?;
+    let inverse_bruh = dif.checked_div(til_end).ok_or(HydraError::NumericalOverflow)?; // ok is this gonna die a whole lot lol? realdevs fix plz appreciate
+    let dif_dist = dif_dist1.checked_div(inverse_bruh).ok_or(HydraError::NumericalOverflow)?;
+
     update_snapshot(fanout, membership_voucher, dif_dist)?;
     membership_voucher.total_inflow = membership_voucher
         .total_inflow
