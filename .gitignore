@@ -16,3 +16,4 @@ test-ledger
 !.yarn/sdks
 !.yarn/versions
 .idea/*
+tests/out.json

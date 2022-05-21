@@ -18,15 +18,11 @@ function localDeployPath(dir, programName) {
   return path.join(dir, `${programName}.so`);
 }
 const programs = {
-  metadata: {
-    programId: programIds.metadata,
-    deployPath: localDeployPath(remoteDeployDir, "mpl_token_metadata"),
-  },
   fanout: {
     programId: programIds.fanout,
     deployPath: localDeployPath(
       path.join(__dirname, "target", "deploy"),
-      "hydra"
+      "hydra_wallet"
     ),
   },
 };
@@ -34,7 +30,15 @@ const programs = {
 const validator = {
   verifyFees: false,
   commitment: "confirmed",
-  programs: [programs.metadata, programs.fanout],
+  programs: [programs.fanout],
+  accountsCluster: "https://api.metaplex.solana.com",
+  accounts: [
+    {
+      label: "Token Metadata Program",
+      accountId: programIds.metadata,
+      executable: true,
+    },
+  ],
 };
 
 module.exports = {
