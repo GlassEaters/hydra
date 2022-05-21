@@ -1,0 +1,137 @@
+name: Test
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  checks: write
+  contents: read
+  issues: read
+  pull-requests: write
+
+env:
+  CARGO_TERM_COLOR: always
+  SOLANA_VERSION: 1.9.24
+  RUST_TOOLCHAIN: nightly
+  SOTERIA_VERSION: 0.0.0
+  ANCHOR_GIT: https://github.com/project-serum/anchor
+  ANCHOR_VERSION: 0.24.2
+
+jobs:
+  rust-clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          override: true
+          components: rustfmt, clippy
+          profile: minimal
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          args: --all-features
+
+  rust-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          override: true
+          components: rustfmt, clippy
+          profile: minimal
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - name: Run fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all --manifest-path ./Cargo.toml -- --check
+
+  soteria-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          override: true
+          profile: minimal
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - uses: ./.github/actions/install-solana
+        with:
+          solana_version: ${{ env.SOLANA_VERSION }}
+      - uses: ./.github/actions/install-soteria
+        with:
+          soteria_version: ${{ env.SOTERIA_VERSION }}
+      - name: Soteria scan programs
+        working-directory: ./programs
+        run: >-
+          for PROGRAM in ./*; do
+              if [ -d "$PROGRAM" ]; then
+                  cd "$PROGRAM"
+                  echo "Soteria scan for $PROGRAM"
+                  soteria -analyzeAll .
+                  cd ..
+              fi
+          done
+        shell: bash
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/install-linux-build-deps
+      - uses: actions-rs/toolchain@v1
+        with:
+          override: true
+          profile: minimal
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+      - uses: ./.github/actions/install-solana
+        with:
+          solana_version: ${{ env.SOLANA_VERSION }}
+      - uses: ./.github/actions/install-anchor
+        with:
+          anchor_git: ${{ env.ANCHOR_GIT }}
+          anchor_version: ${{ env.ANCHOR_VERSION }}
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ./rust/target
+          key: ${{ env.cache_id }}-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUSTC_HASH }}
+
+      - name: Install Yarn dependencies
+        run: yarn install
+
+      - name: Generate client sdk
+        run: yarn run api:gen
+
+      - run: mkdir -p target/deploy
+      - run: cp -r tests/test-keypairs/* target/deploy
+      - run: find . -type f -name "*" -exec sed -i'' -e "s/hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg/$(solana-keygen pubkey tests/test-keypairs/hydra-keypair.json)/g" {} +
+
+      - run: yarn build
+      - run: anchor build
+
+      - run: solana-test-validator --url https://api.devnet.solana.com --clone metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s --clone PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT --reset &
+      - run: sleep 6
+      - run: solana airdrop 1000 $(solana-keygen pubkey tests/test-key.json) --url http://localhost:8899
+      - run: anchor deploy --provider.cluster localnet
+      - run: yarn test:report
+
+      - uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: integration-tests
+          path: ./tests/out.json
+          reporter: mocha-json

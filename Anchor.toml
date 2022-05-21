@@ -13,10 +13,9 @@ url = "https://anchor.projectserum.com"
 
 [provider]
 cluster = "localnet"
-wallet = "~/.config/solana/id.json"
+wallet = "./tests/test-key.json"
 
 [scripts]
-test = "ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
-
+test = "ts-mocha -p ./tsconfig.json -t 1000000 tests/wallet.test.ts"
 
 
