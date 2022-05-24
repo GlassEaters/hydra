@@ -24,18 +24,11 @@ import { createMasterEdition } from "./utils/metaplex";
 import { DataV2 } from "@metaplex-foundation/mpl-token-metadata";
 import { airdrop, LOCALHOST } from "@metaplex-foundation/amman";
 import { builtNftFanout, builtWalletFanout } from "./utils/scenarios";
-import { AnchorProvider, setProvider } from "@project-serum/anchor";
 
 use(ChaiAsPromised);
 
-export const getProvider = (): AnchorProvider => {
-  const anchorProvider = AnchorProvider.env();
-  setProvider(anchorProvider);
-  return anchorProvider;
-};
-
 describe("fanout", async () => {
-  const connection = getProvider().connection;
+  const connection = new Connection(LOCALHOST, "confirmed");
   let authorityWallet: Keypair;
   let fanoutSdk: FanoutClient;
   beforeEach(async () => {
