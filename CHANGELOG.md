@@ -1,5 +1,11 @@
 # CHANGELOG.md
 
+## 0.2.5 (2022-05-15) - Unstable release API MAY CHANGE in a future release
+
+Features:
+
+Allow wrapped sol.
+
 
 ## 0.2.4 (2022-05-15) - Unstable release API MAY CHANGE in a future release
 

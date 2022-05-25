@@ -6,7 +6,7 @@ import {
 } from "@solana/web3.js";
 import { NodeWallet } from "@project-serum/common"; //TODO remove this
 import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID, NATIVE_MINT,
   Token,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -91,6 +91,35 @@ describe("fanout", async () => {
       expect(fanoutMintAccount.fanout.toBase58()).to.equal(fanout.toBase58());
       expect(fanoutMintAccount.tokenAccount.toBase58()).to.equal(
         tokenAccount.toBase58()
+      );
+      expect(fanoutMintAccount.totalInflow.toString()).to.equal("0");
+      expect(fanoutMintAccount.lastSnapshotAmount.toString()).to.equal("0");
+    });
+
+    it("Init For Wrapped Sol", async () => {
+      const { fanout } = await fanoutSdk.initializeFanout({
+        totalShares: 100,
+        name: `Test${Date.now()}`,
+        membershipModel: MembershipModel.Wallet,
+      });
+
+      const { fanoutForMint, tokenAccount } =
+          await fanoutSdk.initializeFanoutForMint({
+            fanout,
+            mint: NATIVE_MINT,
+          });
+
+      const fanoutMintAccount = await fanoutSdk.fetch<FanoutMint>(
+          fanoutForMint,
+          FanoutMint
+      );
+
+      expect(fanoutMintAccount.mint.toBase58()).to.equal(
+          NATIVE_MINT.toBase58()
+      );
+      expect(fanoutMintAccount.fanout.toBase58()).to.equal(fanout.toBase58());
+      expect(fanoutMintAccount.tokenAccount.toBase58()).to.equal(
+          tokenAccount.toBase58()
       );
       expect(fanoutMintAccount.totalInflow.toString()).to.equal("0");
       expect(fanoutMintAccount.lastSnapshotAmount.toString()).to.equal("0");
