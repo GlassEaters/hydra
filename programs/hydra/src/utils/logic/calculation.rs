@@ -62,7 +62,10 @@ pub fn update_inflow_for_mint(
             .or_arith_error()?
             .checked_div(tss as u128)
             .or_arith_error()? as u64;
-        fanout_for_mint.total_inflow += unstaked_correction;
+        fanout_for_mint.total_inflow = fanout_for_mint
+            .total_inflow
+            .checked_add(unstaked_correction)
+            .expect("Add error");
     }
     fanout_for_mint.last_snapshot_amount = current_snapshot;
     Ok(())
@@ -83,7 +86,10 @@ pub fn update_inflow(fanout: &mut Fanout, current_snapshot: u64) -> Result<()> {
             .or_arith_error()?
             .checked_div(tss as u128)
             .or_arith_error()? as u64;
-        fanout.total_inflow += unstaked_correction;
+        fanout.total_inflow = fanout
+            .total_inflow
+            .checked_add(unstaked_correction)
+            .expect("Add error");
     }
     fanout.last_snapshot_amount = current_snapshot;
     Ok(())

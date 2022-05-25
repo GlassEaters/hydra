@@ -60,7 +60,13 @@ pub fn transfer_shares(ctx: Context<TransferShares>, shares: u64) -> Result<()> 
     {
         return Err(HydraError::TransferNotSupported.into());
     }
-    from_membership_account.shares -= shares;
-    to_membership_account.shares += shares;
+    from_membership_account.shares = from_membership_account
+        .shares
+        .checked_sub(shares)
+        .expect("Sub error");
+    to_membership_account.shares = to_membership_account
+        .shares
+        .checked_add(shares)
+        .expect("Add error");
     Ok(())
 }
