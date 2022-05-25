@@ -23,10 +23,7 @@ pub fn calculate_dist_amount(
     Ok(dist_amount as u64)
 }
 
-pub fn update_fanout_for_add(
-    fanout: &mut Account<Fanout>,
-    shares: u64,
-) -> Result<()> {
+pub fn update_fanout_for_add(fanout: &mut Account<Fanout>, shares: u64) -> Result<()> {
     let less_shares = fanout
         .total_available_shares
         .checked_sub(shares)

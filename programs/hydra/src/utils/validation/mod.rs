@@ -32,10 +32,7 @@ pub fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> Result<()> {
     }
 }
 
-pub fn assert_membership_model(
-    fanout: &Account<Fanout>,
-    model: MembershipModel,
-) -> Result<()> {
+pub fn assert_membership_model(fanout: &Account<Fanout>, model: MembershipModel) -> Result<()> {
     if fanout.membership_model != model {
         return Err(HydraError::InvalidMembershipModel.into());
     }
@@ -130,7 +127,6 @@ pub fn assert_owned_by_one(account: &AccountInfo, owners: Vec<&Pubkey>) -> Resul
     Err(HydraError::IncorrectOwner.into())
 }
 
-
 #[cfg(test)]
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
@@ -143,7 +139,7 @@ mod tests {
         let owner2 = Pubkey::new_unique();
         let ad = Pubkey::new_unique();
         let actual_owner = Pubkey::new_unique();
-        let lam= &mut 10000;
+        let lam = &mut 10000;
         let a = AccountInfo::new(&ad, false, false, lam, &mut [0; 0], &actual_owner, false, 0);
 
         let e = assert_owned_by_one(&a, vec![&owner, &owner2, &owner1]);
@@ -153,8 +149,5 @@ mod tests {
         let e = assert_owned_by_one(&a, vec![&owner, &actual_owner, &owner1]);
 
         assert_eq!(e.is_ok(), true);
-
     }
-
-
 }
