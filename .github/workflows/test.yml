@@ -118,7 +118,7 @@ jobs:
 
       - run: mkdir -p target/deploy
       - run: cp -r tests/test-keypairs/* target/deploy
-      - run: find . -type f -name "*" -exec sed -i'' -e "s/hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg/$(solana-keygen pubkey tests/test-keypairs/hydra-keypair.json)/g" {} +
+      - run: find . -type f -name "*" -exec sed -i'' -e "s/hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg/$(solana-keygen pubkey tests/test-keypairs/hydra_wallet-keypair.json)/g" {} +
 
       - run: yarn build
       - run: anchor build

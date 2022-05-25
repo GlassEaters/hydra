@@ -8,7 +8,7 @@ use anchor_client::solana_client::rpc_config::{RpcAccountInfoConfig, RpcProgramA
 use anchor_client::solana_client::rpc_filter::{Memcmp, MemcmpEncodedBytes, RpcFilterType};
 
 use clap::{ArgMatches, Error, ErrorKind};
-use hydra::state::{Fanout, FanoutMint};
+use hydra_wallet::state::{Fanout, FanoutMint};
 use solana_account_decoder::UiAccountEncoding;
 use solana_sdk::commitment_config::{CommitmentConfig, CommitmentLevel};
 use solana_sdk::pubkey::Pubkey;
@@ -75,7 +75,7 @@ fn main() {
     let get_hydra_mints = |rpc: RpcClient| {
         move |hydra_pub: Pubkey, _fanout: Fanout| {
             rpc.get_program_accounts_with_config(
-                &hydra::id(),
+                &hydra_wallet::id(),
                 RpcProgramAccountsConfig {
                     filters: Some(vec![RpcFilterType::Memcmp(Memcmp {
                         offset: 40,
