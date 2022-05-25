@@ -80,10 +80,7 @@ pub fn parse_fanout_mint(
     Ok(fanout_for_mint_object)
 }
 
-pub fn parse_token_account(
-    account: &AccountInfo,
-    owner: &Pubkey,
-) -> Result<TokenAccount> {
+pub fn parse_token_account(account: &AccountInfo, owner: &Pubkey) -> Result<TokenAccount> {
     let ref_data = account.try_borrow_data()?;
     let mut account_data: &[u8] = &ref_data;
     let account_object = TokenAccount::try_deserialize(&mut account_data)?;

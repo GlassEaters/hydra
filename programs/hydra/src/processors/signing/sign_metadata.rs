@@ -52,11 +52,12 @@ pub fn sign_metadata(ctx: Context<SignMetadata>) -> Result<()> {
             ctx.accounts.fanout.key().as_ref(),
             &[*ctx.bumps.get("holding_account").unwrap()],
         ]],
-    ).map_err(|e| {
-        error::Error::ProgramError(ProgramErrorWithOrigin{
+    )
+    .map_err(|e| {
+        error::Error::ProgramError(ProgramErrorWithOrigin {
             program_error: e,
             error_origin: None,
-            compared_values: None
+            compared_values: None,
         })
     })?;
     Ok(())
