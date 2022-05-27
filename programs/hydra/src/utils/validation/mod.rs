@@ -11,12 +11,11 @@ pub fn assert_derivation(
     path: &[&[u8]],
     error: Option<error::Error>,
 ) -> Result<u8> {
-    let (key, bump) = Pubkey::find_program_address(&path, program_id);
+    let (key, bump) = Pubkey::find_program_address(path, program_id);
     if key != *account.key {
-        if error.is_some() {
-            let err = error.unwrap();
+        if let Some(err) = error {
             msg!("Derivation {:?}", err);
-            return Err(err.into());
+            return Err(err);
         }
         msg!("DerivedKeyInvalid");
         return Err(HydraError::DerivedKeyInvalid.into());

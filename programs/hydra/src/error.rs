@@ -6,19 +6,19 @@ pub trait OrArithError<T> {
 
 impl OrArithError<u64> for Option<u64> {
     fn or_arith_error(self) -> StdResult<u64, error::Error> {
-        self.ok_or(HydraError::BadArtithmetic.into())
+        self.ok_or_else(|| HydraError::BadArtithmetic.into())
     }
 }
 
 impl OrArithError<u32> for Option<u32> {
     fn or_arith_error(self) -> StdResult<u32, error::Error> {
-        self.ok_or(HydraError::BadArtithmetic.into())
+        self.ok_or_else(|| HydraError::BadArtithmetic.into())
     }
 }
 
 impl OrArithError<u128> for Option<u128> {
     fn or_arith_error(self) -> StdResult<u128, error::Error> {
-        self.ok_or(HydraError::BadArtithmetic.into())
+        self.ok_or_else(|| HydraError::BadArtithmetic.into())
     }
 }
 

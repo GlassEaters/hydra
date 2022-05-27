@@ -126,5 +126,5 @@ pub fn current_lamports(
     let subtract_size = rent.minimum_balance(size).max(1);
     holding_account_lamports
         .checked_sub(subtract_size)
-        .ok_or(HydraError::NumericalOverflow.into())
+        .ok_or_else(|| HydraError::NumericalOverflow.into())
 }

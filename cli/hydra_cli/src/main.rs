@@ -22,7 +22,7 @@ mod cli_api;
 fn setup_connection(app: &ArgMatches) -> (RpcClient, Keypair) {
     let json = app
         .value_of("rpc")
-        .unwrap_or(&"wss://api.devnet.solana.com".to_owned())
+        .unwrap_or("wss://api.devnet.solana.com")
         .to_owned();
     let _wss = json.replace("https", "wss");
 
@@ -37,15 +37,15 @@ fn setup_connection(app: &ArgMatches) -> (RpcClient, Keypair) {
 
 #[derive(Debug)]
 struct HydraMint {
-    fanout_mint: FanoutMint,
-    address: Pubkey,
+    _fanout_mint: FanoutMint,
+    _address: Pubkey,
 }
 
 #[derive(Debug)]
 struct HydraObject {
     pub fanout: Fanout,
     pub address: Pubkey,
-    pub children: Option<HydraMint>,
+    pub _children: Option<HydraMint>,
 }
 
 fn main() {
@@ -68,7 +68,7 @@ fn main() {
             let hpu = &hydra_pub;
             rpc.get_account_data(hpu)
                 .map(|d| (hydra_pub, d))
-                .map_err(|_| return hydra_not_found())
+                .map_err(|_| hydra_not_found())
         }
     };
 
@@ -92,16 +92,16 @@ fn main() {
                     with_context: None,
                 },
             )
-            .map_err(|e| hydra_mint_rpcs_error(e))
+            .map_err(hydra_mint_rpcs_error)
             .map(|result| -> Vec<HydraMint> {
                 result
                     .iter()
-                    .map(|(addr, fanoutMintAccount)| HydraMint {
-                        fanout_mint: FanoutMint::try_deserialize(
-                            &mut fanoutMintAccount.data.as_slice(),
+                    .map(|(addr, fanout_mint_account)| HydraMint {
+                        _fanout_mint: FanoutMint::try_deserialize(
+                            &mut fanout_mint_account.data.as_slice(),
                         )
                         .unwrap(),
-                        address: *addr,
+                        _address: *addr,
                     })
                     .collect()
             })
@@ -113,17 +113,17 @@ fn main() {
             .map(|f| HydraObject {
                 address: input.0,
                 fanout: f,
-                children: None,
+                _children: None,
             })
             .map_err(|_| invalid_hydra_address())
     };
 
     match app.subcommand() {
-        (SHOW, Some(arg_matches)) => {
-            println!("Running {}", SHOW);
+        (show, Some(arg_matches)) => {
+            println!("Running {}", show);
             let hydra_pub = arg_matches
                 .value_of("hydra_address")
-                .ok_or(missing_hydra_address())
+                .ok_or_else(missing_hydra_address)
                 .and_then(|hydra_address| {
                     Pubkey::from_str(hydra_address).map_err(|_| invalid_hydra_address())
                 });
@@ -136,19 +136,16 @@ fn main() {
                     println!("{:#?}", hy);
                     get_mints(hy.address, hy.fanout)
                 })
-                .and_then(|mints| {
+                .map(|mints| {
                     if mints.is_empty() {
                         println!("No Hydra Children");
-                        return Ok(());
+                    } else {
+                        mints.iter().for_each(|m| {
+                            println!("\n\n{:#?}", m);
+                        });
                     }
-                    mints.iter().for_each(|m| {
-                        println!("\n\n{:#?}", m);
-                    });
-                    return Ok(());
                 })
-                .map_err(|e| {
-                    println!("{:?}", e);
-                })
+                .map_err(|e| println!("{:?}", e))
                 .unwrap();
         }
         _ => unreachable!(),

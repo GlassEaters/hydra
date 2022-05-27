@@ -1,9 +1,11 @@
 pub mod add_member;
 pub mod distribute;
 pub mod init;
+#[allow(clippy::module_inception)]
 pub mod remove_member;
 pub mod signing;
 pub mod stake;
+#[allow(clippy::module_inception)]
 pub mod transfer_shares;
 
 pub use self::add_member::arg::*;
