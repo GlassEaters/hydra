@@ -2177,7 +2177,7 @@ __metadata:
   dependencies:
     "@metaplex-foundation/amman": ^0.1.0
     "@metaplex-foundation/solita": 0.2.0
-    "@project-serum/anchor": ^0.23.0
+    "@project-serum/anchor": ^0.24.2
     "@strata-foundation/spl-utils": ^3.4.5
     "@types/chai": ^4.2.21
     "@types/chai-as-promised": ^7.1.5
@@ -2542,9 +2542,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@project-serum/anchor@npm:^0.23.0":
-  version: 0.23.0
-  resolution: "@project-serum/anchor@npm:0.23.0"
+"@project-serum/anchor@npm:^0.24.2":
+  version: 0.24.2
+  resolution: "@project-serum/anchor@npm:0.24.2"
   dependencies:
     "@project-serum/borsh": ^0.2.5
     "@solana/web3.js": ^1.36.0
@@ -2556,12 +2556,11 @@ __metadata:
     cross-fetch: ^3.1.5
     crypto-hash: ^1.3.0
     eventemitter3: ^4.0.7
-    find: ^0.3.0
     js-sha256: ^0.9.0
     pako: ^2.0.3
     snake-case: ^3.0.4
     toml: ^3.0.0
-  checksum: 900786f745fc4c8bbd255d0ddd89fb832152a73c995f0ecda628dad59ff57f792953bdf85a85fb4654bf89157331076dfad220cf230fbe5ab3b5ff28190137d3
+  checksum: feceab2997ec742d7864c9c5d8daf605becb8465b39b77ae67d3e69940645a3c257f2d9aefd1aef3287dcc4b572594fff5923681dbc386e7d13a28fa49666054
   languageName: node
   linkType: hard
 

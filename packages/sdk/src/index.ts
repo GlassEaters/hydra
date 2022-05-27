@@ -149,7 +149,7 @@ function promiseLog(c: any): any {
 export class FanoutClient {
   connection: Connection;
   wallet: Wallet;
-  provider: Provider;
+  provider: anchor.AnchorProvider;
 
   static ID = new PublicKey("hyDQ4Nz1eYyegS6JfenyKwKzYxRsCWCriYSAjtzP4Vg");
 
@@ -163,7 +163,7 @@ export class FanoutClient {
   constructor(connection: Connection, wallet: Wallet) {
     this.connection = connection;
     this.wallet = wallet;
-    this.provider = new Provider(connection, wallet, {});
+    this.provider = new anchor.AnchorProvider(connection, wallet, {});
   }
 
   async fetch<T>(key: PublicKey, type: any): Promise<T> {
@@ -916,8 +916,16 @@ export class FanoutClient {
             const account = (
               await this.connection.getTokenLargestAccounts(member)
             ).value[0].address;
-            const wallet = (await getTokenAccount(this.provider, account))
-              .owner;
+            const wallet = (
+              await getTokenAccount(
+                {
+                  ...this.provider,
+                  send: async () => "",
+                  sendAll: async () => [""],
+                },
+                account
+              )
+            ).owner;
             return this.distributeNftMemberInstructions({
               distributeForMint: !mint.equals(NATIVE_MINT),
               fanout,

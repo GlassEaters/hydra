@@ -10,6 +10,7 @@ use anchor_lang::solana_program::system_instruction;
 use anchor_spl::token::TokenAccount;
 use std::convert::TryInto;
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_or_allocate_account_raw<'a>(
     program_id: Pubkey,
     new_account_info: &AccountInfo<'a>,
@@ -26,16 +27,15 @@ pub fn create_or_allocate_account_raw<'a>(
         .max(1)
         .saturating_sub(new_account_info.lamports());
     if required_lamports > 0 {
-        let seeds: &[&[&[u8]]];
         let as_arr = [signer_seeds];
 
-        if signer_seeds.len() > 0 {
-            seeds = &as_arr;
+        let seeds: &[&[&[u8]]] = if !signer_seeds.is_empty() {
+            &as_arr
         } else {
-            seeds = &[];
-        }
+            &[]
+        };
         invoke_signed(
-            &system_instruction::transfer(&payer_info.key, new_account_info.key, required_lamports),
+            &system_instruction::transfer(payer_info.key, new_account_info.key, required_lamports),
             &[
                 payer_info.clone(),
                 new_account_info.clone(),
@@ -43,21 +43,22 @@ pub fn create_or_allocate_account_raw<'a>(
             ],
             seeds,
         )?;
-    }
+    };
     let accounts = &[new_account_info.clone(), system_program_info.clone()];
     invoke_signed(
         &system_instruction::allocate(new_account_info.key, size.try_into().unwrap()),
         accounts,
-        &[&new_acct_seeds],
+        &[new_acct_seeds],
     )?;
     invoke_signed(
         &system_instruction::assign(new_account_info.key, &program_id),
         accounts,
-        &[&new_acct_seeds],
+        &[new_acct_seeds],
     )?;
     Ok(())
 }
 
+#[allow(clippy::useless_asref)]
 pub fn parse_fanout_mint(
     fanout_for_mint: &mut UncheckedAccount,
     fanout: &Pubkey,
@@ -80,10 +81,7 @@ pub fn parse_fanout_mint(
     Ok(fanout_for_mint_object)
 }
 
-pub fn parse_token_account(
-    account: &AccountInfo,
-    owner: &Pubkey,
-) -> Result<TokenAccount> {
+pub fn parse_token_account(account: &AccountInfo, owner: &Pubkey) -> Result<TokenAccount> {
     let ref_data = account.try_borrow_data()?;
     let mut account_data: &[u8] = &ref_data;
     let account_object = TokenAccount::try_deserialize(&mut account_data)?;
@@ -94,6 +92,7 @@ pub fn parse_token_account(
     Ok(account_object)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn parse_mint_membership_voucher<'info>(
     fanout_for_mint_membership_voucher: &mut UncheckedAccount<'info>,
     rent: &Sysvar<'info, anchor_lang::prelude::Rent>,
@@ -123,15 +122,15 @@ pub fn parse_mint_membership_voucher<'info>(
             crate::ID,
             &account_info,
             &rent.to_account_info(),
-            &system_program,
+            system_program,
             payer,
             FANOUT_MINT_MEMBERSHIP_VOUCHER_SIZE,
             &[],
             &[
                 b"fanout-membership",
-                &fanout_for_mint.as_ref(),
-                &membership_key.as_ref(),
-                &fanout_mint.as_ref(),
+                fanout_for_mint.as_ref(),
+                membership_key.as_ref(),
+                fanout_mint.as_ref(),
                 &[mint_membership_voucher_bump],
             ],
         )?;
@@ -144,7 +143,7 @@ pub fn parse_mint_membership_voucher<'info>(
     } else {
         let mut membership_data: &[u8] =
             &fanout_for_mint_membership_voucher.try_borrow_mut_data()?;
-        assert_owned_by(&fanout_for_mint_membership_voucher, &crate::ID)?;
+        assert_owned_by(fanout_for_mint_membership_voucher, &crate::ID)?;
         let membership = FanoutMembershipMintVoucher::try_deserialize(&mut membership_data)?;
         if membership.bump_seed != mint_membership_voucher_bump {
             msg!("Mint Membership Bump Doesnt match");

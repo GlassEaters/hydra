@@ -50,10 +50,7 @@ pub struct SetForTokenMemberStake<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-pub fn set_for_token_member_stake(
-    ctx: Context<SetForTokenMemberStake>,
-    shares: u64,
-) -> Result<()> {
+pub fn set_for_token_member_stake(ctx: Context<SetForTokenMemberStake>, shares: u64) -> Result<()> {
     let fanout = &mut ctx.accounts.fanout;
     let member = &ctx.accounts.member;
     let membership_voucher = &mut ctx.accounts.membership_voucher;

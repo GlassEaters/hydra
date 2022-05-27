@@ -7,7 +7,7 @@ license = "GPL-3.0"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "hydra"
+name = "hydra_wallet"
 
 [features]
 no-entrypoint = []

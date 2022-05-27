@@ -26,7 +26,7 @@ const programs = {
     programId: programIds.fanout,
     deployPath: localDeployPath(
       path.join(__dirname, "target", "deploy"),
-      "hydra"
+      "hydra_wallet"
     ),
   },
 };
