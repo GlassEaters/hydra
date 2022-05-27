@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: ./.github/actions/install-linux-build-deps
       - uses: actions-rs/toolchain@v1
         with:
           override: true
