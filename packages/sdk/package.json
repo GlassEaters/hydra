@@ -1,6 +1,6 @@
 {
   "name": "@glasseaters/hydra-sdk",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Interface to the hydra smart contract",
   "repository": {
     "type": "git",

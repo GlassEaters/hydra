@@ -1,6 +1,6 @@
 [package]
 name = "hydra_wallet"
-version = "0.2.5"
+version = "0.3.0"
 description = "Collective account pooling, fan out wallet, dao treasury, all of the things you need to FAN OUT"
 edition = "2018"
 license = "GPL-3.0"
