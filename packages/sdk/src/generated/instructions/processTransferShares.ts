@@ -40,12 +40,11 @@ const processTransferSharesStruct = new beet.BeetArgsStruct<
  */
 export type ProcessTransferSharesInstructionAccounts = {
   authority: web3.PublicKey;
-  member: web3.PublicKey;
-  membershipKey: web3.PublicKey;
+  fromMember: web3.PublicKey;
+  toMember: web3.PublicKey;
   fanout: web3.PublicKey;
   fromMembershipAccount: web3.PublicKey;
   toMembershipAccount: web3.PublicKey;
-  instructions: web3.PublicKey;
 };
 
 const processTransferSharesInstructionDiscriminator = [
@@ -68,12 +67,11 @@ export function createProcessTransferSharesInstruction(
 ) {
   const {
     authority,
-    member,
-    membershipKey,
+    fromMember,
+    toMember,
     fanout,
     fromMembershipAccount,
     toMembershipAccount,
-    instructions,
   } = accounts;
 
   const [data] = processTransferSharesStruct.serialize({
@@ -87,12 +85,12 @@ export function createProcessTransferSharesInstruction(
       isSigner: true,
     },
     {
-      pubkey: member,
+      pubkey: fromMember,
       isWritable: false,
       isSigner: false,
     },
     {
-      pubkey: membershipKey,
+      pubkey: toMember,
       isWritable: false,
       isSigner: false,
     },
@@ -103,17 +101,12 @@ export function createProcessTransferSharesInstruction(
     },
     {
       pubkey: fromMembershipAccount,
-      isWritable: false,
+      isWritable: true,
       isSigner: false,
     },
     {
       pubkey: toMembershipAccount,
-      isWritable: false,
-      isSigner: false,
-    },
-    {
-      pubkey: instructions,
-      isWritable: false,
+      isWritable: true,
       isSigner: false,
     },
   ];

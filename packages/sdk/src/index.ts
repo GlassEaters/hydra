@@ -1,48 +1,41 @@
-import * as anchor from "@project-serum/anchor";
-import { BorshAccountsCoder, Program, Provider } from "@project-serum/anchor";
+import { BorshAccountsCoder, Provider } from "@project-serum/anchor";
 import {
-  AccountLayout,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   NATIVE_MINT,
   Token,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
-  Commitment,
+  AccountInfo,
   Connection,
   Finality,
   PublicKey,
   RpcResponseAndContext,
   SignatureResult,
   Signer,
-  SystemProgram,
   SYSVAR_INSTRUCTIONS_PUBKEY,
-  SYSVAR_RENT_PUBKEY,
   Transaction,
-  TransactionError,
   TransactionInstruction,
   TransactionSignature,
 } from "@solana/web3.js";
 import { ProgramError } from "./systemErrors";
 import {
-  createProcessInitInstruction,
-  createProcessInitForMintInstruction,
   createProcessAddMemberNftInstruction,
-  createProcessDistributeNftInstruction,
   createProcessAddMemberWalletInstruction,
-  createProcessDistributeWalletInstruction,
-  createProcessSetTokenMemberStakeInstruction,
-  createProcessSetForTokenMemberStakeInstruction,
+  createProcessDistributeNftInstruction,
   createProcessDistributeTokenInstruction,
-  createProcessUnstakeInstruction,
+  createProcessDistributeWalletInstruction,
+  createProcessInitForMintInstruction,
+  createProcessInitInstruction,
+  createProcessRemoveMemberInstruction,
+  createProcessSetForTokenMemberStakeInstruction,
+  createProcessSetTokenMemberStakeInstruction,
   createProcessSignMetadataInstruction,
+  createProcessTransferSharesInstruction,
+  createProcessUnstakeInstruction,
 } from "./generated/instructions";
 import { MembershipModel } from "./generated/types";
-import { Fanout, FanoutMembershipVoucher } from "./generated/accounts";
-
-export * from "./generated/types";
-export * from "./generated/accounts";
-export * from "./generated/errors";
+import { Fanout } from "./generated/accounts";
 import { MetadataProgram } from "@metaplex-foundation/mpl-token-metadata";
 import {
   BigInstructionResult,
@@ -52,6 +45,10 @@ import {
 import bs58 from "bs58";
 import { getTokenAccount } from "@project-serum/common";
 import { chunks } from "./utils";
+
+export * from "./generated/types";
+export * from "./generated/accounts";
+export * from "./generated/errors";
 
 interface InitializeFanoutArgs {
   name: string;
@@ -125,6 +122,19 @@ interface DistributeAllArgs {
   payer: PublicKey;
 }
 
+interface TransferSharesArgs {
+  fanout: PublicKey;
+  fromMember: PublicKey;
+  toMember: PublicKey;
+  shares: number;
+}
+
+interface RemoveMemberArgs {
+  fanout: PublicKey;
+  member: PublicKey;
+  destination: PublicKey;
+}
+
 const MPL_TM_BUF = MetadataProgram.PUBKEY.toBuffer();
 const MPL_TM_PREFIX = "metadata";
 
@@ -169,6 +179,14 @@ export class FanoutClient {
   async fetch<T>(key: PublicKey, type: any): Promise<T> {
     let a = await this.connection.getAccountInfo(key);
     return type.fromAccountInfo(a)[0] as T;
+  }
+
+  async getAccountInfo(key: PublicKey): Promise<AccountInfo<Buffer>> {
+    let a = await this.connection.getAccountInfo(key);
+    if (!a) {
+      throw Error("Account not found");
+    }
+    return a;
   }
 
   async getMembers({ fanout }: { fanout: PublicKey }): Promise<PublicKey[]> {
@@ -1135,6 +1153,67 @@ export class FanoutClient {
     };
   }
 
+  async transferSharesInstructions(
+    opts: TransferSharesArgs
+  ): Promise<InstructionResult<{}>> {
+    const instructions: TransactionInstruction[] = [];
+    const signers: Signer[] = [];
+    let [fromMembershipAccount, f_mvb] = await FanoutClient.membershipVoucher(
+      opts.fanout,
+      opts.fromMember
+    );
+    let [toMembershipAccount, tmvb] = await FanoutClient.membershipVoucher(
+      opts.fanout,
+      opts.toMember
+    );
+    instructions.push(
+      createProcessTransferSharesInstruction(
+        {
+          fromMember: opts.fromMember,
+          toMember: opts.toMember,
+          authority: this.wallet.publicKey,
+          fanout: opts.fanout,
+          fromMembershipAccount,
+          toMembershipAccount,
+        },
+        {
+          shares: opts.shares,
+        }
+      )
+    );
+    return {
+      output: {},
+      instructions,
+      signers,
+    };
+  }
+
+  async removeMemberInstructions(
+    opts: RemoveMemberArgs
+  ): Promise<InstructionResult<{}>> {
+    const instructions: TransactionInstruction[] = [];
+    const signers: Signer[] = [];
+    let [voucher, f_mvb] = await FanoutClient.membershipVoucher(
+      opts.fanout,
+      opts.member
+    );
+
+    instructions.push(
+      createProcessRemoveMemberInstruction({
+        fanout: opts.fanout,
+        member: opts.member,
+        membershipAccount: voucher,
+        authority: this.wallet.publicKey,
+        destination: opts.destination,
+      })
+    );
+    return {
+      output: {},
+      instructions,
+      signers,
+    };
+  }
+
   async initializeFanout(
     opts: InitializeFanoutArgs
   ): Promise<{ fanout: PublicKey; nativeAccount: PublicKey }> {
@@ -1189,6 +1268,41 @@ export class FanoutClient {
     const { instructions, signers, output } =
       await this.signMetadataInstructions(opts);
     await this.throwingSend(instructions, signers, this.wallet.publicKey);
+    return output;
+  }
+
+  async removeMember(opts: RemoveMemberArgs) {
+    let {
+      instructions: remove_ix,
+      signers: remove_signers,
+      output,
+    } = await this.removeMemberInstructions(opts);
+    await this.throwingSend(
+      [...remove_ix],
+      [...remove_signers],
+      this.wallet.publicKey
+    );
+    return output;
+  }
+
+  async transferShares(opts: TransferSharesArgs) {
+    let data = await this.fetch<Fanout>(opts.fanout, Fanout);
+    const {
+      instructions: transfer_ix,
+      signers: transfer_signers,
+      output,
+    } = await this.transferSharesInstructions(opts);
+    if (
+      data.membershipModel != MembershipModel.Wallet &&
+      data.membershipModel != MembershipModel.NFT
+    ) {
+      throw Error("Transfer is only supported in NFT and Wallet fanouts");
+    }
+    await this.throwingSend(
+      [...transfer_ix],
+      [...transfer_signers],
+      this.wallet.publicKey
+    );
     return output;
   }
 

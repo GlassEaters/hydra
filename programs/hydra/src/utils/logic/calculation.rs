@@ -40,6 +40,13 @@ pub fn update_fanout_for_add(
     }
 }
 
+pub fn update_fanout_for_remove(
+    fanout: &mut Account<Fanout>,
+) -> Result<()> {
+    fanout.total_members = fanout.total_members.checked_sub(1).or_arith_error()?;
+    Ok(())
+}
+
 pub fn update_inflow_for_mint(
     fanout: &mut Account<Fanout>,
     fanout_for_mint: &mut FanoutMint,

@@ -557,6 +557,59 @@ createErrorFromNameLookup.set(
 );
 
 /**
+ * RemoveSharesMustBeZero: 'Before you remove a wallet or NFT member please transfer the shares to another member'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class RemoveSharesMustBeZeroError extends Error {
+  readonly code: number = 0x1787;
+  readonly name: string = "RemoveSharesMustBeZero";
+  constructor() {
+    super(
+      "Before you remove a wallet or NFT member please transfer the shares to another member"
+    );
+    if (typeof Error.captureStackTrace === "function") {
+      Error.captureStackTrace(this, RemoveSharesMustBeZeroError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x1787, () => new RemoveSharesMustBeZeroError());
+createErrorFromNameLookup.set(
+  "RemoveSharesMustBeZero",
+  () => new RemoveSharesMustBeZeroError()
+);
+
+/**
+ * InvalidCloseAccountDestination: 'Sending Sol to a SPL token destination will render the sol unusable'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class InvalidCloseAccountDestinationError extends Error {
+  readonly code: number = 0x1788;
+  readonly name: string = "InvalidCloseAccountDestination";
+  constructor() {
+    super(
+      "Sending Sol to a SPL token destination will render the sol unusable"
+    );
+    if (typeof Error.captureStackTrace === "function") {
+      Error.captureStackTrace(this, InvalidCloseAccountDestinationError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(
+  0x1788,
+  () => new InvalidCloseAccountDestinationError()
+);
+createErrorFromNameLookup.set(
+  "InvalidCloseAccountDestination",
+  () => new InvalidCloseAccountDestinationError()
+);
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

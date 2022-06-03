@@ -28,11 +28,11 @@
   },
   "scripts": {
     "amman:start": "amman validator .ammanrc.cjs",
-    "amman:stop": "pkill solana-test-validator",
+    "amman:stop": "pkill solana-test-validator || true",
     "api:gen": "node scripts/api-gen-ts.cjs && prettier --write ./packages/**/*.ts",
     "watch": "npx lerna run --parallel watch",
     "build": "npx lerna run build",
-    "mega-test": "yarn run api:gen && yarn run build && yarn run amman:start && yarn test",
+    "mega-test": "yarn run api:gen && yarn run build && yarn run amman:stop && yarn run amman:start && yarn test",
     "test": "ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\"",
     "prepare": "husky install"
   },

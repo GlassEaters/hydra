@@ -1,5 +1,11 @@
 # CHANGELOG.md
 
+## 0.3.0 (2022-06-3) - Unstable release API MAY CHANGE in a future release
+
+Features:
+
+Allow share transfer and member removal.
+
 ## 0.2.5 (2022-05-15) - Unstable release API MAY CHANGE in a future release
 
 Features:

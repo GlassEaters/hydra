@@ -4,6 +4,12 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::Instruction;
 use anchor_spl::token::TokenAccount;
 use mpl_token_metadata::state::Metadata;
+use anchor_lang::solana_program::program_memory::{sol_memcmp};
+use anchor_lang::solana_program::pubkey::PUBKEY_BYTES;
+
+pub fn cmp_pubkeys(a: &Pubkey, b: &Pubkey) -> bool {
+    sol_memcmp(a.as_ref(), b.as_ref(), PUBKEY_BYTES) == 0
+}
 
 pub fn assert_derivation(
     program_id: &Pubkey,
@@ -12,7 +18,7 @@ pub fn assert_derivation(
     error: Option<error::Error>,
 ) -> Result<u8> {
     let (key, bump) = Pubkey::find_program_address(&path, program_id);
-    if key != *account.key {
+    if !cmp_pubkeys(&key, account.key) {
         if error.is_some() {
             let err = error.unwrap();
             msg!("Derivation {:?}", err);
@@ -25,7 +31,7 @@ pub fn assert_derivation(
 }
 
 pub fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> Result<()> {
-    if account.owner != owner {
+    if !cmp_pubkeys(account.owner, owner) {
         Err(HydraError::IncorrectOwner.into())
     } else {
         Ok(())
@@ -75,13 +81,13 @@ pub fn assert_holding(
     assert_owned_by(mint_info, &spl_token::id())?;
     let token_account_info = token_account.to_account_info();
     assert_owned_by(&token_account_info, &spl_token::id())?;
-    if token_account.owner != *owner.key {
+    if !cmp_pubkeys(&token_account.owner, owner.key) {
         return Err(HydraError::IncorrectOwner.into());
     }
     if token_account.amount < 1 {
         return Err(HydraError::WalletDoesNotOwnMembershipToken.into());
     }
-    if token_account.mint != mint_info.key() {
+    if !cmp_pubkeys(&token_account.mint, &mint_info.key()) {
         return Err(HydraError::MintDoesNotMatch.into());
     }
     Ok(())
@@ -92,7 +98,7 @@ pub fn assert_distributed(
     subject: &Pubkey,
     membership_model: MembershipModel,
 ) -> Result<()> {
-    if ix.program_id != crate::id() {
+    if !cmp_pubkeys(&ix.program_id, &crate::id()) {
         return Err(HydraError::MustDistribute.into());
     }
     let instruction_id = match membership_model {
@@ -100,10 +106,10 @@ pub fn assert_distributed(
         MembershipModel::NFT => [108, 240, 68, 81, 144, 83, 58, 153],
         MembershipModel::Token => [126, 105, 46, 135, 28, 36, 117, 212],
     };
-    if instruction_id != ix.data[0..8] {
+    if sol_memcmp(instruction_id.as_ref(), ix.data[0..8].as_ref(), 8) != 0 {
         return Err(HydraError::MustDistribute.into());
     }
-    if subject != &ix.accounts[1].pubkey {
+    if !cmp_pubkeys(subject, &ix.accounts[1].pubkey) {
         return Err(HydraError::MustDistribute.into());
     }
     Ok(())
@@ -114,7 +120,7 @@ pub fn assert_valid_metadata(
     mint: &AccountInfo,
 ) -> Result<Metadata> {
     let meta = Metadata::from_account_info(metadata_account)?;
-    if meta.mint != *mint.key {
+    if !cmp_pubkeys(&meta.mint, mint.key) {
         return Err(HydraError::InvalidMetadata.into());
     }
     Ok(meta)
@@ -143,7 +149,7 @@ mod tests {
         let owner2 = Pubkey::new_unique();
         let ad = Pubkey::new_unique();
         let actual_owner = Pubkey::new_unique();
-        let lam= &mut 10000;
+        let lam = &mut 10000;
         let a = AccountInfo::new(&ad, false, false, lam, &mut [0; 0], &actual_owner, false, 0);
 
         let e = assert_owned_by_one(&a, vec![&owner, &owner2, &owner1]);
@@ -153,8 +159,5 @@ mod tests {
         let e = assert_owned_by_one(&a, vec![&owner, &actual_owner, &owner1]);
 
         assert_eq!(e.is_ok(), true);
-
     }
-
-
 }

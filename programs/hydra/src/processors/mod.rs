@@ -20,3 +20,4 @@ pub use self::stake::set::*;
 pub use self::stake::set_for::*;
 pub use self::stake::unstake::*;
 pub use self::transfer_shares::transfer_shares::*;
+pub use self::remove_member::remove_member::*;

@@ -88,4 +88,10 @@ pub enum HydraError {
 
     #[msg("Remove is not supported on this membership model")]
     RemoveNotSupported,
+
+    #[msg("Before you remove a wallet or NFT member please transfer the shares to another member")]
+    RemoveSharesMustBeZero,
+
+    #[msg("Sending Sol to a SPL token destination will render the sol unusable")]
+    InvalidCloseAccountDestination
 }

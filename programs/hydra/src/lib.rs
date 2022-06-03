@@ -87,4 +87,8 @@ pub mod hydra {
     pub fn process_unstake(ctx: Context<UnStakeTokenMember>) -> Result<()> {
         unstake(ctx)
     }
+
+    pub fn process_remove_member(ctx: Context<RemoveMember>) -> Result<()> {
+        remove_member(ctx)
+    }
 }
