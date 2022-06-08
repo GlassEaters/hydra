@@ -29,6 +29,7 @@ pub struct Fanout {
     pub bump_seed: u8,                     //1
     pub account_owner_bump_seed: u8,       //1
     pub total_available_shares: u64,       //8
+    pub payer_reward_basis_points: u64,    //8
     pub membership_model: MembershipModel, //1
     pub membership_mint: Option<Pubkey>,   //32
     pub total_staked_shares: Option<u64>,  //4

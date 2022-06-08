@@ -43,6 +43,7 @@ pub struct DistributeWalletMember<'info> {
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
     pub token_program: Program<'info, Token>,
+    pub payer_token_account: Option<UncheckedAccount<'info>>,
 }
 
 pub fn distribute_for_wallet(
@@ -59,7 +60,27 @@ pub fn distribute_for_wallet(
     assert_owned_by(&member.to_account_info(), &System::id())?;
     assert_membership_model(fanout, MembershipModel::Wallet)?;
     assert_shares_distributed(fanout)?;
+
+    let payer_rewards = calculate_payer_rewards(fanout.total_inflow, fanout.payer_reward_basis_points);
+    if payer_rewards > 0 {
+        if distribute_for_mint
+    }
     if distribute_for_mint {
+        if payer_rewards > 0 {
+            if Some(payer_ata) in payer_token_account {
+                let payer_account_ata = parse_token_account(payer_ata, payer.key)?;
+
+                transfer_from_mint_holding(
+                    ctx.accounts.fanout,
+                    ctx.accounts.fanout,
+                    ctx.accounts.token_program.to_owned(),
+                    ctx.accounts.payer.to_account_info(),
+                    payer_account_ata,
+                    payer_rewards,
+            }
+            return Err(ErrorCode::PayerATANotSupplied.into());
+        }
+
         let membership_key = &ctx.accounts.member.key().clone();
         let member = ctx.accounts.member.to_owned();
         distribute_mint(
@@ -78,6 +99,14 @@ pub fn distribute_for_wallet(
             membership_key,
         )?;
     } else {
+        if payer_rewards > 0 {
+            transfer_native(
+                ctx.accounts.holding_account,
+                ctx.accounts.payer.to_account_info(),
+                ctx.accounts.current_snapshot,
+                payer_rewards,
+            )?;
+        }
         distribute_native(
             &mut ctx.accounts.holding_account,
             &mut ctx.accounts.fanout,

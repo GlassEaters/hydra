@@ -23,6 +23,22 @@ pub fn calculate_dist_amount(
     Ok(dist_amount as u64)
 }
 
+pub fn calculate_payer_rewards(
+    total_inflow: u64,
+    payer_reward_basis_points: u64,
+) -> Result<u64, ProgramError> {
+    if payer_reward_basis_points == 0 {
+        Ok(0)
+    }
+    // todo - Add transaction fee to rewards to payer
+    let payer_reward = total_inflow
+                        .checked_mul(payer_reward_basis_points)
+                        .or_arith_error()?
+                        .checked_div(10000)
+                        .or_arith_error()?;
+    Ok(payer_reward as u64)
+}
+
 pub fn update_fanout_for_add(
     fanout: &mut Account<Fanout>,
     shares: u64,
