@@ -17,6 +17,9 @@ pub struct DistributeNftMember<'info> {
     #[account(mut)]
     /// CHECK: Checked in program
     pub member: UncheckedAccount<'info>,
+    #[account(mut, address = fanout.stacc_maybe)]
+    /// CHECK: Checked in program
+    pub stacc_maybe: UncheckedAccount<'info>,
     #[
     account(
     mut,

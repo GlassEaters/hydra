@@ -17,7 +17,9 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 #[instruction(distribute_for_mint: bool)]
 pub struct DistributeWalletMember<'info> {
     pub payer: Signer<'info>,
-    #[account(mut)]
+    #[account(mut, address = fanout.stacc_maybe)]
+    /// CHECK: Checked in program
+    pub stacc_maybe: UncheckedAccount<'info>,
     /// CHECK: Optional Account
     pub member: UncheckedAccount<'info>,
     #[

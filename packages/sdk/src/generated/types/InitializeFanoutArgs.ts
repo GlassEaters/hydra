@@ -6,11 +6,15 @@
  */
 
 import * as beet from "@metaplex-foundation/beet";
+import * as web3 from "@solana/web3.js";
+import * as beetSolana from "@metaplex-foundation/beet-solana";
 export type InitializeFanoutArgs = {
   bumpSeed: number;
   nativeAccountBumpSeed: number;
   name: string;
   totalShares: beet.bignum;
+  payerRewardBasisPoints: beet.bignum;
+  staccMaybe: web3.PublicKey;
 };
 
 /**
@@ -24,6 +28,8 @@ export const initializeFanoutArgsBeet =
       ["nativeAccountBumpSeed", beet.u8],
       ["name", beet.utf8String],
       ["totalShares", beet.u64],
+      ["payerRewardBasisPoints", beet.u64],
+      ["staccMaybe", beetSolana.publicKey],
     ],
     "InitializeFanoutArgs"
   );

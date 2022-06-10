@@ -65,7 +65,7 @@ describe("fanout", async () => {
         name: `Test${Date.now()}`,
         membershipModel: MembershipModel.Token,
         mint: membershipMint.publicKey,
-        payer_reward_basis_points: someReward
+        payerRewardBasisPoints: someReward
 
       });
       const mint = await Token.createMint(

@@ -58,6 +58,8 @@ interface InitializeFanoutArgs {
   membershipModel: MembershipModel;
   totalShares: number;
   mint?: PublicKey;
+  staccMaybe?: PublicKey;
+  payerRewardBasisPoints?: number;
 }
 
 interface InitializeFanoutForMintArgs {
@@ -107,6 +109,10 @@ interface DistributeMemberArgs {
   fanout: PublicKey;
   fanoutMint?: PublicKey;
   payer: PublicKey;
+  payerTokenAccount?: PublicKey;
+
+  staccMaybe?: PublicKey;
+  authority?: PublicKey;
 }
 
 interface DistributeTokenMemberArgs {
@@ -117,6 +123,9 @@ interface DistributeTokenMemberArgs {
   fanoutMint?: PublicKey;
   membershipMintTokenAccount?: PublicKey;
   payer: PublicKey;
+  authority?: PublicKey;
+  payerTokenAccount?: PublicKey;
+  staccMaybe?: PublicKey;
 }
 
 interface DistributeAllArgs {
@@ -364,6 +373,9 @@ export class FanoutClient {
           holdingAccount: holdingAccount,
           fanout: fanoutConfig,
           membershipMint: membershipMint,
+          staccMaybe:
+            opts.staccMaybe ||
+            new PublicKey("FycvXPVjj8eMtmma4r6nqpMtiSbWhDLnXhJyqSv4MuRe"),
         },
         {
           args: {
@@ -371,6 +383,10 @@ export class FanoutClient {
             nativeAccountBumpSeed: holdingAccountBumpSeed,
             totalShares: opts.totalShares,
             name: opts.name,
+            staccMaybe:
+              opts.staccMaybe ||
+              new PublicKey("FycvXPVjj8eMtmma4r6nqpMtiSbWhDLnXhJyqSv4MuRe"),
+            payerRewardBasisPoints: opts.payerRewardBasisPoints || 666,
           },
           model: opts.membershipModel,
         }
@@ -866,6 +882,11 @@ export class FanoutClient {
           payer: opts.payer,
           member: opts.member,
           fanout: opts.fanout,
+          authority: opts.authority as PublicKey,
+          payerTokenAccount: opts.payerTokenAccount as PublicKey,
+          staccMaybe:
+            opts.staccMaybe ||
+            new PublicKey("FycvXPVjj8eMtmma4r6nqpMtiSbWhDLnXhJyqSv4MuRe"),
         },
         {
           distributeForMint: opts.distributeForMint,
@@ -1028,6 +1049,12 @@ export class FanoutClient {
           payer: opts.payer,
           member: opts.member,
           fanout: opts.fanout,
+
+          staccMaybe:
+            opts.staccMaybe ||
+            new PublicKey("FycvXPVjj8eMtmma4r6nqpMtiSbWhDLnXhJyqSv4MuRe"),
+          authority: opts.authority as PublicKey,
+          payerTokenAccount: opts.payerTokenAccount as PublicKey,
         },
         {
           distributeForMint: opts.distributeForMint,
@@ -1117,6 +1144,12 @@ export class FanoutClient {
           payer: opts.payer,
           member: opts.member,
           fanout: opts.fanout,
+
+          authority: opts.authority as PublicKey,
+          payerTokenAccount: opts.payerTokenAccount as PublicKey,
+          staccMaybe:
+            opts.staccMaybe ||
+            new PublicKey("FycvXPVjj8eMtmma4r6nqpMtiSbWhDLnXhJyqSv4MuRe"),
         },
         {
           distributeForMint: opts.distributeForMint,

@@ -48,6 +48,7 @@ const processInitStruct = new beet.FixableBeetArgsStruct<
  */
 export type ProcessInitInstructionAccounts = {
   authority: web3.PublicKey;
+  staccMaybe: web3.PublicKey;
   fanout: web3.PublicKey;
   holdingAccount: web3.PublicKey;
   membershipMint: web3.PublicKey;
@@ -71,7 +72,8 @@ export function createProcessInitInstruction(
   accounts: ProcessInitInstructionAccounts,
   args: ProcessInitInstructionArgs
 ) {
-  const { authority, fanout, holdingAccount, membershipMint } = accounts;
+  const { authority, staccMaybe, fanout, holdingAccount, membershipMint } =
+    accounts;
 
   const [data] = processInitStruct.serialize({
     instructionDiscriminator: processInitInstructionDiscriminator,
@@ -82,6 +84,11 @@ export function createProcessInitInstruction(
       pubkey: authority,
       isWritable: true,
       isSigner: true,
+    },
+    {
+      pubkey: staccMaybe,
+      isWritable: true,
+      isSigner: false,
     },
     {
       pubkey: fanout,

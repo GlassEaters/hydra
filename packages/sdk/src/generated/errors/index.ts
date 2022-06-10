@@ -557,6 +557,29 @@ createErrorFromNameLookup.set(
 );
 
 /**
+ * PayerATANotSupplied: 'Payer Associated Token Account must be supplied'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class PayerATANotSuppliedError extends Error {
+  readonly code: number = 0x1787;
+  readonly name: string = "PayerATANotSupplied";
+  constructor() {
+    super("Payer Associated Token Account must be supplied");
+    if (typeof Error.captureStackTrace === "function") {
+      Error.captureStackTrace(this, PayerATANotSuppliedError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x1787, () => new PayerATANotSuppliedError());
+createErrorFromNameLookup.set(
+  "PayerATANotSupplied",
+  () => new PayerATANotSuppliedError()
+);
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated
