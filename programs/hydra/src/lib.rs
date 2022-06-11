@@ -34,6 +34,13 @@ pub mod hydra {
         add_member_wallet(ctx, args)
     }
 
+    pub fn process_transfer_to_hodling(
+        ctx: Context<TransferToHodling>,
+        args: TransferToArgs,
+    ) -> Result<()> {
+        transfer_to_hodling(ctx, args)
+    }
+
     pub fn process_add_member_nft(
         ctx: Context<AddMemberWithNFT>,
         args: AddMemberArgs,
