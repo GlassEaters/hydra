@@ -21,6 +21,7 @@ export type FanoutMembershipVoucherArgs = {
   bumpSeed: number;
   membershipKey: web3.PublicKey;
   shares: beet.bignum;
+  stakedAt: beet.COption<beet.bignum>;
 };
 
 const fanoutMembershipVoucherDiscriminator = [
@@ -40,7 +41,8 @@ export class FanoutMembershipVoucher implements FanoutMembershipVoucherArgs {
     readonly lastInflow: beet.bignum,
     readonly bumpSeed: number,
     readonly membershipKey: web3.PublicKey,
-    readonly shares: beet.bignum
+    readonly shares: beet.bignum,
+    readonly stakedAt: beet.COption<beet.bignum>
   ) {}
 
   /**
@@ -53,7 +55,8 @@ export class FanoutMembershipVoucher implements FanoutMembershipVoucherArgs {
       args.lastInflow,
       args.bumpSeed,
       args.membershipKey,
-      args.shares
+      args.shares,
+      args.stakedAt
     );
   }
 
@@ -111,34 +114,36 @@ export class FanoutMembershipVoucher implements FanoutMembershipVoucherArgs {
 
   /**
    * Returns the byteSize of a {@link Buffer} holding the serialized data of
-   * {@link FanoutMembershipVoucher}
+   * {@link FanoutMembershipVoucher} for the provided args.
+   *
+   * @param args need to be provided since the byte size for this account
+   * depends on them
    */
-  static get byteSize() {
-    return fanoutMembershipVoucherBeet.byteSize;
+  static byteSize(args: FanoutMembershipVoucherArgs) {
+    const instance = FanoutMembershipVoucher.fromArgs(args);
+    return fanoutMembershipVoucherBeet.toFixedFromValue({
+      accountDiscriminator: fanoutMembershipVoucherDiscriminator,
+      ...instance,
+    }).byteSize;
   }
 
   /**
    * Fetches the minimum balance needed to exempt an account holding
    * {@link FanoutMembershipVoucher} data from rent
    *
+   * @param args need to be provided since the byte size for this account
+   * depends on them
    * @param connection used to retrieve the rent exemption information
    */
   static async getMinimumBalanceForRentExemption(
+    args: FanoutMembershipVoucherArgs,
     connection: web3.Connection,
     commitment?: web3.Commitment
   ): Promise<number> {
     return connection.getMinimumBalanceForRentExemption(
-      FanoutMembershipVoucher.byteSize,
+      FanoutMembershipVoucher.byteSize(args),
       commitment
     );
-  }
-
-  /**
-   * Determines if the provided {@link Buffer} has the correct byte size to
-   * hold {@link FanoutMembershipVoucher} data.
-   */
-  static hasCorrectByteSize(buf: Buffer, offset = 0) {
-    return buf.byteLength - offset === FanoutMembershipVoucher.byteSize;
   }
 
   /**
@@ -153,6 +158,7 @@ export class FanoutMembershipVoucher implements FanoutMembershipVoucherArgs {
       bumpSeed: this.bumpSeed,
       membershipKey: this.membershipKey.toBase58(),
       shares: this.shares,
+      stakedAt: this.stakedAt,
     };
   }
 }
@@ -161,7 +167,7 @@ export class FanoutMembershipVoucher implements FanoutMembershipVoucherArgs {
  * @category Accounts
  * @category generated
  */
-export const fanoutMembershipVoucherBeet = new beet.BeetStruct<
+export const fanoutMembershipVoucherBeet = new beet.FixableBeetStruct<
   FanoutMembershipVoucher,
   FanoutMembershipVoucherArgs & {
     accountDiscriminator: number[] /* size: 8 */;
@@ -175,6 +181,7 @@ export const fanoutMembershipVoucherBeet = new beet.BeetStruct<
     ["bumpSeed", beet.u8],
     ["membershipKey", beetSolana.publicKey],
     ["shares", beet.u64],
+    ["stakedAt", beet.coption(beet.i64)],
   ],
   FanoutMembershipVoucher.fromArgs,
   "FanoutMembershipVoucher"

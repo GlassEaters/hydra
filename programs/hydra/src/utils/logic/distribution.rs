@@ -119,3 +119,18 @@ pub fn distribute_mint<'info>(
         dif_dist,
     )
 }
+
+
+pub fn assert_duration(duration: Option<i64>, then: Option<i64>) -> Result<()> {
+    let now = Clock::get()?;
+    //Allow First pass for existing Hydras
+    if (duration.is_some() && then.is_none()) || duration.is_none() {
+        return Ok(());
+    }
+    let min_dur = duration.unwrap();
+    let then_dur =  now.unix_timestamp - then.unwrap();
+    if then_dur >= min_dur {
+        return Ok(());
+    }
+    Err(HydraError::InvalidStakeDuration.into())
+}

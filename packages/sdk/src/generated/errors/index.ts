@@ -610,6 +610,29 @@ createErrorFromNameLookup.set(
 );
 
 /**
+ * InvalidStakeDuration: 'The Tokens Have not been staked long enough'
+ *
+ * @category Errors
+ * @category generated
+ */
+export class InvalidStakeDurationError extends Error {
+  readonly code: number = 0x1789;
+  readonly name: string = "InvalidStakeDuration";
+  constructor() {
+    super("The Tokens Have not been staked long enough");
+    if (typeof Error.captureStackTrace === "function") {
+      Error.captureStackTrace(this, InvalidStakeDurationError);
+    }
+  }
+}
+
+createErrorFromCodeLookup.set(0x1789, () => new InvalidStakeDurationError());
+createErrorFromNameLookup.set(
+  "InvalidStakeDuration",
+  () => new InvalidStakeDurationError()
+);
+
+/**
  * Attempts to resolve a custom program error from the provided error code.
  * @category Errors
  * @category generated

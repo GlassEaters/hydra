@@ -6,6 +6,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::sysvar;
 use anchor_lang::solana_program::sysvar::instructions::get_instruction_relative;
 use anchor_spl::token::{Mint, Token, TokenAccount};
+use crate::utils::logic::distribution::assert_duration;
 
 #[derive(Accounts)]
 pub struct UnStakeTokenMember<'info> {
@@ -56,9 +57,12 @@ pub fn unstake(ctx: Context<UnStakeTokenMember>) -> Result<()> {
     let ixs = &ctx.accounts.instructions;
     let membership_mint = &mut ctx.accounts.membership_mint;
     let prev_ix = get_instruction_relative(-1, ixs).unwrap();
+    let voucher = &ctx.accounts.membership_voucher;
+    assert_duration(fanout.stake_min_time, voucher.staked_at)?;
     assert_distributed(prev_ix, member.key, fanout.membership_model)?;
     assert_owned_by(&fanout.to_account_info(), &crate::ID)?;
     assert_owned_by(&member.to_account_info(), &System::id())?;
+
     let amount = ctx.accounts.member_stake_account.amount;
     fanout.total_staked_shares = fanout
         .total_staked_shares

@@ -9,6 +9,7 @@ pub struct InitializeFanoutArgs {
     pub native_account_bump_seed: u8,
     pub name: String,
     pub total_shares: u64,
+    pub minimum_stake_duration: Option<i64>,
 }
 
 #[derive(Accounts)]
@@ -40,6 +41,7 @@ pub struct InitializeFanout<'info> {
     pub rent: Sysvar<'info, Rent>,
     pub token_program: Program<'info, Token>,
 }
+
 pub fn init(
     ctx: Context<InitializeFanout>,
     args: InitializeFanoutArgs,
@@ -69,6 +71,7 @@ pub fn init(
         MembershipModel::Token => {
             fanout.total_shares = membership_mint.supply;
             fanout.total_available_shares = 0;
+            fanout.stake_min_time = args.minimum_stake_duration.or(Some(0));
             if fanout.membership_mint.is_none() {
                 return Err(HydraError::MintAccountRequired.into());
             }

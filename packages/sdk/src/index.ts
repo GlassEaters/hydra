@@ -45,6 +45,7 @@ import {
 import bs58 from "bs58";
 import { getTokenAccount } from "@project-serum/common";
 import { chunks } from "./utils";
+import { bignum, coption } from "@metaplex-foundation/beet";
 
 export * from "./generated/types";
 export * from "./generated/accounts";
@@ -55,6 +56,7 @@ interface InitializeFanoutArgs {
   membershipModel: MembershipModel;
   totalShares: number;
   mint?: PublicKey;
+  stakeMinDuration?: number;
 }
 
 interface InitializeFanoutForMintArgs {
@@ -375,6 +377,8 @@ export class FanoutClient {
       }
       membershipMint = opts.mint;
     }
+    let minimumStakeDuration: number | null =
+      opts.stakeMinDuration == undefined ? null : opts.stakeMinDuration;
     instructions.push(
       createProcessInitInstruction(
         {
@@ -389,6 +393,7 @@ export class FanoutClient {
             nativeAccountBumpSeed: holdingAccountBumpSeed,
             totalShares: opts.totalShares,
             name: opts.name,
+            minimumStakeDuration: minimumStakeDuration,
           },
           model: opts.membershipModel,
         }

@@ -11,6 +11,7 @@ export type InitializeFanoutArgs = {
   nativeAccountBumpSeed: number;
   name: string;
   totalShares: beet.bignum;
+  minimumStakeDuration: beet.COption<beet.bignum>;
 };
 
 /**
@@ -24,6 +25,7 @@ export const initializeFanoutArgsBeet =
       ["nativeAccountBumpSeed", beet.u8],
       ["name", beet.utf8String],
       ["totalShares", beet.u64],
+      ["minimumStakeDuration", beet.coption(beet.i64)],
     ],
     "InitializeFanoutArgs"
   );

@@ -55,7 +55,8 @@ export async function builtTokenFanout(
   mintAuth: Keypair,
   fanoutSdk: FanoutClient,
   shares: number,
-  numberMembers: number
+  numberMembers: number,
+  stakeMinDuration?: number
 ): Promise<BuiltTokenFanout> {
   const name = `Test${Date.now()}`;
   const { fanout } = await fanoutSdk.initializeFanout({
@@ -63,6 +64,7 @@ export async function builtTokenFanout(
     name: `Test${Date.now()}`,
     membershipModel: MembershipModel.Token,
     mint: mint.publicKey,
+    stakeMinDuration: stakeMinDuration
   });
   let mintInfo = await mint.getMintInfo();
   let totalSupply = shares ** mintInfo.decimals;
