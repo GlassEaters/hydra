@@ -1,4 +1,3 @@
-use anchor_lang::AccountsClose;
 use crate::state::{Fanout, FanoutMembershipVoucher};
 use crate::utils::logic::calculation::*;
 use crate::utils::validation::{assert_membership_model, assert_owned_by};

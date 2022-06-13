@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use std::result::Result as StdResult;
+
 pub trait OrArithError<T> {
     fn or_arith_error(self) -> StdResult<T, error::Error>;
 }
@@ -75,7 +76,7 @@ pub enum HydraError {
     InvalidFanoutForMint,
 
     #[msg(
-        "This operation must be the instruction right after a distrobution on the same accounts."
+    "This operation must be the instruction right after a distrobution on the same accounts."
     )]
     MustDistribute,
 
@@ -93,5 +94,8 @@ pub enum HydraError {
     RemoveSharesMustBeZero,
 
     #[msg("Sending Sol to a SPL token destination will render the sol unusable")]
-    InvalidCloseAccountDestination
+    InvalidCloseAccountDestination,
+
+    #[msg("The Tokens Have not been staked long enough")]
+    InvalidStakeDuration,
 }

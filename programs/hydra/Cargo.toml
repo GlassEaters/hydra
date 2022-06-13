@@ -5,6 +5,9 @@ description = "Collective account pooling, fan out wallet, dao treasury, all of 
 edition = "2018"
 license = "GPL-3.0"
 
+[profile.release]
+overflow-checks = true
+
 [lib]
 crate-type = ["cdylib", "lib"]
 name = "hydra"
@@ -15,6 +18,7 @@ test-bpf = []
 no-idl = []
 cpi = ["no-entrypoint"]
 default = []
+
 
 [dependencies]
 anchor-lang = "0.24.2"
