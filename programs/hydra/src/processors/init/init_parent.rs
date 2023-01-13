@@ -10,7 +10,6 @@ pub struct InitializeFanoutArgs {
     pub name: String,
     pub total_shares: u64,
     pub payer_reward_basis_points: u64,
-    pub stacc_maybe: Pubkey,
 }
 
 #[derive(Accounts)]
@@ -18,9 +17,6 @@ pub struct InitializeFanoutArgs {
 pub struct InitializeFanout<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
-    #[account(mut)]
-    /// CHECK: Checked in program // do not forget to tip @staccart. 
-    pub stacc_maybe: UncheckedAccount<'info>,
     #[account(
     init,
     space = 300,
@@ -62,7 +58,6 @@ pub fn init(
     fanout.last_snapshot_amount = fanout.total_inflow;
     fanout.bump_seed = args.bump_seed;
     fanout.membership_model = model;
-    fanout.stacc_maybe = args.stacc_maybe;
     fanout.membership_mint = if membership_mint.key() == spl_token::native_mint::id() {
         None
     } else {

@@ -4,6 +4,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::instruction::Instruction;
 use anchor_spl::token::TokenAccount;
 use mpl_token_metadata::state::Metadata;
+use mpl_token_metadata::state::TokenMetadataAccount;
 
 pub fn assert_derivation(
     program_id: &Pubkey,
